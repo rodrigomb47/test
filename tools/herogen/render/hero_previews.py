@@ -21,7 +21,8 @@ controller's queue blends for 4), with HeroFace's frames, face_ctrl keys and bli
   locomotion.gif    walk, run and the set its mobility traits use, with its own overrides (Natsuho, an acrobat: a
                     cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump;
                     the Wither, a flyer who hovers: her drift, hover and flight set; Benika, a charger and leaper:
-                    the charging run and skid, the crouch jump, leap and heavy landing)
+                    the charging run and skid, the crouch jump, leap and heavy landing; Kagenori, a leaper II and
+                    runner: his crane leap and the landing roll)
   sheet.png         every clip of its own file, 7 frames each from the action's start
   wings.png         (a winged hero only, B5) the wings folded as at rest and under the fold loop, spread on the
                     ground, and in flight: the glide, the top and the bottom of the beat
@@ -86,6 +87,11 @@ OWN_CAPTIONS = {
         "phase.3": "phase.3 (nine tails, the lanterns flare)",
         "escape": "escape, a sleeve and a smirk (no code yet), over the run",
         "sprint": "sprint (his fox lope)",
+    },
+    "kagenori_tsurumine": {
+        "phases": "the phase looks (2: the plain helmet; 3: glowing eyes and blade edges, the short sword drawn)",
+        "phase.2": "phase.2 (the helmet goes on)",
+        "phase.3": "phase.3 (the short sword drawn, the eyes and edges glow)",
     },
     "the_wither": {
         "phases": "the phase looks (2: soul-blue stays, gem and hem; 3: no familiars, burning tips, blazing eyes); "
@@ -378,11 +384,21 @@ def mobility_traits(a):
     return [(mob.get(k) or {}).get("trait") for k in ("primary", "secondary") if mob.get(k)]
 
 
+def mobility_tier(a, trait):
+    """C3: the tier (1-3) of one of a hero's mobility traits, 0 when it lacks the trait."""
+    mob = (a.hero or {}).get("mobility") or {}
+    for k in ("primary", "secondary"):
+        if (mob.get(k) or {}).get("trait") == trait:
+            return int(mob[k].get("tier", 1))
+    return 0
+
+
 def loco_segments(a):
     """The locomotion a hero's mobility traits use (MOBILITY_AND_WORK 1, 4.1): an acrobat's jumps, wall kicks and
     mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a runner's own
     sprint burst when its file overrides it (C2: Yugen's fox lope), a charger's charging run and skid (C2), a leaper's
-    crouch jump, leap and heavy landing (C2) or else a plain jump, the ladder climb, and the swim for a swimmer."""
+    crouch jump, leap and heavy landing (C2; the landing roll for a leaper II or III, C3) or else a plain jump, the ladder
+    climb, and the swim for a swimmer."""
     from anim.loco_preview import Segment
     traits = mobility_traits(a)
     if "acrobat" in traits:
@@ -432,9 +448,12 @@ def loco_segments(a):
         segs.append(Segment("charge_run > skid (a charger's traversal charge)",
                             [("move.charge_run", 1.8), ("move.skid", None)]))
     if "leaper" in traits:
-        # C2: a leaper's jump: the 0.3 s crouch (the tell), the leap and the heavy landing (MOBILITY_AND_WORK 1.6)
-        segs.append(Segment("crouch_jump (the tell) > leap > land_heavy (a leaper)",
-                            [("move.crouch_jump", None), ("move.leap", 0.5), ("move.land_heavy", None)]))
+        # C2: a leaper's jump: the 0.3 s crouch (the tell), the leap and the heavy landing (MOBILITY_AND_WORK 1.6);
+        # C3: a leaper of tier II or III lands in the landing roll instead (MOBILITY_AND_WORK 1.6, 4.1: Kagenori)
+        land = "move.land_roll" if mobility_tier(a, "leaper") >= 2 else "move.land_heavy"
+        segs.append(Segment("crouch_jump (the tell) > leap > %s (a leaper%s)" % (
+                                land[5:], " II: the landing roll" if land == "move.land_roll" else ""),
+                            [("move.crouch_jump", None), ("move.leap", 0.5), (land, None)]))
     else:
         segs.append(Segment("jump > leap > land", [("move.jump", None), ("move.leap", 0.35), ("move.land", None)]))
     if "swimmer" in traits:

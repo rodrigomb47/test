@@ -1,0 +1,129 @@
+{
+  "animation_chain": ["kagenori_tsurumine", "_style_katana", "_core"],
+  "base": "adult_m",
+  "bones": {
+    "fine": [
+      "fine_bangs",
+      "fine_foot_l",
+      "fine_foot_r",
+      "fine_forearm_l",
+      "fine_forearm_r",
+      "fine_hair_l",
+      "fine_hair_r",
+      "fine_hair_top",
+      "fine_holstered",
+      "fine_p2_hat",
+      "fine_p3_weapon_back",
+      "fine_p3_weapon_l",
+      "fine_sash",
+      "fine_sheath",
+      "fine_tail_hair_2",
+      "fine_weapon_back",
+      "fine_weapon_r"
+    ],
+    "items": ["item_r", "item_l"],
+    "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
+    "phase": {"p2_hat": 2, "p3_weapon_back": 3, "p3_weapon_l": 3, "p3_weapon_r": 3},
+    "tint": ["fine_sash", "sash"],
+    "weapon_drawn": ["weapon_r", "weapon_l"],
+    "weapon_sheathed": ["weapon_back"]
+  },
+  "build": "standard",
+  "face": {
+    "asymmetric": false,
+    "blink": {
+      "double_chance": 0.15,
+      "interval": [4, 7],
+      "over_eyes": [0, 4, 5, 8, 9],
+      "profile": "calm",
+      "ticks": [1, 2, 1]
+    },
+    "cheek_frames": ["none", "blush", "sweat", "tears"],
+    "eye_frames": [
+      "open",
+      "half",
+      "closed",
+      "happy",
+      "angry",
+      "sad",
+      "surprised",
+      "pain",
+      "focused",
+      "smug",
+      "glowing",
+      "sleeping"
+    ],
+    "mood_order": [
+      "calm",
+      "happy",
+      "angry",
+      "focused",
+      "hurt",
+      "tired",
+      "sad",
+      "smug",
+      "surprised",
+      "asleep",
+      "flustered",
+      "determined"
+    ],
+    "moods": {
+      "angry": {"cheeks": 0, "eyes": 4, "mouth": 4},
+      "asleep": {"cheeks": 0, "eyes": 11, "mouth": 0},
+      "calm": {"cheeks": 0, "eyes": 0, "mouth": 0},
+      "determined": {"cheeks": 0, "eyes": 4, "mouth": 0},
+      "flustered": {"cheeks": 1, "eyes": 6, "mouth": 5},
+      "focused": {"cheeks": 0, "eyes": 8, "mouth": 0},
+      "happy": {"cheeks": 0, "eyes": 8, "mouth": 1},
+      "hurt": {"cheeks": 0, "eyes": 7, "mouth": 4},
+      "sad": {"cheeks": 0, "eyes": 5, "mouth": 5},
+      "smug": {"cheeks": 0, "eyes": 9, "mouth": 1},
+      "surprised": {"cheeks": 0, "eyes": 6, "mouth": 2},
+      "tired": {"cheeks": 2, "eyes": 1, "mouth": 0}
+    },
+    "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
+    "overrides": {"happy": {"eyes": "focused", "mouth": "smile"}},
+    "regions": {
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 33, "w": 16},
+      "eyes": {"columns": 4, "frames": 12, "h": 10, "u": 64, "v": 0, "w": 20},
+      "mouth": {"columns": 8, "frames": 8, "h": 3, "u": 64, "v": 30, "w": 8}
+    }
+  },
+  "form": "adult",
+  "format": 1,
+  "generator": "herogen 1",
+  "head_y": 42,
+  "height_px": 52,
+  "id": "kagenori_tsurumine",
+  "moves": [
+    "three_cut",
+    "iai_stance",
+    "thunderclap_draw",
+    "crane_step",
+    "guard_splitter",
+    "chain_draw",
+    "falling_crane"
+  ],
+  "phases": [
+    {"eyes_glow": false, "hide": [], "phase": 2, "show": ["p2_hat"], "texture": "base"},
+    {"eyes_glow": true, "hide": ["holstered"], "phase": 3, "show": [], "texture": "base"}
+  ],
+  "render_scale": 0.56,
+  "rig": "hero_rig_v3",
+  "scale": 1.02,
+  "secondary": [
+    {
+      "chain": ["tail_hair_1", "tail_hair_2"],
+      "damping": 0.6,
+      "part": "hair/high_ponytail_long",
+      "stiffness": 0.35
+    },
+    {"chain": ["sleeve_r", "sleeve_l"], "damping": 0.7, "part": "outfit_top/haori", "stiffness": 0.5}
+  ],
+  "source_sha256": "f0a2dab0207e78a2625e7a8672e22df7702aa46606aafb4e31ad39b880738a72",
+  "states": ["twin_sky"],
+  "style": "katana",
+  "texture": {"glow_outside_face": true, "glowmask": true, "height": 256, "p2": false, "width": 256},
+  "voice": {"blip": "bass", "pitch": 0.85, "rate": 3},
+  "weapon": {"hand": "right", "offhand": {"phase": 3, "sheathed": "obi_same"}, "sheathed": "obi"}
+}

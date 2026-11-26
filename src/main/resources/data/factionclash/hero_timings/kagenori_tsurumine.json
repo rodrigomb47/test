@@ -1,0 +1,261 @@
+{
+  "animations": {
+    "intro": {
+      "events": [{"t": 0.4, "tick": 8, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.intro"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "last_stand": {
+      "events": [],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "move.chain_draw": {
+      "class": "heavy",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "chain_bolt"},
+        {"t": 1.15, "tick": 23, "type": "hit"},
+        {"t": 1.15, "tick": 23, "type": "vfx", "value": "chain_bolt"},
+        {"t": 1.3, "tick": 26, "type": "hit"},
+        {"t": 1.3, "tick": 26, "type": "vfx", "value": "chain_bolt"},
+        {"t": 1.4, "tick": 28, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 9, "recovery": 16, "windup": 20},
+      "frames": {"active": 0.45, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.15, 1.3, 1.4],
+      "kind": "action",
+      "length": 2.15,
+      "loop": "once",
+      "ticks": 43,
+      "total_ticks": 45,
+      "transition_ticks": 2
+    },
+    "move.crane_step": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.8, "tick": 16, "type": "hit"},
+        {"t": 0.8, "tick": 16, "type": "vfx", "value": "crane_dash"},
+        {"t": 0.8, "tick": 16, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.step_dash"},
+        {"t": 1, "tick": 20, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 5, "recovery": 16, "windup": 16},
+      "frames": {"active": 0.25, "recovery": 0.8, "windup": 0.8},
+      "hits": [0.8, 1],
+      "kind": "action",
+      "length": 1.75,
+      "loop": "once",
+      "ticks": 35,
+      "total_ticks": 37,
+      "transition_ticks": 2
+    },
+    "move.falling_crane": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "jump_dust"},
+        {"t": 0.9, "tick": 18, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.crane_leap"},
+        {"t": 1.35, "tick": 27, "type": "cast"},
+        {"t": 1.35, "tick": 27, "type": "vfx", "value": "crane_land"}
+      ],
+      "frame_ticks": {"active": 10, "recovery": 20, "windup": 18},
+      "frames": {"active": 0.5, "recovery": 1, "windup": 0.9},
+      "hits": [0.9, 1.35],
+      "kind": "action",
+      "length": 2.3,
+      "loop": "once",
+      "ticks": 46,
+      "total_ticks": 48,
+      "transition_ticks": 2
+    },
+    "move.guard_splitter": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.85, "tick": 17, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.heavy_cut"},
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "split_arc"},
+        {"t": 0.95, "tick": 19, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 18, "windup": 18},
+      "frames": {"active": 0.1, "recovery": 0.9, "windup": 0.9},
+      "hits": [0.9, 0.95],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.iai_stance": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "vfx", "value": "hilt_sparks"},
+        {"t": 1.5, "tick": 30, "type": "hit"},
+        {"t": 1.5, "tick": 30, "type": "vfx", "value": "iai_flash"},
+        {"t": 1.5, "tick": 30, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.iai_draw"},
+        {"t": 1.55, "tick": 31, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 16, "windup": 30},
+      "frames": {"active": 0.1, "recovery": 0.8, "windup": 1.5},
+      "hits": [1.5, 1.55],
+      "kind": "action",
+      "length": 2.3,
+      "loop": "once",
+      "ticks": 46,
+      "total_ticks": 48,
+      "transition_ticks": 2
+    },
+    "move.leap": {
+      "events": [],
+      "kind": "base",
+      "length": 1.2,
+      "loop": "loop",
+      "ticks": 24,
+      "total_ticks": 28,
+      "transition_ticks": 4
+    },
+    "move.three_cut": {
+      "class": "light",
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.katana_swing"},
+        {"t": 0.45, "tick": 9, "type": "hit"},
+        {"t": 0.45, "tick": 9, "type": "vfx", "value": "slash_arc"},
+        {"t": 0.6, "tick": 12, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.katana_swing"},
+        {"t": 0.65, "tick": 13, "type": "hit"},
+        {"t": 0.65, "tick": 13, "type": "vfx", "value": "slash_arc"},
+        {"t": 0.8, "tick": 16, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.katana_swing"},
+        {"t": 0.85, "tick": 17, "type": "hit"},
+        {"t": 0.85, "tick": 17, "type": "vfx", "value": "slash_arc"}
+      ],
+      "frame_ticks": {"active": 9, "recovery": 7, "windup": 9},
+      "frames": {"active": 0.45, "recovery": 0.35, "windup": 0.45},
+      "hits": [0.45, 0.65, 0.85],
+      "kind": "action",
+      "length": 1.15,
+      "loop": "once",
+      "ticks": 23,
+      "total_ticks": 25,
+      "transition_ticks": 2
+    },
+    "move.thunderclap_draw": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "vfx", "value": "hilt_glint"},
+        {"t": 1.3, "tick": 26, "type": "hit"},
+        {"t": 1.3, "tick": 26, "type": "vfx", "value": "thunderclap_line"},
+        {"t": 1.9, "tick": 38, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.sheathe"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 17, "windup": 26},
+      "frames": {"active": 0.05, "recovery": 0.85, "windup": 1.3},
+      "hits": [1.3],
+      "kind": "action",
+      "length": 2.1,
+      "loop": "once",
+      "ticks": 42,
+      "total_ticks": 44,
+      "transition_ticks": 2
+    },
+    "personal.1": {
+      "events": [{"t": 1.1, "tick": 22, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.guard_tap"}],
+      "kind": "action",
+      "length": 2.6,
+      "loop": "once",
+      "ticks": 52,
+      "total_ticks": 54,
+      "transition_ticks": 2
+    },
+    "personal.2": {
+      "events": [],
+      "kind": "action",
+      "length": 3,
+      "loop": "once",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "personal.3": {
+      "events": [{"t": 1.05, "tick": 21, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.hair_tie"}],
+      "kind": "action",
+      "length": 3.2,
+      "loop": "once",
+      "ticks": 64,
+      "total_ticks": 66,
+      "transition_ticks": 2
+    },
+    "phase.2": {
+      "events": [{"t": 0.45, "tick": 9, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.helmet"}],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "phase.3": {
+      "events": [{"t": 0.65, "tick": 13, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.blade_hum"}],
+      "kind": "action",
+      "length": 1.3,
+      "loop": "once",
+      "ticks": 26,
+      "total_ticks": 28,
+      "transition_ticks": 2
+    },
+    "state.twin_sky": {
+      "events": [{"t": 1.05, "tick": 21, "type": "vfx", "value": "twin_arcs"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "taunt": {
+      "events": [{"t": 0.5, "tick": 10, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.hm"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "ultimate": {
+      "class": "ultimate",
+      "events": [
+        {"t": 2, "tick": 40, "type": "hit"},
+        {"t": 2, "tick": 40, "type": "vfx", "value": "heaven_split"},
+        {"t": 2.05, "tick": 41, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 32, "windup": 40},
+      "frames": {"active": 0.1, "recovery": 1.6, "windup": 2},
+      "hits": [2, 2.05],
+      "kind": "action",
+      "length": 3.6,
+      "loop": "once",
+      "ticks": 72,
+      "total_ticks": 74,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [{"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.kagenori_tsurumine.hm"}],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    }
+  },
+  "file": "kagenori_tsurumine",
+  "format": 2,
+  "generator": "herogen 1",
+  "source_sha256": "2bdff60bff472a3698c8449e293ce33eb6e07106c5b63dcc3c95958d2c582067",
+  "tick": 0.05
+}

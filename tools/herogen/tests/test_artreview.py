@@ -190,15 +190,18 @@ class RingTest(unittest.TestCase):
         lint on chibi_f). A full ring ends one step short of 180."""
         import glob
         import os
+        import expr
         from util import HEROSRC
         for path in sorted(glob.glob(os.path.join(HEROSRC, "parts", "**", "*.json"), recursive=True)):
             with open(path) as f:
                 part = json.load(f)
+            # a count may be an expression of the part's params (C3: the kabuto's `lames`): read at their defaults
+            defaults = {k: float(v.get("default", 0)) for k, v in (part.get("params") or {}).items()}
             for g in part.get("strands", []) or []:
                 if g.get("path") != "arc" or not isinstance(g.get("angles"), list):
                     continue
                 a0, a1 = (float(a) for a in g["angles"])
-                n = int(g.get("count", 1))
+                n = int(expr.evaluate(g.get("count", 1), defaults))
                 if n < 2:
                     continue
                 step = (a1 - a0) / (n - 1)

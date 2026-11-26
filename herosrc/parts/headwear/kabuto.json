@@ -1,5 +1,5 @@
 {
-  "_comment": "A plain samurai helmet (G6a): a bowl of three stacked slabs over the hair with a knob on top, a short visor tilted down over the brow, a neck guard of three lames flaring out round the sides and back (open at the face), turned-back side flaps, and a V-shaped crest in the trim colour on the front. Lacquered metal by default. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "_comment": "A plain samurai helmet (G6a): a bowl of three stacked slabs over the hair with a knob on top, a short visor tilted down over the brow, a neck guard of three lames flaring out round the sides and back (open at the face), turned-back side flaps, and a V-shaped crest in the trim colour on the front. Lacquered metal by default. `lames` is the bottom row's plate count (the rows above have one and two fewer); fewer lames are wider, so the guard keeps its coverage with fewer cubes (C3: Kagenori wears 9, so his phase-2 helmet fits the 130 cubes kept beyond the fine distance). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
   "id": "headwear/kabuto",
   "category": "headwear",
   "slots": {
@@ -8,6 +8,9 @@
   },
   "occupies": ["hat"],
   "conflicts": ["headwear/witch_hat", "headwear/visored_helm", "headwear/halo_ring"],
+  "params": {
+    "lames": {"default": 11, "max": 11, "min": 7}
+  },
   "offset": [0, "head_y", 0],
   "cubes": [
     {
@@ -110,8 +113,8 @@
       "bone": "hat",
       "path": "arc",
       "angles": [62, 298],
-      "count": 9,
-      "width": 4.4,
+      "count": "(lames) - 2",
+      "width": "4.4 + 0.55 * (11 - (lames))",
       "depth": 0.5,
       "length": 2.4,
       "material": "lacquer",
@@ -127,8 +130,8 @@
       "bone": "hat",
       "path": "arc",
       "angles": [64, 296],
-      "count": 10,
-      "width": 4.4,
+      "count": "(lames) - 1",
+      "width": "4.4 + 0.55 * (11 - (lames))",
       "depth": 0.5,
       "length": 2.4,
       "material": "lacquer",
@@ -145,8 +148,8 @@
       "bone": "hat",
       "path": "arc",
       "angles": [66, 294],
-      "count": 11,
-      "width": 4.4,
+      "count": "(lames)",
+      "width": "4.4 + 0.55 * (11 - (lames))",
       "depth": 0.5,
       "length": 2.4,
       "material": "lacquer",

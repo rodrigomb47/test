@@ -4692,3 +4692,200 @@ own clips.)
 - Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`, which also hold the 100 / 300 / 130 budgets), GameTests, the in-game and campaign checks (gates
   3 and 5), and the jar.
+
+## C3: Kagenori Tsurumine (2026-11-26)
+
+HEROES_V2.md 15.2 row C3, Kagenori's half (Ambrose Nettlewick's is still open). This adds his source file, his art, his
+signature animations and the pieces he needed. His kit is the slice fixture's
+(`src/test/resources/heroes/slice/kagenori_tsurumine.json`, copied field for field; his server definition belongs to
+the engine side). He has one body for good (the owner's rule, HEROES_V2 3.6): **adult, male, standard build, drawn at
+102%** (SLICE_PLAN 3.5), 52 px tall (1.86 blocks). Every preview shows him only in that body. He has no tail. No hit
+tick, marker or timing file of an existing clip changed: the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen, the
+test rig, the Wither and the Ender Dragon build byte for byte as before, and his animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/kagenori_tsurumine.hero.json` | the source: the kit, `art` (body, palette, parts, face with its override, the long sword and the short sword, phase looks) and `animations` (style `katana`, blink `calm`, the G10 variant `crane_leap`, 56 poses of his own, 18 signatures) |
+| `herosrc/parts/headwear/kabuto.json` | the `lames` param (below) |
+| generated | `geo/hero` (72 bones, 217 cubes of the 300 budget, 127 of the 130 beyond the fine distance), `textures/entity/hero` (256x256 texture and glow mask; no `_p2` texture: nothing of his changes colour by day), `heroes/*.visual.json`, `animations/hero/kagenori_tsurumine.animation.json`, `data/factionclash/hero_timings/kagenori_tsurumine.json` |
+| `render/hero_previews.py` | `mobility_tier`; a leaper of tier II or III lands in the landing roll in its locomotion film; his captions |
+| `anim/loco_preview.py` | G10's `hero_kagenori.gif` drawn from his own source in his one body, landing in the roll |
+| `tests/test_kagenori.py` | 18 tests (below); `tests/test_artreview.py`'s ring test reads expression counts |
+| `previews/parts/head_headwear.png` | re-rendered: the kabuto's caption lists its `lames` |
+
+### His look
+
+The still crane samurai of the sample outfit (G6b, G6c): a long black high ponytail (`hair/high_ponytail_long`, length
+18), an indigo haori with off-white inner panels and gold trim over an off-white hakama, a steel shoulder plate on the
+right (`armour/sode`), steel bracers, tabi and sandals, the faction sash, and a white crane crest on his back, chest and
+sleeves (`markings/crest`, emblem `crane`). The palette is SLICE_PLAN 3.5's; `leather` (#4B3D35) dresses the sandal
+soles and `glow` is a pale lightning blue (#A8DEFF). His face: `sharp` eyes, no lashes, no flick, `straight_thick`
+brows and the `small` mouth; his one override is `happy`: his focused eyes with a faint smile (SLICE_PLAN 3.5). Blink
+`calm`.
+
+- **The swords**: the katana in his right hand, sheathed at the obi on his left hip; the short sword (the same prop with
+  a 10 px blade, `offhand` with `phase: 3`) sheathed beside it, a little higher and further back (`sheath_offset`).
+  Before phase 3 its hilt shows at his hip at all times (the generator's `holstered` copy); from phase 3 it is in his
+  left hand while the weapon is drawn.
+- **Phase 2** (60%): the plain helmet goes on (`headwear/kabuto` worn with `"phase": 2`, indigo lacquer with gold
+  lames).
+- **Phase 3** (25%): his eyes glow (frame 10 in the glow colour), the edges of both blades glow (`weapon.phase_glow`
+  on `blade_*`, shells on `p3_` bones, as Hinae's streamers), and the short sword is drawn.
+
+**The kabuto's `lames` param.** The sample outfit's helmet (G6a's kabuto, three rows of 9, 10 and 11 neck-guard lames)
+put him at 133 cubes beyond the fine distance, over the 130 budget. `lames` sets the bottom row's count (the rows above
+have one and two fewer, 7..11) and widens each lame by 0.55 px per lame dropped, so the guard keeps its span. The
+default, 11, builds the helmet exactly as before (the sample outfit and the parts sheets render byte for byte); he
+wears 9: six cubes fewer, 127 beyond the fine distance.
+
+Indigo over off-white keeps him apart from the others: their two largest colour regions differ from Hinae's (white top,
+red hakama) by delta-E 78.5 and 3.3 (the black hair), from Benika's by 79.4 and 9.1, from Natsuho's by 62.3 and 8.3 and
+from Yugen's by 12.1 and 36.9 (one pair under the NOTE's 15 at most). Front and side silhouettes at 4x overlap 0.82
+with Hinae (long hair over a hakama, as gate 2 measured on the sample outfits), 0.74 with Benika, 0.72 with Yugen and
+0.59 with Natsuho (the NOTE is at 0.90). He is the only samurai with a source, so `check` gives no NOTE.
+
+### The iai: the blade laid in its scabbard
+
+Five of his clips sheathe the blade and draw it again: Still Water, Thunderclap Draw, the ultimate, the intro, and
+(with the short sword) phase 3. In a move the server keeps the weapon drawn, so the drawn copy stays in his hand and
+the sheathed copy stays hidden; a `weapon:` marker would also leave the server's flag wrong after the move. So the poses
+lay the blade in his hand exactly where the sheathed copy hangs. The scratch solver maps the held copy's points onto
+the sheathed copy's (the generator's own placement rule for the obi sheath: a Kabsch fit with zero residual) and solves
+the arm for that grip point and blade direction (the noto: the tip at the scabbard's mouth with 10 px still out, half
+in, home, a tick apart). The roll is left to the wrist: the edge-up roll of the sheathed copy is out of the wrist's
+reach (cost 226, the blade 21 degrees off), so the hand turns the blade 160 degrees, and as the hilt is near-square
+the hilt shows the same. Every iai pose shares one upper torso (`waist`, `chest`) so the hips may sink and the head
+turn while the hand stays on the hilt; no layer moves the waist, chest or arms during a hold. Measured on every tick of
+every hold: the hilt within 0.58 px of the sheathed copy's, the wrap within 0.48, the guard (2.3 by 2.5) within 0.81;
+the short sword in phase 3's opening within 0.05.
+
+### Signature animations
+
+His own file has the 18 signatures and the `crane_leap` variant's `move.leap` (G10); the katana library and the core
+cover the rest: his basic string `attack.1-3`, the locomotion, the hurt and the death. Each move's clip has the kit's
+frames to the tick: the `hit` on the release and a `cast` on the active part's last tick; Three Cuts has a `hit` on
+each cut and Chained Lightning Draw one on each of its three jumps (MovePlan takes the markers as the form's hit ticks
+when the counts match).
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.three_cut` | 1.15 s | light | 9 / 9 / 7, hits 9, 13, 17 | the blade lifted beside his right shoulder, a diagonal cut down to the front left, a rising cut back to the high right, the blade dropped level as the knees load, a level sweep right to left (the knockback); held a beat. A swing sound before each cut |
+| `move.iai_stance` | 2.3 s | heavy | 30 / 2 / 16 | the blade slid home in one stroke (0.2-0.3 s), down into the iai crouch with the hand on the hilt, only the hips settling lower over the 1.5 s stance (the tell; the server's guard click and sparks); the blade slides out along the scabbard's line and whips out in one level cut to his right front (`hit` 30, the riposte, the `iai_draw` sound), `cast` 31, carried round and held (zanshin), a chiburi, back to his guard |
+| `move.thunderclap_draw` | 2.1 s | heavy | 26 / 1 / 17 | the blade slid home and the grip set by 0.3 s (the glint), down into his deepest crouch and total stillness; the lunging level draw, arm and blade straight at the target (`hit` 26: the server's thunderclap); the re-sheathe, his recovery weak point: a chiburi, the blade slid slowly home (the `sheathe` sound, the move's `end`), a beat with the hand on the hilt, a quick draw back into his guard |
+| `move.crane_step` | 1.75 s | heavy | 16 / 5 / 16 | low on bent knees, the blade drawn back low pointing behind him, the left arm reaching forward like a crane's wing (the tell); the burst (`hit` 16, `step_dash`), the blade round level at the waist mid-dash, braking on deep knees with the blade out to his left (`cast` 20) |
+| `move.guard_splitter` | 1.8 s | heavy | 18 / 2 / 18 | the blade raised high over his head and drawn back like a bow, trembling with a held breath (the tell, `heavy_cut` at the top); crashed straight down (`hit` 18, a kiai), driven on to just above the ground over deep knees (`cast` 19) |
+| `move.chain_draw` | 2.15 s | heavy | 20 / 9 / 16, hits 20, 23, 26 | the blade upright before his face, flat toward him, the left palm raised beside it while the hands tremble with gathering lightning (the tell); the point thrust at the first target (`hit` 20), snapped to his right front (23) and across to his left front (26), held (`cast` 28) |
+| `move.falling_crane` | 2.3 s | heavy | 18 / 10 / 20 | a deep gathering crouch, both arms swept back and low like folded wings (the tell); the launch (`hit` 18, `crane_leap`) with the arms beating up and out, the crane at the top (arms spread, one knee high), the blade raised over his head as he drops, down blade-first on deep knees (`cast` 27: the landing's knockback; Three Cuts follows) |
+| `ultimate` | 3.6 s | ultimate | 40 / 2 / 32 | Heaven-Splitting Draw: the blade slid home, the eyes close and stay closed (no blinking) as he sinks into the deepest iai; the eyes open sharp at 1.75 s, the blade starts out along the scabbard's line and he uncoils in one rising draw that sweeps the blade past his face to the sky (`hit` 40: the server's lightning), `cast` 41; held high (zanshin), the chiburi, his guard |
+| `state.twin_sky` | 1.5 s | - | - | played as phase 3's transition ends: both blades raised and crossed high ("Two blades."), swept apart and down to his sides ("No more restraint."), into his guard |
+| `phase.2`, `phase.3` | 1.1, 1.3 s | - | - | inside the 1.2 s and 1.4 s transitions: the left hand holds the helmet up over his head (`p2_hat` lifted 6 px), sets it on (the `helmet` sound) and tugs its cord tight; the head bowed and the eyes closed, the left hand on the short sword's hilt in its scabbard ("Forgive me, teacher."), the head comes up with the eyes and edges glowing (`blade_hum`) and the short sword is drawn out to his left side |
+| `intro` | 1.5 s | - | - | the blade slid home, a formal bow from the hips with the eyes closed and the hand on the hilt ("Tsurumine Kagenori."), upright with the hand on the hilt ("Draw when you are ready."), the quick draw into his guard |
+| `victory`, `taunt` | 2.0, 1.5 s | - | - | the chiburi, the blade lowered, a small bow toward the fallen with the eyes closed and a low "hm" ("Rest."); no guard at all, the blade's point lowered to the ground, the chin up and a slow nod: come |
+| `last_stand` | 1.6 s | - | - | bent over and breathing hard with both blades low, then up straight with both blades crossed before his chest ("I do not turn my back. Come.") |
+| `personal.1-3` | 2.6, 3.0, 3.2 s | - | - | the hand resting on the hilt of the sheathed blade, the thumb nudging the guard (`guard_tap`); two slow breaths with the eyes closed; re-tying his ponytail, the cord pulled tight twice (`hair_tie`) |
+
+- **No `escape`**: he never escapes (SLICE_PLAN 3.5: he does not turn his back), so the clip would never play, as for
+  Benika and the bosses. **No `ultimate.loop`**, as for the others.
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slots name: the releases of Three Cuts
+  (`katana_swing`, one per cut), Still Water (`iai_draw`), Crane Step (`step_dash`), Guard Splitter (`heavy_cut`) and
+  Falling Crane (`crane_leap`), Thunderclap Draw's `end` (`sheathe`), both phases (`helmet`, `blade_hum`), the intro and
+  two quirks (`guard_tap`, `hair_tie`), and his `hm` emote in the victory and the taunt. The wind-ups, the impacts, the
+  thunderclap and the heaven split (`plays` server by kind), Twin Sky's `draw_second` and the kiai are the server's.
+- **Faces**: every clip keys `face_ctrl`. The moves key the mouth only (a level mouth, gritted teeth at the cuts, an
+  open kiai on the heaviest) and leave the eyes to the mood, so the wind-up's focused eyes and phase 3's glow show; the
+  eyes are keyed only where they close (the ultimate's stillness, the bows, the breaths).
+- **Rules**: every own clip passes the quality rules on all six bases (no foot slides, planted feet within 0.5 px, the
+  soles on the ground, the joint limits), and both blades (the short sword in every clip, since any move may play in
+  phase 3) stay clear of his body and above the ground on every tick (`grips.animation_problems`). The arm poses were
+  solved on his own skeleton for grip points and blade directions; the legs of every planted pose for his stance's sole
+  spots; the airborne poses of Falling Crane lift the root and use the `floor` fix.
+- **The ponytail off his face**: his long high ponytail hangs (the bake's `hang`), so in a deep fold forward (the
+  guard splitter's blow, the crane's landing, the bows) its follow-through swung it down over his face. Those five
+  clips (`move.guard_splitter`, `move.falling_crane`, `intro`, `victory`, `last_stand`) bake every secondary group but
+  the ponytail (`secondary` lists the others), so it stays on his head as the base clip carries it; no strand point
+  comes in front of his face on any tick of any clip.
+
+### Generator additions (every other hero builds and previews byte for byte as before)
+
+- **`headwear/kabuto`, param `lames`** (above).
+- **`render/hero_previews.py`**: `mobility_tier(a, trait)`; a leaper of tier II or III lands in `move.land_roll` in
+  its locomotion film (MOBILITY_AND_WORK 1.6, 4.1: "roll for leaper II+"); Benika and Yugen, leapers of tier I, keep the
+  heavy landing and their films are unchanged. His captions (`OWN_CAPTIONS`).
+- **`anim/loco_preview.py`**: G10's `hero_kagenori.gif` (the crane leap) is drawn from his own source in his one body
+  and lands in the roll (before, the sample outfit and the heavy landing); `previews/anim/locomotion/hero_kagenori.*`
+  and its README line are re-rendered.
+
+### Previews (`docs/heroes-v2/previews/heroes/kagenori_tsurumine/` and `heroes/lineup.png`)
+
+His set, as the others', with a README: `turnaround.png`, `faces.png`, `phases.png`, `sheet.png`, a GIF per move
+(Guard Splitter and Chained Lightning Draw in phase 2, Falling Crane in phase 3, their first kit phases),
+`ultimate.gif`, `string.gif` (the katana string, Thunderclap Draw > Crane Step, Crane Step > Three Cuts, Falling Crane >
+Three Cuts), `moments.gif` (Twin Sky after phase 3's transition), `idles.gif` and `locomotion.gif` (walk > run, crouch
+jump > crane leap > landing roll, climb). The lineup now has him between Hinae and Natsuho (alphabetical).
+
+### Tests (533 -> 551: `tests/test_kagenori.py`, 18)
+
+- His one body: adult, male, standard, 102, no phase changes it, no tail; the kit is the fixture's; the budgets (72
+  bones, 217 cubes, 127 beyond the fine distance) within SLICE_PLAN 3.9's 72 bones and 300 / 130.
+- Every move's and the ultimate's frames equal the kit's (Three Cuts' hits 9, 13, 17; Chained Lightning Draw's three
+  jumps 3 ticks apart), and `assets.check_frames` passes on the written chain.
+- His own clips pass every rule on every base; the clip set is the 18 and G10's leap, with no `escape` and no
+  `ultimate.loop`; both blades stay clear of his body on every tick.
+- The iai: on every tick of every hold the held hilt within 0.7 px of the sheathed copy's and the guard within 1.0, and
+  the blade does leave the scabbard at the three draws; phase 3 opens with the short sword in its scabbard (within
+  0.2 px) and draws it.
+- The ponytail never in front of his face on any tick of any clip.
+- Every client slot has its marker (three swings in Three Cuts, the re-sheathe's `end`), no server slot is a marker;
+  `face_ctrl` in every clip, his happy face, the ultimate's closed eyes through the stillness and open before the cut,
+  and no move keys the eyes.
+- The phase looks: the helmet's `p2_` bones from phase 2, the short sword's from phase 3, glowing shells on both blades;
+  phase 2 starts with the helmet lifted and sets it on; both phase clips fit their transitions.
+- The kabuto's `lames`: the default builds the old helmet, 9 is six cubes fewer, 6 and 12 are errors.
+- The previews: his locomotion (the landing roll; Benika and Yugen keep the heavy landing), the clips' phases (Twin Sky
+  and the last stand in phase 3), his captions, G10's GIF from his source, the lineup.
+
+Sabotage (each restored afterwards, every file byte for byte): a leaper II landing heavy fails the locomotion test; G10's GIF back on the sample outfit fails its test; the ponytail spring kept in every clip fails the ponytail test; the iai hand rolled 6 degrees fails the scabbard test; Three Cuts' second hit a tick late fails the frames test; the kabuto's default at 10 lames fails the `lames` test.
+
+`test_artreview`'s ring test read an arc's `count` as a plain number; it now reads an expression of the part's params at their defaults (the kabuto's counts are `(lames) - 2` .. `(lames)`).
+
+### Checks run
+
+`herogen check kagenori_tsurumine` (all of 14.2) OK and `check --all --style` OK (its one NOTE, the test rig's `lunge`, is old); `build --check --all` OK (the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen, the test rig, the Wither and the Ender Dragon build byte for byte as committed); `lint` of his ten parts (high_ponytail_long, haori, hakama, sode, bracers, tabi_sandals, sash_obi, kabuto, crest, katana) on every base: 232 builds and checks, 0 problems; `hero-previews kagenori_tsurumine --check`, `hero-previews natsuho_komezaki hinae_shirasuzu benika_akagane yugen_kagaribi the_wither the_ender_dragon --check` and `hero-previews --lineup --check` OK; `anim-previews --locomotion --check`, `--core --check` and `--styles --check`, `render-previews --check` and `icons --check` OK; `parts-previews` re-rendered: only `previews/parts/head_headwear.png` changed (the kabuto's caption now lists `lames 7-11`), and `--check` passes; the Python suite, 551 tests, OK.
+
+### Decisions
+
+1. **His kit is the fixture's verbatim** (as the other slice heroes').
+2. **The iai lays the drawn copy in the scabbard** instead of switching the weapon flag with `weapon:` markers: the
+   server owns the flag during a move, and a marker would leave the client's look wrong after the move ends. The cost:
+   a blade that is sheathed for a second and drawn again must be drawn on screen too, so each iai clip ends with a quick
+   draw back into his guard.
+3. **The roll left to the wrist** (above): the guard sits within 0.81 px of the sheathed copy's.
+4. **The short sword drawn in `phase.3`, the flourish in `state.twin_sky`**: the kit gives Twin Sky "he draws the second
+   sword", but HeroModel shows the offhand from phase 3 by the phase looks (it ignores a state's `show`), so the sword is
+   in his hand as soon as the phase begins. Phase 3's clip opens with the left hand on its hilt in the scabbard and draws
+   it; Twin Sky, which starts when the transition ends, is the two-blade flourish.
+5. **No escape clip** (he never escapes) and **Still Water and Crane Step in all three phases** (the fixture's lists;
+   the kit sheet leaves that choice to the build).
+6. **The ponytail spring left out of five clips** rather than a collision rule in the bake: the bake has no head
+   collision, and the hair hanging on his head as the base carries it reads well at that speed.
+7. **Previews in the move's first kit phase** (the shared rule): the five phase-1 moves are drawn with one sword. Every
+   move was filmed in phase 3 too while authoring, and the short sword's clearance is checked in every clip.
+
+### Open items
+
+- **Engine side**: his definition in `data/factionclash/heroes/` (the fixture's fields); the `last_stand` action code
+  (6.13); the `vfx:` markers of his moves (`hilt_sparks`, `hilt_glint`, `iai_flash`, `thunderclap_line`, `crane_dash`,
+  `split_arc`, `chain_bolt`, `jump_dust`, `crane_land`, `heaven_split`, `twin_arcs`, `slash_arc`).
+- **The phase changes' first ticks**: the helmet's bones show from the moment the phase becomes 2, and the short sword
+  from phase 3, while `phase.2` and `phase.3` start with the helmet raised and the left hand at the scabbard: for the
+  action's 2-tick blend the helmet and the sword are drawn on his head or in his hand from the stance. As Hinae's ring,
+  the engine can set the phase bit a tick after it sends the phase clip if the flash shows in game.
+- **Still Water's riposte** plays at the stance's end, as the kit's frames do (as Natsuho's counter); when he is struck
+  the server answers at once, which needs the engine to jump the clip or a separate riposte action.
+- **His basic string** keeps the katana library's vanilla sweep sound; SOUND.md 5 lets C3 point his own `attack`
+  overrides at `katana_swing`, which needs own copies of `attack.1-3` (not done: the library clips serve him well).
+- **Followup films**: as Benika's and Yugen's, `string.gif` starts each followup after the whole first clip.
+- Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.

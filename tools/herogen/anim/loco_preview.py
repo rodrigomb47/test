@@ -19,8 +19,9 @@ on a chibi and an adult (Tansy, chibi_f, and Maren, adult_f: a tail, twin tails,
 cape, armour and greaves), and one GIF per slice hero's variant (MOBILITY_AND_WORK 15) in that hero's one body only
 (the owner's one-body rule, HEROES_V2 3.6: the adult for all eight): hero_natsuho (the cat twist, from her own source,
 herosrc/heroes/natsuho_komezaki.hero.json), hero_yugen (the fox lope, from his own source since C2,
-herosrc/heroes/yugen_kagaribi.hero.json), hero_kagenori (the crane leap), hero_ambrose (the broom, side-saddle, on his
-staff), the last two from their sample outfits (herosrc/style/outfits.json) until their sources exist.
+herosrc/heroes/yugen_kagaribi.hero.json), hero_kagenori (the crane leap and his leaper II landing roll, from his own
+source since C3, herosrc/heroes/kagenori_tsurumine.hero.json), hero_ambrose (the broom, side-saddle, on his staff,
+from his sample outfit in herosrc/style/outfits.json until his source exists).
 `herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
 """
 import copy
@@ -229,9 +230,9 @@ HERO_GIFS = {
     "hero_yugen": ("yugen_kagaribi", None, "Yugen's fox lope (move.sprint, variant fox_lope)",
                    [Segment("run (core) > sprint (the fox lope) > skid", [("move.run", 1.2), ("move.sprint", 2.4),
                                                                           ("move.skid", None)])]),
-    "hero_kagenori": ("kagenori", ["adult_m"], "Kagenori's crane leap (move.leap, variant crane_leap)",
-                      [Segment("crouch_jump > leap (the crane) > land_heavy",
-                               [("move.crouch_jump", None), ("move.leap", 2.4), ("move.land_heavy", None)])]),
+    "hero_kagenori": ("kagenori_tsurumine", None, "Kagenori's crane leap (move.leap, variant crane_leap)",
+                      [Segment("crouch_jump > leap (the crane) > land_roll (a leaper II)",
+                               [("move.crouch_jump", None), ("move.leap", 2.4), ("move.land_roll", None)])]),
     "hero_ambrose": ("ambrose", ["adult_m"], "Ambrose on his staff-broom (variant broom: side-saddle)",
                      [Segment("takeoff > ride > ride_cast (a vial) > ride > fly_land",
                               [("move.takeoff", None), ("move.ride", 2.8), ("move.fly_land", None)],

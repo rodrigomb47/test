@@ -1,0 +1,6854 @@
+{
+  "_comment": "Kagenori Tsurumine, the still crane samurai (SLICE_PLAN 3.5, kit sheet docs/heroes-v2/kits/kagenori_tsurumine.txt). The kit fields are the slice fixture's (src/test/resources/heroes/slice/kagenori_tsurumine.json); art and animations are source only (HEROES_V2 12.5, 12.6). One body for good (the owner's rule of 2026-11-13, HEROES_V2 3.6): an adult of ordinary size, standard build, drawn at 102%.",
+  "format": 2,
+  "id": "kagenori_tsurumine",
+  "name": "Kagenori Tsurumine",
+  "title": "the Still Crane",
+  "description": "A quiet swordsman of few words who fights like still water until the moment his blade moves.",
+  "gender": "male",
+  "archetype": "samurai",
+  "rarity": "epic",
+  "element": "shock",
+  "resistances": {
+    "shock": 20,
+    "blight": -15
+  },
+  "gear": [
+    {
+      "item": "iron_sword",
+      "name": "Crane's Edge",
+      "enchantments": {
+        "sweeping_edge": 2
+      }
+    },
+    "chainmail_chestplate",
+    "iron_boots"
+  ],
+  "behaviour": {
+    "combat_role": "striker",
+    "duel_style": "counter",
+    "duty": "guard",
+    "focus": "strongest"
+  },
+  "basic_attack": {
+    "style": "melee",
+    "combo": 3,
+    "every_nth_hit": {
+      "n": 3,
+      "effects": [
+        {
+          "type": "mark",
+          "mark": "storm",
+          "stacks": 1
+        }
+      ]
+    }
+  },
+  "moves": [
+    {
+      "id": "three_cut",
+      "name": "Three Cuts",
+      "form": "combo",
+      "class": "light",
+      "band": [
+        "close"
+      ],
+      "weight": 6,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "cooldown": 10,
+      "frames": {
+        "windup": 0.45,
+        "active": 0.45,
+        "recovery": 0.35
+      },
+      "strikes": [
+        {
+          "effects": [
+            {
+              "type": "damage",
+              "amount": {
+                "attack_percent": 55
+              }
+            }
+          ]
+        },
+        {
+          "effects": [
+            {
+              "type": "damage",
+              "amount": {
+                "attack_percent": 55
+              }
+            }
+          ]
+        },
+        {
+          "effects": [
+            {
+              "type": "damage",
+              "amount": {
+                "attack_percent": 80
+              }
+            },
+            {
+              "type": "knockback",
+              "strength": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "iai_stance",
+      "name": "Still Water",
+      "form": "counter",
+      "class": "heavy",
+      "band": [
+        "close"
+      ],
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "stance": 1.5,
+      "absorb": 80,
+      "cooldown": 10,
+      "frames": {
+        "windup": 1.5,
+        "active": 0.1,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 140
+          }
+        },
+        {
+          "type": "stun",
+          "seconds": 1
+        }
+      ],
+      "prefer_when": {
+        "condition": "target_is",
+        "kind": "person"
+      },
+      "look": {
+        "particle": "electric_spark",
+        "sound": "item.shield.block"
+      }
+    },
+    {
+      "id": "thunderclap_draw",
+      "name": "Thunderclap Draw",
+      "form": "line",
+      "class": "heavy",
+      "band": [
+        "mid"
+      ],
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "range": 8,
+      "width": 1,
+      "cooldown": 11,
+      "frames": {
+        "windup": 1.3,
+        "active": 0.05,
+        "recovery": 0.85
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 150
+          }
+        }
+      ],
+      "followups": [
+        {
+          "move": "crane_step",
+          "chance": 30
+        }
+      ],
+      "line": "Thunder answers the blade."
+    },
+    {
+      "id": "crane_step",
+      "name": "Crane Step",
+      "form": "dash",
+      "class": "heavy",
+      "band": [
+        "mid"
+      ],
+      "range": 6,
+      "phases": [
+        1,
+        2,
+        3
+      ],
+      "cooldown": 8,
+      "frames": {
+        "windup": 0.8,
+        "active": 0.25,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 80
+          }
+        }
+      ],
+      "followups": [
+        {
+          "move": "three_cut",
+          "chance": 70
+        }
+      ]
+    },
+    {
+      "id": "guard_splitter",
+      "name": "Guard Splitter",
+      "form": "melee",
+      "class": "heavy",
+      "breaks_guard": true,
+      "band": [
+        "close"
+      ],
+      "phases": [
+        2,
+        3
+      ],
+      "cooldown": 12,
+      "frames": {
+        "windup": 0.9,
+        "active": 0.1,
+        "recovery": 0.9
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 110
+          }
+        },
+        {
+          "type": "guard_break",
+          "seconds": 4
+        }
+      ]
+    },
+    {
+      "id": "chain_draw",
+      "name": "Chained Lightning Draw",
+      "form": "chain",
+      "class": "heavy",
+      "band": [
+        "mid"
+      ],
+      "phases": [
+        2,
+        3
+      ],
+      "range": 10,
+      "radius": 4,
+      "count": 3,
+      "cooldown": 14,
+      "frames": {
+        "windup": 1.0,
+        "active": 0.45,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 7
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 1,
+          "seconds": 3
+        }
+      ]
+    },
+    {
+      "id": "falling_crane",
+      "name": "Falling Crane",
+      "form": "leap",
+      "class": "heavy",
+      "band": [
+        "mid",
+        "far"
+      ],
+      "phases": [
+        3
+      ],
+      "range": 8,
+      "radius": 2,
+      "cooldown": 12,
+      "frames": {
+        "windup": 0.9,
+        "active": 0.5,
+        "recovery": 1.0
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 100
+          }
+        },
+        {
+          "type": "knockback",
+          "strength": 2
+        }
+      ],
+      "followups": [
+        {
+          "move": "three_cut",
+          "chance": 100
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "id": "heaven_split",
+    "name": "Heaven-Splitting Draw",
+    "form": "line",
+    "class": "ultimate",
+    "range": 12,
+    "width": 2,
+    "frames": {
+      "windup": 2.0,
+      "active": 0.1,
+      "recovery": 1.6
+    },
+    "effects": [
+      {
+        "type": "damage",
+        "amount": 22
+      }
+    ],
+    "look": {
+      "lightning": true,
+      "sound": "entity.lightning_bolt.thunder"
+    },
+    "line": "Close your eyes. It is already over."
+  },
+  "passives": [
+    {
+      "name": "Still Mind",
+      "trigger": "on_counter",
+      "form": "self",
+      "effects": [
+        {
+          "type": "energy",
+          "amount": 15,
+          "to": "self"
+        }
+      ],
+      "cooldown": 6
+    }
+  ],
+  "states": [
+    {
+      "name": "twin_sky",
+      "stats": [
+        {
+          "stat": "attack_speed",
+          "percent": 20
+        },
+        {
+          "stat": "damage_dealt",
+          "percent": 10
+        }
+      ],
+      "show": [
+        "p3_weapon_l"
+      ],
+      "face": "determined",
+      "line": "Two blades. No more restraint."
+    }
+  ],
+  "boss": {
+    "health_scale": 350,
+    "poise": 100,
+    "weak_points": [
+      "recovery",
+      "back"
+    ],
+    "phases": [
+      {
+        "at": 100
+      },
+      {
+        "at": 60,
+        "stats": [
+          {
+            "stat": "armor",
+            "percent": 20
+          }
+        ],
+        "transition": {
+          "seconds": 1.2,
+          "line": "Then I will fight you properly.",
+          "face": "determined"
+        }
+      },
+      {
+        "at": 25,
+        "states": [
+          "twin_sky"
+        ],
+        "transition": {
+          "seconds": 1.4,
+          "line": "Forgive me, teacher."
+        }
+      }
+    ],
+    "reactions": [
+      {
+        "when": "target_blocking",
+        "move": "guard_splitter",
+        "chance": 60,
+        "cooldown": 10
+      },
+      {
+        "when": "target_drawing_bow",
+        "move": "crane_step",
+        "chance": 70,
+        "cooldown": 8
+      }
+    ],
+    "intro": {
+      "line": "Tsurumine Kagenori. Draw when you are ready."
+    }
+  },
+  "personality": {
+    "temperament": "stoic",
+    "traits": {
+      "aggression": 50,
+      "honour": 90,
+      "ambition": 45,
+      "caution": 65,
+      "greed": 25,
+      "sociability": 30,
+      "loyalty": 85,
+      "volatility": 10
+    },
+    "likes": [
+      "bamboo",
+      "cherry_sapling"
+    ],
+    "dislikes": [
+      "rotten_flesh"
+    ],
+    "quirks": [
+      "re-ties his hair before every duel"
+    ]
+  },
+  "leader": {
+    "title": "Lord of the Still Crane",
+    "faction_names": [
+      "House of the Still Crane",
+      "Still Crane Watch"
+    ],
+    "short_name": "Still Crane",
+    "motto": "The blade waits. So do we.",
+    "colors": {
+      "primary": "#2E3A6B",
+      "secondary": "#E8E4D8",
+      "accent": "#9AA6B2"
+    },
+    "banner": {
+      "base": "blue",
+      "patterns": [
+        {
+          "pattern": "circle",
+          "color": "white"
+        },
+        {
+          "pattern": "border",
+          "color": "light_gray"
+        }
+      ]
+    },
+    "base_style": "deepslate_keep",
+    "culture": "east",
+    "economy_focus": [
+      "military",
+      "mining"
+    ]
+  },
+  "talents": [
+    {
+      "id": "drill"
+    },
+    {
+      "id": "mentor",
+      "realm": true
+    }
+  ],
+  "voice": {
+    "blip": "bass",
+    "pitch": 0.85,
+    "rate": 3
+  },
+  "lines": {
+    "founding": [
+      "From today this land is the Still Crane's. Keep your blades clean."
+    ],
+    "greeting": [
+      "{player}. Walk with purpose."
+    ],
+    "kill": [
+      "Rest."
+    ],
+    "last_stand": [
+      "I do not turn my back. Come."
+    ],
+    "fallen": [
+      "...Well struck."
+    ]
+  },
+  "mobility": {
+    "primary": {
+      "trait": "leaper",
+      "tier": 2
+    },
+    "secondary": {
+      "trait": "runner",
+      "tier": 1
+    }
+  },
+  "art": {
+    "base": "male",
+    "form": "adult",
+    "build": "standard",
+    "scale": 102,
+    "palette": {
+      "skin": "#F1D3BC",
+      "hair": "#1E1F2A",
+      "eyes": "#6C7BD0",
+      "primary": "#2E3A6B",
+      "secondary": "#E8E4D8",
+      "accent": "#9AA6B2",
+      "trim": "#B8963E",
+      "metal": "#C9CED6",
+      "leather": "#4B3D35",
+      "glow": "#A8DEFF"
+    },
+    "base_layer": {
+      "base_top": "secondary",
+      "base_bottom": "accent",
+      "shoes": "leather"
+    },
+    "parts": [
+      {
+        "part": "hair/high_ponytail_long",
+        "color": "hair",
+        "trim": "secondary",
+        "params": {
+          "length": 18
+        }
+      },
+      {
+        "part": "outfit_top/haori",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim"
+      },
+      {
+        "part": "outfit_bottom/hakama",
+        "color": "secondary",
+        "trim": "trim"
+      },
+      {
+        "part": "armour/sode",
+        "color": "metal",
+        "trim": "trim"
+      },
+      {
+        "part": "armour/bracers",
+        "color": "metal",
+        "trim": "trim"
+      },
+      {
+        "part": "legwear/tabi_sandals",
+        "color": "secondary",
+        "alt": "leather",
+        "trim": "trim"
+      },
+      {
+        "part": "accessories/sash_obi"
+      },
+      {
+        "part": "headwear/kabuto",
+        "color": "primary",
+        "trim": "trim",
+        "phase": 2,
+        "params": {
+          "lames": 9
+        }
+      },
+      {
+        "part": "markings/crest",
+        "emblem": "crane",
+        "color": "secondary",
+        "params": {
+          "back": 1,
+          "chest_pair": 1,
+          "sleeves": 1
+        }
+      }
+    ],
+    "face": {
+      "eyes": "sharp",
+      "lashes": 0,
+      "flick": "none",
+      "brows": "straight_thick",
+      "mouth": "small",
+      "overrides": {
+        "happy": {
+          "eyes": "focused",
+          "mouth": "smile"
+        }
+      }
+    },
+    "weapon": {
+      "prop": "weapons/katana",
+      "hand": "right",
+      "sheathed": "obi",
+      "color": "metal",
+      "trim": "trim",
+      "alt": "hair",
+      "detail": "secondary",
+      "phase_glow": {
+        "phase": 3,
+        "cubes": [
+          "blade_*"
+        ],
+        "slot": "glow"
+      },
+      "offhand": {
+        "prop": "weapons/katana",
+        "params": {
+          "blade": 10
+        },
+        "sheathed": "obi_same",
+        "sheath_offset": [
+          -0.6,
+          0.5,
+          -0.6
+        ],
+        "phase": 3,
+        "color": "metal",
+        "trim": "trim",
+        "alt": "hair",
+        "detail": "secondary",
+        "phase_glow": {
+          "phase": 3,
+          "cubes": [
+            "blade_*"
+          ],
+          "slot": "glow"
+        }
+      }
+    },
+    "phases": [
+      {
+        "phase": 2,
+        "show": [
+          "p2_hat"
+        ]
+      },
+      {
+        "phase": 3,
+        "eyes_glow": true
+      }
+    ]
+  },
+  "animations": {
+    "style": "katana",
+    "blink": "calm",
+    "variants": [
+      "crane_leap"
+    ],
+    "poses": {
+      "kag.iai": {
+        "_comment": "The iai crouch: the knees bent and the weight forward, the hips turned a little to his left so the scabbard is presented, the right hand on the hilt with the blade home in the scabbard, the left hand on the scabbard's mouth, the eyes on the target.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -27.92,
+            0.0,
+            3.12
+          ],
+          "shin_r": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.08,
+            0.0,
+            -3.12
+          ],
+          "leg_l": [
+            -12.19,
+            0.0,
+            -4.13
+          ],
+          "shin_l": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -27.81,
+            0.0,
+            4.13
+          ],
+          "body": [
+            10,
+            -12,
+            0
+          ],
+          "neck": [
+            -14,
+            20,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -61.1,
+            -45.4,
+            18.2
+          ],
+          "forearm_r": [
+            -58.0,
+            -83.2,
+            0.0
+          ],
+          "hand_r": [
+            65.4,
+            9.4,
+            -35.0
+          ],
+          "arm_l": [
+            17.3,
+            -5.8,
+            -4.9
+          ],
+          "forearm_l": [
+            -53.3,
+            -4.6,
+            0.0
+          ],
+          "hand_l": [
+            46.7,
+            -44.1,
+            25.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.noto_m": {
+        "_comment": "The noto (sliding the blade home), the tip at the scabbard's mouth: the blade in line with the scabbard, 10 px of it still out in front of the hip.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -21.94,
+            0.0,
+            3.04
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.06,
+            0.0,
+            -3.04
+          ],
+          "leg_l": [
+            -6.71,
+            0.0,
+            -4.04
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -21.29,
+            0.0,
+            4.04
+          ],
+          "body": [
+            6,
+            -12,
+            0
+          ],
+          "neck": [
+            -8,
+            20,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -81.0,
+            8.2,
+            30.0
+          ],
+          "forearm_r": [
+            -79.4,
+            -84.8,
+            0.0
+          ],
+          "hand_r": [
+            30.4,
+            -10.3,
+            -35.0
+          ],
+          "arm_l": [
+            17.7,
+            -8.2,
+            -2.4
+          ],
+          "forearm_l": [
+            -55.9,
+            -3.5,
+            0.0
+          ],
+          "hand_l": [
+            45.3,
+            -47.7,
+            27.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.noto_h": {
+        "_comment": "The noto (sliding the blade home), half in: the blade in line with the scabbard, 5 px of it still out in front of the hip.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -21.94,
+            0.0,
+            3.04
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.06,
+            0.0,
+            -3.04
+          ],
+          "leg_l": [
+            -6.71,
+            0.0,
+            -4.04
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -21.29,
+            0.0,
+            4.04
+          ],
+          "body": [
+            6,
+            -12,
+            0
+          ],
+          "neck": [
+            -8,
+            20,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -74.7,
+            -13.0,
+            27.4
+          ],
+          "forearm_r": [
+            -82.2,
+            -89.2,
+            0.0
+          ],
+          "hand_r": [
+            53.6,
+            3.9,
+            -35.0
+          ],
+          "arm_l": [
+            18.4,
+            -8.7,
+            -1.7
+          ],
+          "forearm_l": [
+            -57.5,
+            -4.0,
+            0.0
+          ],
+          "hand_l": [
+            49.5,
+            -44.4,
+            23.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.draw_h": {
+        "_comment": "Half drawn: the blade sliding out along the scabbard's line, the left hand pulling the scabbard back (saya-biki), the knees bent for the draw.",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -29.93,
+            0.0,
+            3.15
+          ],
+          "shin_r": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -14.07,
+            0.0,
+            -3.15
+          ],
+          "leg_l": [
+            -14.0,
+            0.0,
+            -4.17
+          ],
+          "shin_l": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -30.0,
+            0.0,
+            4.17
+          ],
+          "body": [
+            12,
+            -12,
+            0
+          ],
+          "neck": [
+            -16,
+            20,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -76.5,
+            -7.8,
+            28.4
+          ],
+          "forearm_r": [
+            -83.7,
+            -88.7,
+            0.0
+          ],
+          "hand_r": [
+            49.6,
+            1.3,
+            -35.0
+          ],
+          "arm_l": [
+            24.9,
+            -10.6,
+            0.1
+          ],
+          "forearm_l": [
+            -71.8,
+            -7.3,
+            0.0
+          ],
+          "hand_l": [
+            53.6,
+            -57.6,
+            29.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.iai_deep": {
+        "_comment": "Thunderclap's stillness: the deepest crouch of the family, the hips low and the chest over the front knee, the hand on the hilt, perfectly still.",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -36.05,
+            0.0,
+            3.29
+          ],
+          "shin_r": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -19.95,
+            0.0,
+            -3.29
+          ],
+          "leg_l": [
+            -19.31,
+            0.0,
+            -4.32
+          ],
+          "shin_l": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -36.69,
+            0.0,
+            4.32
+          ],
+          "body": [
+            18,
+            -10,
+            0
+          ],
+          "neck": [
+            -24,
+            18,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.iai_cut": {
+        "_comment": "Still Water's riposte: the blade whipped out of the scabbard in one level cut to his right front, the arm straight, the hips and chest turned into it, the left hand pulling the scabbard back.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -27.92,
+            0.0,
+            3.12
+          ],
+          "shin_r": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.08,
+            0.0,
+            -3.12
+          ],
+          "leg_l": [
+            -12.19,
+            0.0,
+            -4.13
+          ],
+          "shin_l": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -27.81,
+            0.0,
+            4.13
+          ],
+          "body": [
+            8,
+            14,
+            0
+          ],
+          "waist": [
+            2,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            12,
+            0
+          ],
+          "neck": [
+            -12,
+            -18,
+            0
+          ],
+          "arm_r": [
+            -76.4,
+            -4.6,
+            7.5
+          ],
+          "forearm_r": [
+            -20.9,
+            -3.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            35.0
+          ],
+          "arm_l": [
+            34.8,
+            -15.1,
+            -4.6
+          ],
+          "forearm_l": [
+            -38.1,
+            -10.9,
+            0.0
+          ],
+          "hand_l": [
+            33.5,
+            -23.7,
+            13.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.iai_follow": {
+        "_comment": "The riposte's follow-through: the blade carried on round to his right and a little back, held level (zanshin).",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -25.91,
+            0.0,
+            3.09
+          ],
+          "shin_r": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -10.09,
+            0.0,
+            -3.09
+          ],
+          "leg_l": [
+            -10.38,
+            0.0,
+            -4.09
+          ],
+          "shin_l": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -25.62,
+            0.0,
+            4.09
+          ],
+          "body": [
+            6,
+            20,
+            0
+          ],
+          "waist": [
+            2,
+            8,
+            0
+          ],
+          "chest": [
+            2,
+            14,
+            0
+          ],
+          "neck": [
+            -10,
+            -26,
+            0
+          ],
+          "arm_r": [
+            -57.3,
+            6.5,
+            16.7
+          ],
+          "forearm_r": [
+            -34.3,
+            7.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            35.0
+          ],
+          "arm_l": [
+            35.2,
+            -16.5,
+            -4.0
+          ],
+          "forearm_l": [
+            -35.5,
+            -12.1,
+            0.0
+          ],
+          "hand_l": [
+            31.3,
+            -23.4,
+            12.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.chiburi": {
+        "_comment": "The chiburi: the blade snapped down and out to his right, pointing forward and down, shaking it clean.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            4,
+            4,
+            0
+          ],
+          "waist": [
+            1,
+            2,
+            0
+          ],
+          "chest": [
+            4,
+            6,
+            0
+          ],
+          "neck": [
+            -6,
+            4,
+            0
+          ],
+          "arm_r": [
+            -26.5,
+            2.7,
+            16.7
+          ],
+          "forearm_r": [
+            -29.4,
+            5.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            46.3,
+            -9.9
+          ],
+          "arm_l": [
+            20.9,
+            -9.8,
+            -15.2
+          ],
+          "forearm_l": [
+            -47.6,
+            -10.4,
+            0.0
+          ],
+          "hand_l": [
+            60.6,
+            -18.4,
+            6.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.tc_lunge": {
+        "_comment": "Thunderclap Draw: the blade out of the scabbard in a lunging level draw, the arm and the blade straight out along the line at the target, the chest low over the front knee, the left hand pulling the scabbard back.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -38.12,
+            0.0,
+            3.34
+          ],
+          "shin_r": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -21.88,
+            0.0,
+            -3.34
+          ],
+          "leg_l": [
+            -21.05,
+            0.0,
+            -4.39
+          ],
+          "shin_l": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -38.95,
+            0.0,
+            4.39
+          ],
+          "body": [
+            22,
+            8,
+            0
+          ],
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            6,
+            8,
+            0
+          ],
+          "neck": [
+            -28,
+            -12,
+            0
+          ],
+          "arm_r": [
+            -83.8,
+            -19.5,
+            2.0
+          ],
+          "forearm_r": [
+            -31.1,
+            -24.6,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            33.1
+          ],
+          "arm_l": [
+            32.4,
+            -12.9,
+            -4.9
+          ],
+          "forearm_l": [
+            -38.9,
+            -8.9,
+            0.0
+          ],
+          "hand_l": [
+            32.9,
+            -21.2,
+            12.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.c3_wind": {
+        "_comment": "Three Cuts' compact wind-up: the blade lifted beside his right shoulder, tip up and back, the chest turned a little right, the left hand forward at the belly.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            3,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -2,
+            12,
+            0
+          ],
+          "neck": [
+            -4,
+            10,
+            0
+          ],
+          "arm_r": [
+            -14.0,
+            -2.2,
+            4.8
+          ],
+          "forearm_r": [
+            -135.5,
+            4.8,
+            0.0
+          ],
+          "hand_r": [
+            24.9,
+            23.0,
+            4.2
+          ],
+          "arm_l": [
+            10.4,
+            -21.0,
+            1.9
+          ],
+          "forearm_l": [
+            -69.1,
+            -17.8,
+            0.0
+          ],
+          "hand_l": [
+            60.9,
+            -60.0,
+            20.2
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.c3_cut1": {
+        "_comment": "The first cut: diagonal, down and across to the front left (kesa-giri), the chest turned left.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -21.94,
+            0.0,
+            3.04
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.06,
+            0.0,
+            -3.04
+          ],
+          "leg_l": [
+            -6.71,
+            0.0,
+            -4.04
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -21.29,
+            0.0,
+            4.04
+          ],
+          "body": [
+            6,
+            -18,
+            0
+          ],
+          "waist": [
+            2,
+            -6,
+            0
+          ],
+          "chest": [
+            6,
+            -14,
+            0
+          ],
+          "neck": [
+            -8,
+            34,
+            0
+          ],
+          "arm_r": [
+            -34.2,
+            -1.0,
+            15.2
+          ],
+          "forearm_r": [
+            -41.1,
+            0.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            53.4,
+            -13.5
+          ],
+          "arm_l": [
+            -7.1,
+            3.0,
+            -10.5
+          ],
+          "forearm_l": [
+            -65.8,
+            2.6,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -14.1,
+            7.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.c3_cut2": {
+        "_comment": "The second cut: rising back across, from low left to high right (gyaku-kesa), the chest turned right.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -21.94,
+            0.0,
+            3.04
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.06,
+            0.0,
+            -3.04
+          ],
+          "leg_l": [
+            -6.71,
+            0.0,
+            -4.04
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -21.29,
+            0.0,
+            4.04
+          ],
+          "body": [
+            4,
+            10,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            -2,
+            12,
+            0
+          ],
+          "neck": [
+            -6,
+            -10,
+            0
+          ],
+          "arm_r": [
+            -57.1,
+            -12.4,
+            -16.5
+          ],
+          "forearm_r": [
+            -69.8,
+            7.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            26.5,
+            4.8
+          ],
+          "arm_l": [
+            46.3,
+            -14.5,
+            -18.6
+          ],
+          "forearm_l": [
+            -76.0,
+            -20.6,
+            0.0
+          ],
+          "hand_l": [
+            46.8,
+            -60.0,
+            30.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.c3_load": {
+        "_comment": "Between the second and the third cut: the blade dropped level at his right side, edge forward, the weight gathering.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            6,
+            14,
+            0
+          ],
+          "waist": [
+            2,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            14,
+            0
+          ],
+          "neck": [
+            -8,
+            -18,
+            0
+          ],
+          "arm_r": [
+            -21.9,
+            6.1,
+            -6.1
+          ],
+          "forearm_r": [
+            -81.3,
+            18.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -3.3
+          ],
+          "arm_l": [
+            38.6,
+            -23.5,
+            -7.3
+          ],
+          "forearm_l": [
+            -93.7,
+            -22.1,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            25.0,
+            -14.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.c3_cut3": {
+        "_comment": "The third cut (the knockback): a level sweep from his right across to his left at chest height, the knees driving down, the chest turned left behind it.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -29.93,
+            0.0,
+            3.15
+          ],
+          "shin_r": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -14.07,
+            0.0,
+            -3.15
+          ],
+          "leg_l": [
+            -14.0,
+            0.0,
+            -4.17
+          ],
+          "shin_l": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -30.0,
+            0.0,
+            4.17
+          ],
+          "body": [
+            10,
+            -20,
+            0
+          ],
+          "waist": [
+            2,
+            -8,
+            0
+          ],
+          "chest": [
+            4,
+            -16,
+            0
+          ],
+          "neck": [
+            -12,
+            38,
+            0
+          ],
+          "arm_r": [
+            -45.7,
+            1.9,
+            20.5
+          ],
+          "forearm_r": [
+            -66.5,
+            -0.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -17.9
+          ],
+          "arm_l": [
+            -20.4,
+            -25.5,
+            31.7
+          ],
+          "forearm_l": [
+            -70.5,
+            -46.2,
+            0.0
+          ],
+          "hand_l": [
+            54.0,
+            -60.0,
+            6.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.cs_coil": {
+        "_comment": "Crane Step's wind-up: low on bent knees, the blade drawn back low at his right side pointing behind him, the left arm reaching forward like a crane's wing, the eyes on the target.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -31.96,
+            0.0,
+            3.19
+          ],
+          "shin_r": [
+            48.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -16.04,
+            0.0,
+            -3.19
+          ],
+          "leg_l": [
+            -15.79,
+            0.0,
+            -4.22
+          ],
+          "shin_l": [
+            48.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -32.21,
+            0.0,
+            4.22
+          ],
+          "body": [
+            14,
+            16,
+            0
+          ],
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            6,
+            0
+          ],
+          "neck": [
+            -18,
+            -20,
+            0
+          ],
+          "arm_r": [
+            -19.5,
+            38.1,
+            -32.3
+          ],
+          "forearm_r": [
+            -74.6,
+            66.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            59.0,
+            15.7
+          ],
+          "arm_l": [
+            14.0,
+            -24.8,
+            -59.8
+          ],
+          "forearm_l": [
+            -77.7,
+            -36.9,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -60.0,
+            18.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.cs_burst": {
+        "_comment": "Crane Step's burst: the body thrown forward and low, the blade coming round level at his right side, the left arm swept back.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -38.12,
+            0.0,
+            3.34
+          ],
+          "shin_r": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -21.88,
+            0.0,
+            -3.34
+          ],
+          "leg_l": [
+            -21.05,
+            0.0,
+            -4.39
+          ],
+          "shin_l": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -38.95,
+            0.0,
+            4.39
+          ],
+          "body": [
+            26,
+            4,
+            0
+          ],
+          "waist": [
+            2,
+            2,
+            0
+          ],
+          "chest": [
+            4,
+            2,
+            0
+          ],
+          "neck": [
+            -30,
+            -4,
+            0
+          ],
+          "arm_r": [
+            3.5,
+            16.6,
+            18.8
+          ],
+          "forearm_r": [
+            -105.0,
+            23.1,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            47.7,
+            -5.3
+          ],
+          "arm_l": [
+            32.1,
+            -12.7,
+            -29.7
+          ],
+          "forearm_l": [
+            -1.0,
+            -22.3,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -5.1,
+            -4.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.cs_cut": {
+        "_comment": "Crane Step's cut, mid-dash: the blade sweeping level across his front to the left at the waist.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -38.12,
+            0.0,
+            3.34
+          ],
+          "shin_r": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -21.88,
+            0.0,
+            -3.34
+          ],
+          "leg_l": [
+            -21.05,
+            0.0,
+            -4.39
+          ],
+          "shin_l": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -38.95,
+            0.0,
+            4.39
+          ],
+          "body": [
+            24,
+            -12,
+            0
+          ],
+          "waist": [
+            2,
+            -6,
+            0
+          ],
+          "chest": [
+            4,
+            -10,
+            0
+          ],
+          "neck": [
+            -28,
+            20,
+            0
+          ],
+          "arm_r": [
+            -42.1,
+            -11.9,
+            9.0
+          ],
+          "forearm_r": [
+            -75.9,
+            -11.0,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            11.8
+          ],
+          "arm_l": [
+            -1.1,
+            -29.8,
+            -34.7
+          ],
+          "forearm_l": [
+            -1.0,
+            -29.4,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            32.5,
+            -28.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.cs_brake": {
+        "_comment": "Crane Step's brake: down on deep knees, the blade carried on out to his left, the chest turned left behind it.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -40.2,
+            0.0,
+            3.41
+          ],
+          "shin_r": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -23.8,
+            0.0,
+            -3.41
+          ],
+          "leg_l": [
+            -22.77,
+            0.0,
+            -4.46
+          ],
+          "shin_l": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -41.23,
+            0.0,
+            4.46
+          ],
+          "body": [
+            18,
+            -20,
+            0
+          ],
+          "waist": [
+            2,
+            -8,
+            0
+          ],
+          "chest": [
+            4,
+            -14,
+            0
+          ],
+          "neck": [
+            -22,
+            34,
+            0
+          ],
+          "arm_r": [
+            -31.6,
+            -29.5,
+            -29.1
+          ],
+          "forearm_r": [
+            -56.5,
+            -7.6,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -12.4
+          ],
+          "arm_l": [
+            -16.9,
+            -37.4,
+            13.9
+          ],
+          "forearm_l": [
+            -66.6,
+            -49.7,
+            0.0
+          ],
+          "hand_l": [
+            77.8,
+            -60.0,
+            -2.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.gs_raise": {
+        "_comment": "Guard Splitter's wind-up: the blade raised high over his head, tipped back, the left hand up in front as a counterweight, the chest lifted.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            -4,
+            -4,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -8,
+            -4,
+            0
+          ],
+          "neck": [
+            4,
+            6,
+            0
+          ],
+          "arm_r": [
+            -110.4,
+            24.9,
+            33.9
+          ],
+          "forearm_r": [
+            -66.3,
+            15.1,
+            0.0
+          ],
+          "hand_r": [
+            49.7,
+            19.3,
+            4.1
+          ],
+          "arm_l": [
+            -66.1,
+            -0.4,
+            -3.5
+          ],
+          "forearm_l": [
+            -35.0,
+            -10.2,
+            0.0
+          ],
+          "hand_l": [
+            58.1,
+            -60.0,
+            25.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.gs_peak": {
+        "_comment": "Guard Splitter, the last stretch: the blade further back over the head, the body drawn up like a bow.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -18.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -2.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -3.0,
+            0.0,
+            -4.0
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.0,
+            0.0,
+            4.0
+          ],
+          "body": [
+            -6,
+            -4,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -12,
+            -4,
+            0
+          ],
+          "neck": [
+            6,
+            6,
+            0
+          ],
+          "arm_r": [
+            -108.6,
+            31.4,
+            41.6
+          ],
+          "forearm_r": [
+            -60.1,
+            17.8,
+            0.0
+          ],
+          "hand_r": [
+            37.0,
+            21.8,
+            5.7
+          ],
+          "arm_l": [
+            -67.0,
+            2.6,
+            0.8
+          ],
+          "forearm_l": [
+            -38.0,
+            -9.5,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -9.3,
+            -2.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.gs_cut": {
+        "_comment": "Guard Splitter's blow: the blade crashed straight down in front, the body folded forward over deep knees, the left hand snapped back to the hip.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -36.05,
+            0.0,
+            3.29
+          ],
+          "shin_r": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -19.95,
+            0.0,
+            -3.29
+          ],
+          "leg_l": [
+            -19.31,
+            0.0,
+            -4.32
+          ],
+          "shin_l": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -36.69,
+            0.0,
+            4.32
+          ],
+          "body": [
+            22,
+            0,
+            0
+          ],
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            10,
+            0,
+            0
+          ],
+          "neck": [
+            -30,
+            0,
+            0
+          ],
+          "arm_r": [
+            -43.8,
+            -14.1,
+            -28.5
+          ],
+          "forearm_r": [
+            -48.5,
+            13.0,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -8.7
+          ],
+          "arm_l": [
+            41.7,
+            -5.6,
+            -15.3
+          ],
+          "forearm_l": [
+            -61.8,
+            -7.3,
+            0.0
+          ],
+          "hand_l": [
+            28.5,
+            -12.4,
+            9.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.gs_low": {
+        "_comment": "Guard Splitter's finish: the blade driven on down, its tip just above the ground, the weight sunk into the blow.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -38.12,
+            0.0,
+            3.34
+          ],
+          "shin_r": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -21.88,
+            0.0,
+            -3.34
+          ],
+          "leg_l": [
+            -21.05,
+            0.0,
+            -4.39
+          ],
+          "shin_l": [
+            60.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -38.95,
+            0.0,
+            4.39
+          ],
+          "body": [
+            26,
+            0,
+            0
+          ],
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            10,
+            0,
+            0
+          ],
+          "neck": [
+            -32,
+            0,
+            0
+          ],
+          "arm_r": [
+            -35.4,
+            -8.8,
+            -34.1
+          ],
+          "forearm_r": [
+            -41.9,
+            19.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -7.5
+          ],
+          "arm_l": [
+            36.5,
+            -6.2,
+            -14.5
+          ],
+          "forearm_l": [
+            -54.7,
+            -7.2,
+            0.0
+          ],
+          "hand_l": [
+            23.1,
+            -10.8,
+            8.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ch_raise": {
+        "_comment": "Chained Lightning Draw's wind-up: the blade held upright before his face, its flat toward him, the left hand's open palm raised beside it as the lightning gathers.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            0,
+            -8,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -2,
+            -6,
+            0
+          ],
+          "neck": [
+            -6,
+            14,
+            0
+          ],
+          "arm_r": [
+            -13.0,
+            -11.1,
+            0.3
+          ],
+          "forearm_r": [
+            -120.2,
+            -3.6,
+            0.0
+          ],
+          "hand_r": [
+            44.4,
+            -16.9,
+            20.7
+          ],
+          "arm_l": [
+            -31.2,
+            9.3,
+            10.5
+          ],
+          "forearm_l": [
+            -84.4,
+            -1.6,
+            0.0
+          ],
+          "hand_l": [
+            40.8,
+            -60.0,
+            26.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ch_point1": {
+        "_comment": "Chained Lightning Draw, the first strike: the arm and the blade thrust straight out at the target, the lightning leaving its point.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            8,
+            -6,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -4,
+            0
+          ],
+          "neck": [
+            -12,
+            12,
+            0
+          ],
+          "arm_r": [
+            -77.4,
+            4.4,
+            0.8
+          ],
+          "forearm_r": [
+            -28.8,
+            17.6,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -10.9
+          ],
+          "arm_l": [
+            36.3,
+            -2.7,
+            -18.2
+          ],
+          "forearm_l": [
+            -100.9,
+            -5.4,
+            0.0
+          ],
+          "hand_l": [
+            77.3,
+            -2.3,
+            3.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ch_point2": {
+        "_comment": "Chained Lightning Draw, the second jump: the point snapped to his right front.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            8,
+            10,
+            0
+          ],
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            6,
+            0
+          ],
+          "neck": [
+            -12,
+            -10,
+            0
+          ],
+          "arm_r": [
+            -72.1,
+            -8.6,
+            -23.2
+          ],
+          "forearm_r": [
+            -40.4,
+            20.0,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            56.6,
+            -3.4
+          ],
+          "arm_l": [
+            62.7,
+            -10.2,
+            -16.3
+          ],
+          "forearm_l": [
+            -88.0,
+            -15.5,
+            0.0
+          ],
+          "hand_l": [
+            42.2,
+            -37.2,
+            21.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ch_point3": {
+        "_comment": "Chained Lightning Draw, the third jump: the point swept across to his left front.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            8,
+            -18,
+            0
+          ],
+          "waist": [
+            2,
+            -6,
+            0
+          ],
+          "chest": [
+            4,
+            -10,
+            0
+          ],
+          "neck": [
+            -12,
+            30,
+            0
+          ],
+          "arm_r": [
+            -75.4,
+            5.4,
+            11.9
+          ],
+          "forearm_r": [
+            -29.7,
+            8.5,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -14.8
+          ],
+          "arm_l": [
+            18.5,
+            4.7,
+            -24.1
+          ],
+          "forearm_l": [
+            -95.5,
+            1.5,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -17.1,
+            11.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.fc_crouch": {
+        "_comment": "Falling Crane's wind-up: a deep gathering crouch, the body pitched forward, both arms swept back and low like folded wings, the blade trailing behind him.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -42.3,
+            0.0,
+            3.47
+          ],
+          "shin_r": [
+            68.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -25.7,
+            0.0,
+            -3.47
+          ],
+          "leg_l": [
+            -24.47,
+            0.0,
+            -4.53
+          ],
+          "shin_l": [
+            68.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -43.53,
+            0.0,
+            4.53
+          ],
+          "body": [
+            24,
+            0,
+            0
+          ],
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            4,
+            0,
+            0
+          ],
+          "neck": [
+            -28,
+            0,
+            0
+          ],
+          "arm_r": [
+            40.3,
+            20.7,
+            39.2
+          ],
+          "forearm_r": [
+            -1.0,
+            49.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -3.6
+          ],
+          "arm_l": [
+            33.1,
+            2.1,
+            -29.6
+          ],
+          "forearm_l": [
+            -1.0,
+            -6.3,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -38.4,
+            8.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.fc_launch": {
+        "_comment": "Falling Crane's launch: the legs driving straight with the toes pointed, the arms beating up and out like a crane's wings, the blade out to his right like a long feather.",
+        "extends": "katana.stance",
+        "bones": {
+          "body": [
+            -4,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -8,
+            0,
+            0
+          ],
+          "neck": [
+            4,
+            0,
+            0
+          ],
+          "leg_r": [
+            6,
+            0,
+            4
+          ],
+          "shin_r": [
+            4,
+            0,
+            0
+          ],
+          "foot_r": [
+            30,
+            0,
+            -4
+          ],
+          "leg_l": [
+            -4,
+            0,
+            -4
+          ],
+          "shin_l": [
+            8,
+            0,
+            0
+          ],
+          "foot_l": [
+            26,
+            0,
+            4
+          ],
+          "arm_r": [
+            -55.6,
+            47.5,
+            39.8
+          ],
+          "forearm_r": [
+            -40.1,
+            49.3,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            28.8
+          ],
+          "arm_l": [
+            -18.1,
+            23.2,
+            -118.2
+          ],
+          "forearm_l": [
+            -1.0,
+            60.8,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -43.3,
+            27.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.fc_air": {
+        "_comment": "Falling Crane at the top: the crane in the air, arms spread wide, one knee drawn high and the other leg straight below, the chin up.",
+        "extends": "katana.stance",
+        "bones": {
+          "body": [
+            8,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -12,
+            0,
+            0
+          ],
+          "leg_r": [
+            -96,
+            0,
+            4
+          ],
+          "shin_r": [
+            112,
+            0,
+            0
+          ],
+          "foot_r": [
+            22,
+            0,
+            0
+          ],
+          "leg_l": [
+            16,
+            0,
+            -2
+          ],
+          "shin_l": [
+            8,
+            0,
+            0
+          ],
+          "foot_l": [
+            38,
+            0,
+            0
+          ],
+          "arm_r": [
+            28.9,
+            -46.8,
+            64.7
+          ],
+          "forearm_r": [
+            -1.0,
+            -8.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -30.6,
+            8.1
+          ],
+          "arm_l": [
+            21.6,
+            37.7,
+            -70.6
+          ],
+          "forearm_l": [
+            -1.0,
+            12.6,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            26.8,
+            -5.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.fc_drop": {
+        "_comment": "Falling Crane coming down: the blade raised over his head for the falling cut, the legs reaching for the ground.",
+        "extends": "katana.stance",
+        "bones": {
+          "body": [
+            6,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            0,
+            0
+          ],
+          "leg_r": [
+            -30,
+            0,
+            6
+          ],
+          "shin_r": [
+            50,
+            0,
+            0
+          ],
+          "foot_r": [
+            -6,
+            0,
+            -6
+          ],
+          "leg_l": [
+            -26,
+            0,
+            -6
+          ],
+          "shin_l": [
+            46,
+            0,
+            0
+          ],
+          "foot_l": [
+            -4,
+            0,
+            6
+          ],
+          "arm_r": [
+            -89.8,
+            58.3,
+            71.9
+          ],
+          "forearm_r": [
+            -61.9,
+            38.8,
+            0.0
+          ],
+          "hand_r": [
+            49.7,
+            56.6,
+            5.5
+          ],
+          "arm_l": [
+            -62.3,
+            -26.5,
+            -37.0
+          ],
+          "forearm_l": [
+            -48.3,
+            -20.6,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -60.0,
+            14.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.fc_land": {
+        "_comment": "Falling Crane's landing: down blade-first on deep knees, the blade cut down in front of him, the left arm out to the side for balance.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -42.3,
+            0.0,
+            3.47
+          ],
+          "shin_r": [
+            68.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -25.7,
+            0.0,
+            -3.47
+          ],
+          "leg_l": [
+            -24.47,
+            0.0,
+            -4.53
+          ],
+          "shin_l": [
+            68.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -43.53,
+            0.0,
+            4.53
+          ],
+          "body": [
+            30,
+            0,
+            0
+          ],
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            -34,
+            0,
+            0
+          ],
+          "arm_r": [
+            -36.8,
+            -11.1,
+            -29.8
+          ],
+          "forearm_r": [
+            -46.9,
+            15.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -8.3
+          ],
+          "arm_l": [
+            23.5,
+            4.2,
+            -37.3
+          ],
+          "forearm_l": [
+            -1.0,
+            -5.1,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -37.9,
+            8.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ul_sink": {
+        "_comment": "Heaven-Splitting Draw's stillness: the deepest iai, the hips sunk low and the head bowed a little, eyes closed, the hand on the hilt.",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -40.2,
+            0.0,
+            3.41
+          ],
+          "shin_r": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -23.8,
+            0.0,
+            -3.41
+          ],
+          "leg_l": [
+            -22.77,
+            0.0,
+            -4.46
+          ],
+          "shin_l": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -41.23,
+            0.0,
+            4.46
+          ],
+          "body": [
+            20,
+            -10,
+            0
+          ],
+          "neck": [
+            -18,
+            18,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ul_rise": {
+        "_comment": "The heaven-splitting draw: out of the scabbard in one rising cut, the body uncoiling up out of the crouch, the blade swept up past his face to point at the sky, the left hand flung back.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -21.94,
+            0.0,
+            3.04
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.06,
+            0.0,
+            -3.04
+          ],
+          "leg_l": [
+            -6.71,
+            0.0,
+            -4.04
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -21.29,
+            0.0,
+            4.04
+          ],
+          "body": [
+            -6,
+            14,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            -10,
+            12,
+            0
+          ],
+          "neck": [
+            6,
+            -14,
+            0
+          ],
+          "arm_r": [
+            -95.8,
+            -26.5,
+            -25.6
+          ],
+          "forearm_r": [
+            -26.9,
+            -8.8,
+            0.0
+          ],
+          "hand_r": [
+            71.0,
+            8.5,
+            -2.9
+          ],
+          "arm_l": [
+            60.2,
+            -24.2,
+            -47.3
+          ],
+          "forearm_l": [
+            -1.0,
+            -64.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            25.8,
+            -34.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ul_high": {
+        "_comment": "The draw held at its height (zanshin): the blade straight up over his head, a little behind it, the body stretched tall.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            -4,
+            12,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            -8,
+            10,
+            0
+          ],
+          "neck": [
+            4,
+            -12,
+            0
+          ],
+          "arm_r": [
+            -97.9,
+            -31.6,
+            -29.8
+          ],
+          "forearm_r": [
+            -41.9,
+            -13.4,
+            0.0
+          ],
+          "hand_r": [
+            58.8,
+            5.5,
+            -4.6
+          ],
+          "arm_l": [
+            60.5,
+            -26.4,
+            -47.5
+          ],
+          "forearm_l": [
+            -1.0,
+            -68.2,
+            0.0
+          ],
+          "hand_l": [
+            60.6,
+            -60.0,
+            2.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.p2_lift": {
+        "_comment": "Phase 2, the helmet: the left hand lifts the helmet by its brim over his head, the right hand holding the blade low at his side, the eyes forward.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -18.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -2.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -3.0,
+            0.0,
+            -4.0
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.0,
+            0.0,
+            4.0
+          ],
+          "body": [
+            0,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -2,
+            -4,
+            0
+          ],
+          "neck": [
+            -6,
+            6,
+            0
+          ],
+          "arm_r": [
+            13.0,
+            -5.5,
+            24.9
+          ],
+          "forearm_r": [
+            -47.8,
+            3.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            45.5,
+            -12.0
+          ],
+          "arm_l": [
+            -73.4,
+            -69.1,
+            -107.3
+          ],
+          "forearm_l": [
+            -12.0,
+            26.5,
+            0.0
+          ],
+          "hand_l": [
+            13.5,
+            39.3,
+            -2.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "p2_hat": [
+            0,
+            6,
+            -1.5
+          ]
+        }
+      },
+      "kag.p2_set": {
+        "_comment": "Phase 2, the helmet set on his head: the left hand on its brim, settling it down.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -18.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -2.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -3.0,
+            0.0,
+            -4.0
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.0,
+            0.0,
+            4.0
+          ],
+          "body": [
+            0,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -2,
+            -4,
+            0
+          ],
+          "neck": [
+            4,
+            6,
+            0
+          ],
+          "arm_r": [
+            13.0,
+            -5.5,
+            24.9
+          ],
+          "forearm_r": [
+            -47.8,
+            3.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            45.5,
+            -12.0
+          ],
+          "arm_l": [
+            -67.8,
+            -52.7,
+            -98.4
+          ],
+          "forearm_l": [
+            -43.9,
+            16.8,
+            0.0
+          ],
+          "hand_l": [
+            23.6,
+            60.0,
+            -9.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.p2_tie": {
+        "_comment": "Phase 2: the left hand tugs the helmet's cord tight under his chin.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -18.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -2.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -3.0,
+            0.0,
+            -4.0
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.0,
+            0.0,
+            4.0
+          ],
+          "body": [
+            0,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -2,
+            -4,
+            0
+          ],
+          "neck": [
+            -8,
+            6,
+            0
+          ],
+          "arm_r": [
+            13.0,
+            -5.5,
+            24.9
+          ],
+          "forearm_r": [
+            -47.8,
+            3.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            45.5,
+            -12.0
+          ],
+          "arm_l": [
+            -43.9,
+            -44.8,
+            -95.3
+          ],
+          "forearm_l": [
+            -119.0,
+            11.3,
+            0.0
+          ],
+          "hand_l": [
+            68.8,
+            60.0,
+            14.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.p3_hilt": {
+        "_comment": "Phase 3: the head bowed ('Forgive me, teacher.'), the blade held point down at his right side, the left hand on the short sword's hilt at his left hip.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            4,
+            -4,
+            0
+          ],
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "neck": [
+            18,
+            6,
+            0
+          ],
+          "arm_r": [
+            12.9,
+            -5.0,
+            25.0
+          ],
+          "forearm_r": [
+            -60.7,
+            4.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            44.6,
+            -12.0
+          ],
+          "arm_l": [
+            -33.5,
+            3.2,
+            70.6
+          ],
+          "forearm_l": [
+            -110.3,
+            -90.0,
+            0.0
+          ],
+          "hand_l": [
+            69.2,
+            -19.6,
+            -32.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.p3_draw": {
+        "_comment": "Phase 3: the short sword drawn out to his left side in one stroke, the head up, the eyes glowing.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            6,
+            -8,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            2,
+            -6,
+            0
+          ],
+          "neck": [
+            -8,
+            14,
+            0
+          ],
+          "arm_r": [
+            19.6,
+            7.4,
+            16.5
+          ],
+          "forearm_r": [
+            -88.3,
+            15.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            38.9,
+            -5.4
+          ],
+          "arm_l": [
+            -34.3,
+            -8.6,
+            -11.6
+          ],
+          "forearm_l": [
+            -61.0,
+            -12.1,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -5.4,
+            -4.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ts_cross": {
+        "_comment": "Twin Sky: both blades raised and crossed high before him, the long one over the short, the chin up ('Two blades.').",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            -2,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -92.5,
+            34.3,
+            60.3
+          ],
+          "forearm_r": [
+            -47.5,
+            4.5,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            43.8,
+            -12.5
+          ],
+          "arm_l": [
+            -95.6,
+            -27.2,
+            -60.1
+          ],
+          "forearm_l": [
+            -45.2,
+            1.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            41.4,
+            -8.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ts_spread": {
+        "_comment": "Twin Sky: both blades swept apart and down to his sides, the knees sinking ('No more restraint.').",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -27.92,
+            0.0,
+            3.12
+          ],
+          "shin_r": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.08,
+            0.0,
+            -3.12
+          ],
+          "leg_l": [
+            -12.19,
+            0.0,
+            -4.13
+          ],
+          "shin_l": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -27.81,
+            0.0,
+            4.13
+          ],
+          "body": [
+            6,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            2,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -7.6,
+            25.8,
+            41.7
+          ],
+          "forearm_r": [
+            -33.5,
+            27.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -11.6
+          ],
+          "arm_l": [
+            -29.1,
+            -19.0,
+            -47.4
+          ],
+          "forearm_l": [
+            -1.0,
+            -5.6,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            31.1,
+            -17.2
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ls_bent": {
+        "_comment": "The last stand: bent over and breathing hard, both blades hanging low.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -27.92,
+            0.0,
+            3.12
+          ],
+          "shin_r": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.08,
+            0.0,
+            -3.12
+          ],
+          "leg_l": [
+            -12.19,
+            0.0,
+            -4.13
+          ],
+          "shin_l": [
+            40.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -27.81,
+            0.0,
+            4.13
+          ],
+          "body": [
+            22,
+            0,
+            0
+          ],
+          "waist": [
+            4,
+            0,
+            0
+          ],
+          "chest": [
+            10,
+            0,
+            0
+          ],
+          "neck": [
+            -14,
+            0,
+            0
+          ],
+          "arm_r": [
+            -10.0,
+            3.4,
+            16.4
+          ],
+          "forearm_r": [
+            -57.3,
+            8.3,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -12.9
+          ],
+          "arm_l": [
+            -21.5,
+            -6.2,
+            -14.2
+          ],
+          "forearm_l": [
+            -42.6,
+            -6.9,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -33.9,
+            10.2
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ls_cross": {
+        "_comment": "The last stand: up straight, both blades crossed before his chest, the long one high ('I do not turn my back. Come.').",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -23.92,
+            0.0,
+            3.06
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.08,
+            0.0,
+            -3.06
+          ],
+          "leg_l": [
+            -8.55,
+            0.0,
+            -4.06
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -23.45,
+            0.0,
+            4.06
+          ],
+          "body": [
+            2,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -2,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -36.1,
+            -6.1,
+            21.1
+          ],
+          "forearm_r": [
+            -90.2,
+            -9.3,
+            0.0
+          ],
+          "hand_r": [
+            68.6,
+            7.6,
+            -12.0
+          ],
+          "arm_l": [
+            -24.5,
+            10.7,
+            -12.9
+          ],
+          "forearm_l": [
+            -72.7,
+            11.8,
+            0.0
+          ],
+          "hand_l": [
+            53.7,
+            10.1,
+            5.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.intro_bow": {
+        "_comment": "The intro's bow: a formal bow from the hips, the hand on the hilt of the sheathed blade, the left hand on the scabbard.",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -14.1,
+            0.0,
+            2.98
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            2.1,
+            0.0,
+            -2.98
+          ],
+          "leg_l": [
+            0.75,
+            0.0,
+            -3.98
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -12.75,
+            0.0,
+            3.98
+          ],
+          "body": [
+            30,
+            -8,
+            0
+          ],
+          "neck": [
+            12,
+            12,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.intro_up": {
+        "_comment": "The intro: upright again, the hand on the hilt ('Draw when you are ready.').",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -18.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -2.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -3.0,
+            0.0,
+            -4.0
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.0,
+            0.0,
+            4.0
+          ],
+          "body": [
+            4,
+            -10,
+            0
+          ],
+          "neck": [
+            -6,
+            16,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.rest_low": {
+        "_comment": "The blade lowered point down at his right side, the left hand on the scabbard: the calm after the fight.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -16.05,
+            0.0,
+            2.99
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            0.05,
+            0.0,
+            -2.99
+          ],
+          "leg_l": [
+            -1.13,
+            0.0,
+            -3.99
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -14.87,
+            0.0,
+            3.99
+          ],
+          "body": [
+            2,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -1,
+            -4,
+            0
+          ],
+          "neck": [
+            -2,
+            8,
+            0
+          ],
+          "arm_r": [
+            20.2,
+            -5.0,
+            22.6
+          ],
+          "forearm_r": [
+            -54.2,
+            4.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            42.2,
+            -10.5
+          ],
+          "arm_l": [
+            19.3,
+            -9.9,
+            -2.0
+          ],
+          "forearm_l": [
+            -52.2,
+            -5.5,
+            0.0
+          ],
+          "hand_l": [
+            48.1,
+            -47.3,
+            26.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.rest_bow": {
+        "_comment": "The victory's small bow toward the fallen, the blade still lowered.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -16.05,
+            0.0,
+            2.99
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            0.05,
+            0.0,
+            -2.99
+          ],
+          "leg_l": [
+            -1.13,
+            0.0,
+            -3.99
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -14.87,
+            0.0,
+            3.99
+          ],
+          "body": [
+            12,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -4,
+            0
+          ],
+          "neck": [
+            14,
+            8,
+            0
+          ],
+          "arm_r": [
+            17.2,
+            -2.8,
+            24.5
+          ],
+          "forearm_r": [
+            -64.7,
+            7.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            40.9,
+            -10.0
+          ],
+          "arm_l": [
+            19.2,
+            -9.1,
+            -1.7
+          ],
+          "forearm_l": [
+            -56.1,
+            -5.1,
+            0.0
+          ],
+          "hand_l": [
+            48.2,
+            -45.8,
+            24.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.open_guard": {
+        "_comment": "The taunt: no guard at all, standing tall with the blade's point lowered to the ground at his right side, the chin up.",
+        "extends": "katana.stance",
+        "bones": {
+          "leg_r": [
+            -12.17,
+            0.0,
+            2.97
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            4.17,
+            0.0,
+            -2.97
+          ],
+          "leg_l": [
+            2.64,
+            0.0,
+            -3.98
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -10.64,
+            0.0,
+            3.98
+          ],
+          "body": [
+            -2,
+            -2,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            -2,
+            0
+          ],
+          "neck": [
+            -8,
+            2,
+            0
+          ],
+          "arm_r": [
+            -18.1,
+            -7.4,
+            28.7
+          ],
+          "forearm_r": [
+            -6.1,
+            -8.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -18.0
+          ],
+          "arm_l": [
+            22.6,
+            -11.3,
+            -2.2
+          ],
+          "forearm_l": [
+            -52.4,
+            -7.2,
+            0.0
+          ],
+          "hand_l": [
+            47.1,
+            -48.1,
+            26.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.hilt_rest": {
+        "_comment": "Personal 1: the right hand resting on the hilt of the sheathed blade at his left hip, the left hand loose at his side.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "body": [
+            0,
+            -4,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            0,
+            -4,
+            0
+          ],
+          "neck": [
+            0,
+            6,
+            0
+          ],
+          "arm_r": [
+            -59.3,
+            -46.9,
+            16.6
+          ],
+          "forearm_r": [
+            -55.7,
+            -84.2,
+            0.0
+          ],
+          "hand_r": [
+            59.3,
+            9.0,
+            -35.0
+          ],
+          "arm_l": [
+            -5.4,
+            4.0,
+            -11.0
+          ],
+          "forearm_l": [
+            -1.0,
+            4.3,
+            0.0
+          ],
+          "hand_l": [
+            71.6,
+            1.8,
+            2.0
+          ]
+        }
+      },
+      "kag.breathe_in": {
+        "_comment": "Personal 2: eyes closed, a slow deep breath in, the chest and shoulders lifting.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -4,
+            0,
+            0
+          ],
+          "arm_r": [
+            0,
+            0,
+            10
+          ],
+          "arm_l": [
+            0,
+            0,
+            -10
+          ]
+        }
+      },
+      "kag.tie_up": {
+        "_comment": "Personal 3: both hands up behind his head at the tie of his ponytail.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "chest": [
+            -2,
+            0,
+            0
+          ],
+          "neck": [
+            6,
+            0,
+            0
+          ],
+          "arm_r": [
+            77.0,
+            70.6,
+            -78.8
+          ],
+          "forearm_r": [
+            -1.0,
+            -25.8,
+            0.0
+          ],
+          "hand_r": [
+            22.9,
+            -13.8,
+            -24.7
+          ],
+          "arm_l": [
+            77.0,
+            -70.6,
+            78.9
+          ],
+          "forearm_l": [
+            -1.0,
+            25.8,
+            0.0
+          ],
+          "hand_l": [
+            22.9,
+            13.8,
+            24.7
+          ]
+        }
+      },
+      "kag.tie_pull": {
+        "_comment": "Personal 3: the cord pulled tight, the hands drawn apart behind the head.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "chest": [
+            -2,
+            0,
+            0
+          ],
+          "neck": [
+            10,
+            0,
+            0
+          ],
+          "arm_r": [
+            70.4,
+            -36.7,
+            123.3
+          ],
+          "forearm_r": [
+            -55.8,
+            73.8,
+            0.0
+          ],
+          "hand_r": [
+            13.7,
+            17.9,
+            11.4
+          ],
+          "arm_l": [
+            84.9,
+            -53.1,
+            91.8
+          ],
+          "forearm_l": [
+            -39.4,
+            48.3,
+            0.0
+          ],
+          "hand_l": [
+            11.1,
+            -2.0,
+            25.0
+          ]
+        }
+      },
+      "kag.iai_sink": {
+        "_comment": "Still Water held: the iai crouch sunk a little lower over the hold, the body a degree further forward, the hand still on the hilt (only the hips, the legs and the neck move, so the blade stays home).",
+        "extends": "kag.iai",
+        "bones": {
+          "leg_r": [
+            -30.95,
+            0.0,
+            3.17
+          ],
+          "shin_r": [
+            46.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -15.05,
+            0.0,
+            -3.17
+          ],
+          "leg_l": [
+            -14.89,
+            0.0,
+            -4.19
+          ],
+          "shin_l": [
+            46.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -31.11,
+            0.0,
+            4.19
+          ],
+          "body": [
+            12,
+            -12,
+            0
+          ],
+          "neck": [
+            -15,
+            21,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.draw_hd": {
+        "_comment": "Thunderclap's draw starting from the deepest crouch: the blade sliding out along the scabbard's line, the hips still low.",
+        "extends": "kag.draw_h",
+        "bones": {
+          "leg_r": [
+            -36.05,
+            0.0,
+            3.29
+          ],
+          "shin_r": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -19.95,
+            0.0,
+            -3.29
+          ],
+          "leg_l": [
+            -19.31,
+            0.0,
+            -4.32
+          ],
+          "shin_l": [
+            56.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -36.69,
+            0.0,
+            4.32
+          ],
+          "body": [
+            18,
+            -10,
+            0
+          ],
+          "neck": [
+            -24,
+            18,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.ul_drawh": {
+        "_comment": "Heaven-Splitting Draw: from the deepest iai the blade starts out along the scabbard's line, the eyes open.",
+        "extends": "kag.draw_h",
+        "bones": {
+          "leg_r": [
+            -40.2,
+            0.0,
+            3.41
+          ],
+          "shin_r": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -23.8,
+            0.0,
+            -3.41
+          ],
+          "leg_l": [
+            -22.77,
+            0.0,
+            -4.46
+          ],
+          "shin_l": [
+            64.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -41.23,
+            0.0,
+            4.46
+          ],
+          "body": [
+            20,
+            -10,
+            0
+          ],
+          "neck": [
+            -14,
+            16,
+            0
+          ],
+          "waist": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "kag.p3_half": {
+        "_comment": "Phase 3: the head comes up and the short sword starts out of its scabbard along its line.",
+        "extends": "kag.p3_hilt",
+        "bones": {
+          "leg_r": [
+            -19.96,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.04,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -4.86,
+            0.0,
+            -4.02
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.14,
+            0.0,
+            4.02
+          ],
+          "body": [
+            4,
+            -4,
+            0
+          ],
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            -6,
+            0
+          ],
+          "neck": [
+            0,
+            8,
+            0
+          ],
+          "arm_l": [
+            -38.8,
+            23.6,
+            83.8
+          ],
+          "forearm_l": [
+            -105.5,
+            -81.7,
+            0.0
+          ],
+          "hand_l": [
+            37.5,
+            -21.9,
+            -35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      }
+    },
+    "signatures": {
+      "move.three_cut": {
+        "description": "Three Cuts (move slot 0, a combo of 3, light: 0.45 / 0.45 / 0.35 s): no wasted motion. The blade lifts beside his right shoulder (0.2 s), a diagonal cut down and across to the front left at 0.35 s (hit, tick 9), a rising cut back across to the high right at 0.55 s (hit, tick 13), the blade dropped level at his right side as the knees load, and a level sweep from right to left at chest height at 0.75 s (the third hit and its knockback, tick 17); held a beat, and back to his guard by 1.15 s. Feet planted.",
+        "length": 1.15,
+        "class": "light",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.2,
+            "pose": "kag.c3_wind",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.c3_wind"
+          },
+          {
+            "t": 0.3,
+            "sound": "factionclash:hero.kagenori_tsurumine.katana_swing"
+          },
+          {
+            "t": 0.35,
+            "pose": "kag.c3_cut1",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:slash_arc",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.42,
+            "pose": "kag.c3_cut1",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 0.5,
+            "sound": "factionclash:hero.kagenori_tsurumine.katana_swing"
+          },
+          {
+            "t": 0.55,
+            "pose": "kag.c3_cut2",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:slash_arc"
+          },
+          {
+            "t": 0.66,
+            "pose": "kag.c3_load",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.7,
+            "sound": "factionclash:hero.kagenori_tsurumine.katana_swing"
+          },
+          {
+            "t": 0.75,
+            "pose": "kag.c3_cut3",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:slash_arc",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.85,
+            "pose": "kag.c3_cut3",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.15,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.iai_stance": {
+        "description": "Still Water (move slot 1, a counter stance of 1.5 s that absorbs 80%, heavy: 1.5 / 0.1 / 0.8 s): the blade is slid home in one smooth stroke (its tip to the scabbard's mouth at 0.20 s, home at 0.30 s) and he sinks into the iai crouch, the right hand on the hilt, the left on the scabbard, the eyes on the target; the stance is the wind-up, and only his hips settle lower over it (the tell: the hand on the hilt, the server's guard click and sparks). At its end the blade slides out along the scabbard's line (1.35 s) and whips out in one level cut to his right front at 1.40 s (the riposte: hit, tick 30), cast at 1.45 s (tick 31); carried on round and held (zanshin), a chiburi flick, and back to his guard by 2.3 s. Feet planted.",
+        "length": 2.3,
+        "class": "heavy",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.2,
+            "pose": "kag.noto_m",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.noto_h",
+            "ease": "linear"
+          },
+          {
+            "t": 0.3,
+            "pose": "kag.iai",
+            "ease": "easeOutQuad",
+            "marker": "vfx:hilt_sparks"
+          },
+          {
+            "t": 0.9,
+            "pose": "kag.iai_sink",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.3,
+            "pose": "kag.iai_sink"
+          },
+          {
+            "t": 1.35,
+            "pose": "kag.draw_h",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.4,
+            "pose": "kag.iai_cut",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:iai_flash",
+            "sound": "factionclash:hero.kagenori_tsurumine.iai_draw",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.45,
+            "marker": "cast"
+          },
+          {
+            "t": 1.6,
+            "pose": "kag.iai_follow",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 1.78,
+            "pose": "kag.iai_follow",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.95,
+            "pose": "kag.chiburi",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 2.3,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.thunderclap_draw": {
+        "description": "Thunderclap Draw (move slot 2, a line 8 long and 1 wide, heavy: 1.3 / 0.05 / 0.85 s): the blade slid home and the quick-draw grip set by 0.30 s (the glint), then down into his deepest crouch and total stillness; the blade starts out along the scabbard's line (1.15 s) and he lunges out in one level draw at 1.20 s (hit, tick 26: the server's thunderclap along the line), the arm and blade straight at the target; the re-sheathe (his recovery weak point): a chiburi flick, the blade slid slowly home (the sheathe sound at 1.80 s), a beat with the hand on the hilt, and a quick draw back into his guard by 2.1 s. Feet planted.",
+        "length": 2.1,
+        "class": "heavy",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.2,
+            "pose": "kag.noto_m",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.noto_h",
+            "ease": "linear"
+          },
+          {
+            "t": 0.3,
+            "pose": "kag.iai",
+            "ease": "easeOutQuad",
+            "marker": "vfx:hilt_glint"
+          },
+          {
+            "t": 0.75,
+            "pose": "kag.iai_deep",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.1,
+            "pose": "kag.iai_deep"
+          },
+          {
+            "t": 1.15,
+            "pose": "kag.draw_hd",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.2,
+            "pose": "kag.tc_lunge",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:thunderclap_line",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.35,
+            "pose": "kag.tc_lunge",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.55,
+            "pose": "kag.chiburi",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.6,
+            "pose": "kag.chiburi"
+          },
+          {
+            "t": 1.7,
+            "pose": "kag.noto_m",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.75,
+            "pose": "kag.noto_h",
+            "ease": "linear"
+          },
+          {
+            "t": 1.8,
+            "pose": "kag.iai",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.8,
+            "sound": "factionclash:hero.kagenori_tsurumine.sheathe"
+          },
+          {
+            "t": 1.95,
+            "pose": "kag.iai"
+          },
+          {
+            "t": 2.0,
+            "pose": "kag.draw_h",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 2.1,
+            "pose": "@stance",
+            "ease": "easeOutQuad"
+          }
+        ]
+      },
+      "move.crane_step": {
+        "description": "Crane Step (move slot 3, a dash of 6, heavy: 0.8 / 0.25 / 0.8 s): down low on bent knees with the blade drawn back low at his right side, its point behind him, and the left arm reaching forward like a crane's wing (0.35-0.62 s: the tell), the burst at 0.70 s (hit, tick 16: the server carries him along the strip), the blade coming round level at the waist mid-dash, braking on deep knees with the blade carried on out to his left at 0.90 s (cast, tick 20); held, and back to his guard by 1.75 s. Feet planted (the server moves him).",
+        "length": 1.75,
+        "class": "heavy",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "kag.cs_coil",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.62,
+            "pose": "kag.cs_coil"
+          },
+          {
+            "t": 0.7,
+            "pose": "kag.cs_burst",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:crane_dash",
+            "sound": "factionclash:hero.kagenori_tsurumine.step_dash",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.8,
+            "pose": "kag.cs_cut",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.9,
+            "pose": "kag.cs_brake",
+            "ease": "easeOutQuad",
+            "marker": "cast"
+          },
+          {
+            "t": 1.15,
+            "pose": "kag.cs_brake",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.75,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.guard_splitter": {
+        "description": "Guard Splitter (move slot 4, a heavy cut that breaks guard, heavy: 0.9 / 0.1 / 0.9 s): the blade raised high over his head, tipped back, the left hand up in front, the chest lifted (0.4 s), drawn further back like a bow with a held breath (0.68 s: the tell), and crashed straight down in front at 0.80 s (hit, tick 18) with a kiai, driven on down to just above the ground as the body folds over deep knees (cast, tick 19); held, and up into his guard by 1.8 s. Feet planted.",
+        "length": 1.8,
+        "class": "heavy",
+        "secondary": [
+          "tail",
+          "ears",
+          "hair",
+          "sleeves",
+          "skirt",
+          "cape"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.4,
+            "pose": "kag.gs_raise",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.68,
+            "pose": "kag.gs_peak",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 0.75,
+            "pose": "kag.gs_peak",
+            "sound": "factionclash:hero.kagenori_tsurumine.heavy_cut"
+          },
+          {
+            "t": 0.8,
+            "pose": "kag.gs_cut",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:split_arc",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.85,
+            "pose": "kag.gs_low",
+            "ease": "easeOutQuad",
+            "marker": "cast"
+          },
+          {
+            "t": 1.15,
+            "pose": "kag.gs_low",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.35,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "forearm_r": [
+                  1.5,
+                  0,
+                  0
+                ],
+                "chest": [
+                  0.8,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.1,
+              "window": [
+                0.6,
+                0.65,
+                0.72,
+                0.75
+              ]
+            }
+          }
+        ]
+      },
+      "move.chain_draw": {
+        "description": "Chained Lightning Draw (move slot 5, a chain of 3, range 10, jump radius 4, heavy: 1.0 / 0.45 / 0.8 s): the blade raised upright before his face with its flat toward him and the left palm raised beside it while the lightning gathers and the hands tremble with it (0.45-0.85 s: the tell); the point thrust straight out at the first target at 0.90 s (hit, tick 20), snapped to his right front at 1.05 s (the second jump, tick 23) and swept across to his left front at 1.20 s (the third, tick 26), held to 1.30 s (cast, tick 28), and back to his guard by 2.15 s. Feet planted.",
+        "length": 2.15,
+        "class": "heavy",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.45,
+            "pose": "kag.ch_raise",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.85,
+            "pose": "kag.ch_raise"
+          },
+          {
+            "t": 0.9,
+            "pose": "kag.ch_point1",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:chain_bolt",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.98,
+            "pose": "kag.ch_point1"
+          },
+          {
+            "t": 1.05,
+            "pose": "kag.ch_point2",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:chain_bolt"
+          },
+          {
+            "t": 1.13,
+            "pose": "kag.ch_point2"
+          },
+          {
+            "t": 1.2,
+            "pose": "kag.ch_point3",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:chain_bolt"
+          },
+          {
+            "t": 1.3,
+            "pose": "kag.ch_point3",
+            "marker": "cast"
+          },
+          {
+            "t": 1.55,
+            "pose": "kag.ch_point3",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.15,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  0,
+                  0,
+                  2.0
+                ],
+                "hand_l": [
+                  2.5,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.1,
+              "window": [
+                0.45,
+                0.5,
+                0.8,
+                0.85
+              ]
+            }
+          }
+        ]
+      },
+      "move.falling_crane": {
+        "description": "Falling Crane (move slot 6, a leap of 8 with a landing of radius 2, heavy: 0.9 / 0.5 / 1.0 s; phase 3): down into a deep gathering crouch, the body pitched forward, both arms swept back and low like folded wings with the blade trailing (0.4-0.72 s: the tell), the launch at 0.80 s (hit, tick 18) with the arms beating up and out, the crane at the top of the leap (arms spread wide, one knee drawn high, 0.95 s), the blade raised over his head as he drops (1.1 s) and the landing cut, down blade-first on deep knees at 1.25 s (cast, tick 27: the landing's knockback); held, and up into his guard by 2.3 s (Three Cuts follows).",
+        "length": 2.3,
+        "class": "heavy",
+        "planted": false,
+        "steps": true,
+        "secondary": [
+          "tail",
+          "ears",
+          "hair",
+          "sleeves",
+          "skirt",
+          "cape"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.4,
+            "pose": "kag.fc_crouch",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.72,
+            "pose": "kag.fc_crouch"
+          },
+          {
+            "t": 0.8,
+            "pose": "kag.fc_launch",
+            "root": [
+              0,
+              4.0,
+              0
+            ],
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:jump_dust",
+            "sound": "factionclash:hero.kagenori_tsurumine.crane_leap",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.95,
+            "pose": "kag.fc_air",
+            "root": [
+              0,
+              7.5,
+              0
+            ],
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.05,
+            "pose": "kag.fc_air",
+            "root": [
+              0,
+              7.5,
+              0
+            ],
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.17,
+            "pose": "kag.fc_drop",
+            "root": [
+              0,
+              4.0,
+              0
+            ],
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.25,
+            "pose": "kag.fc_land",
+            "ease": "easeInQuad",
+            "marker": "cast;vfx:crane_land",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "kag.fc_land",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.3,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "ultimate": {
+        "description": "Heaven-Splitting Draw (the ultimate, a line 12 long and 2 wide, 2.0 / 0.1 / 1.6 s): the blade slid home (0.30 s), the eyes close and stay closed (no blinking) as he sinks into the deepest iai, the head bowed a little, perfectly still ('Close your eyes. It is already over.'); the eyes open sharp at 1.75 s, the blade starts out along the scabbard's line (1.85 s) and he uncoils up out of the crouch in one rising draw that sweeps the blade past his face to point at the sky at 1.90 s (hit, tick 40: the server's lightning along the line), cast at 1.95 s (tick 41); held high (zanshin) to 2.7 s, the chiburi, and back to his guard by 3.6 s. Feet planted.",
+        "length": 3.6,
+        "class": "ultimate",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.2,
+            "pose": "kag.noto_m",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.noto_h",
+            "ease": "linear"
+          },
+          {
+            "t": 0.3,
+            "pose": "kag.iai",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.45,
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.0,
+            "pose": "kag.ul_sink",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.7,
+            "pose": "kag.ul_sink"
+          },
+          {
+            "t": 1.75,
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.8,
+            "pose": "kag.ul_sink"
+          },
+          {
+            "t": 1.85,
+            "pose": "kag.ul_drawh",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.9,
+            "pose": "kag.ul_rise",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:heaven_split",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.95,
+            "marker": "cast"
+          },
+          {
+            "t": 2.2,
+            "pose": "kag.ul_high",
+            "ease": "easeOutSine",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.7,
+            "pose": "kag.ul_high"
+          },
+          {
+            "t": 3.0,
+            "pose": "kag.chiburi",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 3.1,
+            "pose": "kag.chiburi"
+          },
+          {
+            "t": 3.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "state.twin_sky": {
+        "description": "Twin Sky (phase 3's state, played as the transition ends; two swords, attack speed +20%, damage +10%): both blades raised and crossed high before him, the long one over the short, the chin up ('Two blades.'), then swept apart and down to his sides as the knees sink ('No more restraint.'), and into his guard.",
+        "length": 1.5,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "kag.ts_cross",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.7,
+            "pose": "kag.ts_cross"
+          },
+          {
+            "t": 0.95,
+            "pose": "kag.ts_spread",
+            "ease": "easeInOutQuad",
+            "marker": "vfx:twin_arcs"
+          },
+          {
+            "t": 1.15,
+            "pose": "kag.ts_spread",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "Phase 2 (inside the 1.2 s transition: 'Then I will fight you properly.'): his left hand holds the plain helmet up over his head, sets it down on his head (the iron sound) and tugs its cord tight under his chin, the blade held low at his right side, and back to his guard.",
+        "length": 1.1,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "p2_hat"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "kag.p2_lift",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.12,
+            "pose": "kag.p2_lift"
+          },
+          {
+            "t": 0.35,
+            "pose": "kag.p2_set",
+            "ease": "easeInOutSine",
+            "sound": "factionclash:hero.kagenori_tsurumine.helmet"
+          },
+          {
+            "t": 0.55,
+            "pose": "kag.p2_tie",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.75,
+            "pose": "kag.p2_tie"
+          },
+          {
+            "t": 0.95,
+            "face": "none"
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.3": {
+        "description": "Phase 3 (inside the 1.4 s transition: 'Forgive me, teacher.'): the head bowed and the eyes closed, his left hand on the hilt of the short sword still in its scabbard; the head comes up, the eyes open glowing as the blades' edges light (the hum), and the short sword is drawn out to his left side in one stroke; into his guard with both blades (Twin Sky follows).",
+        "length": 1.3,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "kag.p3_hilt",
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.5,
+            "pose": "kag.p3_hilt"
+          },
+          {
+            "t": 0.55,
+            "sound": "factionclash:hero.kagenori_tsurumine.blade_hum"
+          },
+          {
+            "t": 0.7,
+            "pose": "kag.p3_half",
+            "ease": "easeInOutSine",
+            "face": "none"
+          },
+          {
+            "t": 0.85,
+            "pose": "kag.p3_draw",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.0,
+            "pose": "kag.p3_draw",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.3,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "intro": {
+        "description": "Intro (the server holds it as long as the clip): the blade slid home (0.25 s), a formal bow from the hips with the eyes closed and the hand on the hilt ('Tsurumine Kagenori.'), upright again with the hand on the hilt and the eyes on the enemy ('Draw when you are ready.'), and the quick draw into his guard by 1.5 s. Feet planted.",
+        "length": 1.5,
+        "secondary": [
+          "tail",
+          "ears",
+          "hair",
+          "sleeves",
+          "skirt",
+          "cape"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.15,
+            "pose": "kag.noto_m",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.2,
+            "pose": "kag.noto_h",
+            "ease": "linear"
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.iai",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.3,
+            "sound": "factionclash:hero.kagenori_tsurumine.intro",
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.6,
+            "pose": "kag.intro_bow",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.8,
+            "pose": "kag.intro_bow"
+          },
+          {
+            "t": 1.05,
+            "pose": "kag.intro_up",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.25,
+            "pose": "kag.intro_up"
+          },
+          {
+            "t": 1.3,
+            "pose": "kag.draw_h",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeOutQuad"
+          }
+        ]
+      },
+      "victory": {
+        "description": "Victory ('Rest.'): the blade flicked clean in a chiburi, lowered point down at his right side, a small bow toward the fallen with the eyes closed and a low 'hm', and back to his guard.",
+        "length": 2.0,
+        "secondary": [
+          "tail",
+          "ears",
+          "hair",
+          "sleeves",
+          "skirt",
+          "cape"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.25,
+            "pose": "kag.chiburi",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.5,
+            "pose": "kag.rest_low",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.85,
+            "pose": "kag.rest_bow",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.9,
+            "sound": "factionclash:hero.kagenori_tsurumine.hm"
+          },
+          {
+            "t": 1.35,
+            "pose": "kag.rest_bow"
+          },
+          {
+            "t": 1.6,
+            "pose": "kag.rest_low",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.85,
+            "face": "none"
+          },
+          {
+            "t": 2.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "taunt": {
+        "description": "Taunt: no guard at all, standing tall with the blade's point lowered to the ground at his right side and the chin up, a slow nod: come.",
+        "length": 1.5,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "kag.open_guard",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.4,
+            "sound": "factionclash:hero.kagenori_tsurumine.hm"
+          },
+          {
+            "t": 1.15,
+            "pose": "kag.open_guard"
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "neck": [
+                  6,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.5,
+              "window": [
+                0.5,
+                0.6,
+                1.0,
+                1.1
+              ]
+            }
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "Last stand (no action code yet: for the engine side to play under 9% of his health, HEROES_V2 6.13; 'I do not turn my back. Come.'): bent over and breathing hard with both blades hanging low, then up straight with both blades crossed before his chest, and into his guard.",
+        "length": 1.6,
+        "secondary": [
+          "tail",
+          "ears",
+          "hair",
+          "sleeves",
+          "skirt",
+          "cape"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 2,
+              "cheeks": 2
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "kag.ls_bent",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.75,
+            "pose": "kag.ls_bent"
+          },
+          {
+            "t": 1.05,
+            "pose": "kag.ls_cross",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.35,
+            "pose": "kag.ls_cross"
+          },
+          {
+            "t": 1.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "neck": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.3,
+              "window": [
+                0.3,
+                0.35,
+                0.7,
+                0.75
+              ]
+            }
+          }
+        ]
+      },
+      "personal.1": {
+        "description": "Idle quirk, the hilt rest: the right hand comes to rest on the hilt of the sheathed blade, the thumb nudges the guard (a soft click), the eyes half closed; the hand falls back to his side.",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 2.6,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.5,
+            "pose": "kag.hilt_rest",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 1.0,
+            "sound": "factionclash:hero.kagenori_tsurumine.guard_tap",
+            "face": {
+              "eyes": 1,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.0,
+            "pose": "kag.hilt_rest"
+          },
+          {
+            "t": 2.2,
+            "face": "none"
+          },
+          {
+            "t": 2.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  6,
+                  0,
+                  0
+                ]
+              },
+              "shape": "pulse",
+              "period": 0.3,
+              "window": [
+                0.95,
+                1.0,
+                1.25,
+                1.3
+              ]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Idle quirk, the still breath: the eyes closed, two slow deep breaths, the chest and shoulders lifting and settling.",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 3.0,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.2,
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.95,
+            "pose": "kag.breathe_in",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.25,
+            "pose": "kag.breathe_in"
+          },
+          {
+            "t": 1.85,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.45,
+            "pose": "kag.breathe_in",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.75,
+            "face": "none"
+          },
+          {
+            "t": 3.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "Idle quirk, re-tying the hair (he re-ties it before every duel): both hands up behind his head at the tie of his ponytail, the cord pulled tight twice, and the hands back down.",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 3.2,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.6,
+            "pose": "kag.tie_up",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.95,
+            "pose": "kag.tie_pull",
+            "ease": "easeOutQuad",
+            "sound": "factionclash:hero.kagenori_tsurumine.hair_tie",
+            "face": {
+              "eyes": 1,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.25,
+            "pose": "kag.tie_up",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.55,
+            "pose": "kag.tie_pull",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 2.15,
+            "pose": "kag.tie_pull",
+            "face": {
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.6,
+            "face": "none"
+          },
+          {
+            "t": 3.2,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      }
+    }
+  }
+}
