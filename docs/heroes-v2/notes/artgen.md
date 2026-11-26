@@ -4980,7 +4980,8 @@ His own file has the 17 signatures, his own take-off, ride and landing on the br
 added), the variant's cast from the broom and `sec.loop`: 22 clips of the 24 the own file may hold. The staff library
 and the core cover the rest: his basic string `attack.1-3`, his thrown basic attack (`attack.ranged`, a vial), the
 locomotion, the hurt and the death. Each move's clip has the kit's frames to the tick: the `hit` on the release and a
-`cast` on the active part's last tick; Potion Barrage has a `hit` per vial.
+`cast` on the active part's last tick; Potion Barrage has a `hit` per vial (its active part runs one tick over the
+kit's 16, so the third vial keeps the barrage's 8-tick spacing).
 
 | Clip | Length | Class | Server frames (ticks) | What happens |
 |---|---|---|---|---|
@@ -5094,8 +5095,9 @@ Sabotage (each restored afterwards, every file byte for byte): the rider branch 
 hits 12, 20, 29), the brim lifted 6 degrees instead of 16 (`test_the_lifted_brim`: the front edge only 1.28 px up), a
 vial cube 2 px out of the hand (`test_the_field_kit_hides_in_his_hands`), the crow left on its perch in the intro, the
 first draft (`test_clear_of_his_hat_and_crow`: the arm 0.93 px into the crow), the cauldron swing's staff turned 60
-degrees at the wrist (`test_staff_clear_of_his_body`: 1.6 px into his leg), and the sheet never riding or its render
-call dropping `riding` (`test_his_sheet_draws_the_broom_clips_riding`, both). A first try, the cauldron's swing without
+degrees at the wrist (`test_staff_clear_of_his_body`: 1.6 px into his leg), the sheet never riding or its render
+call dropping `riding` (`test_his_sheet_draws_the_broom_clips_riding`, both), and the crow's right wing put back on the
+crow's body bone (`test_the_crow_has_wing_bones`). A first try, the cauldron's swing without
 its waypoint, still passed: measured, the plain blend is clear too now (above), so the turned swing replaced it.
 
 ### Checks run
@@ -5104,7 +5106,8 @@ its waypoint, still passed: measured, the plain blend is clear too now (above), 
 `lunge`, is old); `build --check --all` OK (the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen, Kagenori, the
 test rig, the Wither and the Ender Dragon build byte for byte as committed); `lint` of his eleven parts (messy_medium,
 witch_hat, witch_brim_up, long_coat, trousers, boots, sash_obi, vial_bandolier, crow, field_kit, cauldron_staff) on
-every base with the sample outfits: 230 builds and checks, 0 problems; `sfxgen check` 0 errors; his clips' rules on
+every base: 230 builds and checks, 0 problems, and the sample outfits (the `ambrose` outfit wears the crow) on every
+base: 48 builds, 0 problems; `sfxgen check` 0 errors; his clips' rules on
 every base (0 problems) and the hat, crow and head clearance on every tick (all within 0.5 px); `hero-previews
 ambrose_nettlewick --check`, `hero-previews natsuho_komezaki hinae_shirasuzu benika_akagane yugen_kagaribi
 kagenori_tsurumine the_wither the_ender_dragon --check` and `hero-previews --lineup --check` OK; `anim-previews
@@ -5143,6 +5146,9 @@ Python suite, 576 tests, OK.
   and the lifted brim in phase 3 want a look in the client.
 - **Followup films**: Broom Hops follows itself (up to twice), and the shared followup films leave a move's followup of
   itself out, so no film chains the hops; in game the next hop starts at the end of the active part (`cast` 25).
+- **His thrown basic attack** plays the staff library's `attack.ranged`, whose throw sound is vanilla's splash-potion
+  throw, the event his `vial_throw` uses (at pitch 1.0, not 1.1); an own copy with his marker would take one of the two
+  clips his own file has left. Left as it is, as Kagenori's basic string keeps the katana library's sweep.
 - **The glide on the broom** is the core's `move.glide` with the carrier shown: he lies prone along the staff with his
   arms spread, hands off it. It reads as a broom glide in the previews; an own `move.glide` (gripping the shaft) would
   take one of the two clips his own file has left. A look in game decides.
