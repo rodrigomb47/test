@@ -276,7 +276,12 @@ public final class ReconVantageGameTests {
             n.inventory().setItem(0, new ItemStack(Items.DIRT, 6));
             // a leaf over its head once it stands 3 high, which it clears on its way up (Climber.clearOverhead)
             h.setBlock(new BlockPos(22, 7, 22), Blocks.OAK_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true));
-            t.onCleanup(() -> h.setBlock(new BlockPos(22, 7, 22), Blocks.AIR));
+            // a test that fails or times out midway leaves no pillar standing: the column is cleared (the leaf with it)
+            t.onCleanup(() -> {
+                for (int y = 2; y <= 8; y++) {
+                    h.setBlock(new BlockPos(22, y, 22), Blocks.AIR);
+                }
+            });
         } catch (RuntimeException | Error e) {
             t.cleanup();
             throw e;
