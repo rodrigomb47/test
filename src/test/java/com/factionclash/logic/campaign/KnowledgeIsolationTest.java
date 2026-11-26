@@ -152,6 +152,42 @@ class KnowledgeIsolationTest {
     }
 
     /**
+     * The war council's recon orders ({@code campaign/ReconOrders}, recon.md 2.1, task R3) are placed and settled from what
+     * the faction itself knows: its reports, the strikes it saw, its roster's view of its scouts and what they told at the
+     * station. The class takes no level and no campaign data, so it can read no enemy's records, no base's true state and
+     * no entity; nor any truth the council may not read.
+     */
+    @Test
+    void theReconOrdersReadOnlyTheFactionsOwnKnowledge() throws IOException {
+        Path file = Path.of("src/main/java/com/factionclash/campaign/ReconOrders.java");
+        List<String> found = new ArrayList<>();
+        String[] world = {"ServerLevel", "CampaignData", "data.", ".bases", "getEntit", "level.", "reportedBase("};
+        List<String> lines = Files.readAllLines(file);
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String code = line.contains("//") ? line.substring(0, line.indexOf("//")) : line;
+            if (line.trim().startsWith("*") || line.trim().startsWith("/**")) {
+                continue;
+            }
+            for (String t : world) {
+                if (code.contains(t)) {
+                    found.add((i + 1) + " reads " + t + ": " + line.trim());
+                }
+            }
+            for (String t : ENEMY_TRUTHS) {
+                if (code.contains(t)) {
+                    found.add((i + 1) + " reads " + t + ": " + line.trim());
+                }
+            }
+            if (RECORD_TRUTH.matcher(code).find()) {
+                found.add((i + 1) + " reads a record's truth: " + line.trim());
+            }
+        }
+        assertTrue(lines.size() > 100, "too little of the orders scanned: " + lines.size());
+        assertTrue(found.isEmpty(), "the recon orders read what the faction never saw: " + found);
+    }
+
+    /**
      * {@code hero/} holds a hero's faction-facing lines and decisions too (knowledge review of 2026-11-19): it never reads
      * the kill feed or kill credit, but for the engine's writes ({@code KillCredits.push}, the tracker's clock, and
      * {@code HeroKillFeed.fellAway}: the feed's line for a hero that died unloaded with its faction), the kill feed itself

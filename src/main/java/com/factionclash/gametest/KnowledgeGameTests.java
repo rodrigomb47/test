@@ -62,17 +62,17 @@ public final class KnowledgeGameTests {
     private KnowledgeGameTests() {
     }
 
-    private static final FactionType SIDE = FactionType.TIDE_ALLIANCE, ENEMY = FactionType.GROVE_COVENANT;
+    static final FactionType SIDE = FactionType.TIDE_ALLIANCE, ENEMY = FactionType.GROVE_COVENANT;
     /** Inside the test base's home area, and outside it (Chebyshev 9 from the centre; the edge at 6). */
     private static final int HOME_X = 12, HOME_Z = 15, FAR_X = 12, FAR_Z = 21;
     /** Our soldiers at home, inside the walls' box the council drafts from. */
-    private static final int[][] GARRISON = {{10, 10}, {11, 10}, {13, 10}, {14, 10}, {10, 14}, {14, 14}};
+    static final int[][] GARRISON = {{10, 10}, {11, 10}, {13, 10}, {14, 10}, {10, 14}, {14, 14}};
 
-    private static GameTestBases.Handle base(GameTestHelper h, int timeout) {
+    static GameTestBases.Handle base(GameTestHelper h, int timeout) {
         return GameTestBases.register(h, SIDE, 2, 3, timeout);
     }
 
-    private static FactionNpc member(GameTestBases.Handle t, int x, int z, NpcRole role) {
+    static FactionNpc member(GameTestBases.Handle t, int x, int z, NpcRole role) {
         FactionNpc n = t.npc(x, z, role);
         n.setNoAi(true);
         return n;
@@ -105,7 +105,7 @@ public final class KnowledgeGameTests {
     }
 
     /** An enemy settlement record at relative (x, 2, z) with a tiny walls box; the cleanup removes it. */
-    private static BaseState enemyBase(GameTestBases.Handle t, FactionType faction, BlockPos center) {
+    static BaseState enemyBase(GameTestBases.Handle t, FactionType faction, BlockPos center) {
         BaseState b = new BaseState();
         b.faction = faction;
         b.kind = BaseState.Kind.SETTLEMENT;
@@ -119,14 +119,19 @@ public final class KnowledgeGameTests {
     }
 
     /** A look of ours delivered home (as a scout's report reaches the station). */
-    private static void deliver(GameTestBases.Handle t, FactionState f, Report r, long now) {
+    static void deliver(GameTestBases.Handle t, FactionState f, Report r, long now) {
         r.deliveredAt = now;
         r.by = "a test scout";
         f.addReport(r);
     }
 
-    /** The raid fields the director's council touches, restored by the cleanup; the faction's reports of {@code about} removed. */
-    private static void keepRaidState(GameTestBases.Handle t, FactionState f) {
+    /**
+     * The raid fields the director's council touches, restored by the cleanup; the faction's reports of {@code about} removed.
+     * The council starts from a faction that knows no enemy base and has no recon order, strike or urgent order (the world's
+     * faction state is shared by every test, and a base report another test or an older run left would draw a recon order,
+     * recon.md 2.1, into this test's council line); the cleanup restores them too.
+     */
+    static void keepRaidState(GameTestBases.Handle t, FactionState f) {
         long oldStarted = t.data.startedAt, oldLast = f.lastRaidAt, oldRaid = f.raidStartedAt, oldRally = f.raidRally,
                 oldMuster = f.raidMusteredAt, oldPlan = f.raidPlanTicks;
         int oldLaunched = f.raidsLaunched, oldParty = f.raidParty;
@@ -134,6 +139,7 @@ public final class KnowledgeGameTests {
         List<Report> oldKnowledge = new ArrayList<>(f.knowledge);
         java.util.Map<FactionType, Long> oldStruck = new java.util.HashMap<>(f.struckBy);
         List<com.factionclash.campaign.ReconOrder> oldOrders = new ArrayList<>(f.reconOrders);
+        java.util.Map<FactionType, Long> oldUrgent = new java.util.HashMap<>(f.reconUrgentAt);
         t.onCleanup(() -> {
             t.data.startedAt = oldStarted;
             f.lastRaidAt = oldLast;
@@ -156,12 +162,18 @@ public final class KnowledgeGameTests {
             f.struckBy.putAll(oldStruck);
             f.reconOrders.clear();
             f.reconOrders.addAll(oldOrders);
+            f.reconUrgentAt.clear();
+            f.reconUrgentAt.putAll(oldUrgent);
             FactionDirector.LAST_COUNCIL.remove(f.type);
         });
+        f.knowledge.removeIf(Report::base);
+        f.struckBy.clear();
+        f.reconOrders.clear();
+        f.reconUrgentAt.clear();
     }
 
     /** The director's war council (private), run as the director runs it for the base. */
-    private static void raids(GameTestBases.Handle t, FactionState f, long at) {
+    static void raids(GameTestBases.Handle t, FactionState f, long at) {
         call(FactionDirector.class, null, "raids", new Class<?>[]{ServerLevel.class, CampaignData.class, FactionState.class,
                 BaseState.class, long.class}, t.helper.getLevel(), t.data, f, t.base, at);
     }
@@ -200,13 +212,13 @@ public final class KnowledgeGameTests {
      * A test run early in a fresh GameTest world (a filtered run) has too little world time for a worker to have been idle
      * for half a day: the world's game time is moved on to {@code ticks} then (never back).
      */
-    private static void atLeast(ServerLevel level, long ticks) {
+    static void atLeast(ServerLevel level, long ticks) {
         if (level.getGameTime() < ticks && level.getLevelData() instanceof net.minecraft.world.level.storage.ServerLevelData d) {
             d.setGameTime(ticks);
         }
     }
 
-    private static List<Messages.Said> recording(GameTestBases.Handle t) {
+    static List<Messages.Said> recording(GameTestBases.Handle t) {
         List<Messages.Said> lines = Messages.record();
         t.onCleanup(Messages::stopRecording);
         return lines;
@@ -1260,15 +1272,15 @@ public final class KnowledgeGameTests {
     }
 
     /** A focused recon as a scout's watch gives it (recon.md 4). */
-    private static Intel.Recon recon(int points, boolean middle, long at, java.util.Map<java.util.UUID, Double> faces,
-                                     java.util.Map<String, Double> heroes) {
+    static Intel.Recon recon(int points, boolean middle, long at, java.util.Map<java.util.UUID, Double> faces,
+                             java.util.Map<String, Double> heroes) {
         double power = faces.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
         return new Intel.Recon(faces.size(), power, heroes, Intel.coverage(points), middle, 1200, at, "pillar 12", "Edrin Cole",
                 faces.keySet());
     }
 
     /** A base report a scout delivers, with the recon its watch gave (null: a passing look) and the sides its trip tried. */
-    private static Report delivered(Report.Kind kind, BlockPos pos, FactionType subject, long observedAt, Intel.Recon recon, int sides) {
+    static Report delivered(Report.Kind kind, BlockPos pos, FactionType subject, long observedAt, Intel.Recon recon, int sides) {
         Report r = new Report(kind, pos, observedAt, subject, recon == null ? 0 : recon.soldiers(), "a test report");
         r.recon = recon;
         r.reconSidesTried = sides;
@@ -1279,7 +1291,8 @@ public final class KnowledgeGameTests {
 
     /**
      * recon.md 10.2 (task R2): a faction's recon of a base, its back-off, its open orders and the strikes it saw survive a
-     * save and a reload of the campaign (format 5), each face and power exact. A format-4 report with an old look and
+     * save and a reload of the campaign (format 5), each face and power exact; so do what an order's scout told at the
+     * station and when the council last ordered an urgent recon of each enemy (task R3). A format-4 report with an old look and
      * losses loads with no recon (the old look still read until the council's switch), and a format-4 faction with no
      * orders and no strikes.
      */
@@ -1301,11 +1314,14 @@ public final class KnowledgeGameTests {
         com.factionclash.campaign.ReconOrder urgent = new com.factionclash.campaign.ReconOrder(town, ENEMY, Report.Kind.ENEMY_BASE, 3, 8000, true);
         urgent.scout = scout;
         urgent.takenAt = 8100;
+        urgent.reported = ReconRules.ScoutReport.EMPTY; // (its scout told at the station, R3: the next pass ends it)
+        urgent.reportedSides = ReconRules.Side.EAST.bit();
         com.factionclash.campaign.ReconOrder ordinary = new com.factionclash.campaign.ReconOrder(lairAt, FactionType.HOLLOW, Report.Kind.LAIR, 3, 8200, false);
         f.reconOrders.add(urgent);
         f.reconOrders.add(ordinary);
         f.struck(ENEMY, 7500);
         f.struck(FactionType.EMBER_LEGION, 7600);
+        f.reconUrgentAt.put(ENEMY, 8000L);
         net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
         tag.putInt("format", CampaignData.FORMAT);
         tag.putBoolean("started", true);
@@ -1327,10 +1343,12 @@ public final class KnowledgeGameTests {
         h.assertTrue(back.reconOrders.size() == 2, "the orders: " + back.reconOrders);
         com.factionclash.campaign.ReconOrder u = back.reconOrders.get(0), o = back.reconOrders.get(1);
         h.assertTrue(u.target.equals(town) && u.subject == ENEMY && u.kind == Report.Kind.ENEMY_BASE && u.homeBase == 3 && u.orderedAt == 8000
-                && u.urgent && scout.equals(u.scout) && u.takenAt == 8100, "the urgent order: " + u);
+                && u.urgent && scout.equals(u.scout) && u.takenAt == 8100 && u.reported == ReconRules.ScoutReport.EMPTY
+                && u.reportedSides == ReconRules.Side.EAST.bit(), "the urgent order: " + u);
         h.assertTrue(o.target.equals(lairAt) && o.subject == FactionType.HOLLOW && o.kind == Report.Kind.LAIR && o.orderedAt == 8200
-                && !o.urgent && !o.taken() && o.takenAt == 0, "the ordinary order: " + o);
+                && !o.urgent && !o.taken() && o.takenAt == 0 && o.reported == ReconRules.ScoutReport.NONE, "the ordinary order: " + o);
         h.assertTrue(back.struckBy.equals(java.util.Map.of(ENEMY, 7500L, FactionType.EMBER_LEGION, 7600L)), "the strikes: " + back.struckBy);
+        h.assertTrue(back.reconUrgentAt.equals(java.util.Map.of(ENEMY, 8000L)), "the urgent orders' times: " + back.reconUrgentAt);
         // a watch saved with its scout's job midway (R4b saves it): a face seen before the save and one after are two faces,
         // the points seen on either side of it join, and the watch runs on from its first sample
         int before = 1 << ReconWatch.MIDDLE, after = 1 | 1 << 24;
@@ -1357,6 +1375,7 @@ public final class KnowledgeGameTests {
         net.minecraft.nbt.CompoundTag oldFaction = old.save();
         oldFaction.remove("reconOrders");
         oldFaction.remove("struckBy");
+        oldFaction.remove("reconUrgentAt");
         net.minecraft.nbt.CompoundTag oldTag = new net.minecraft.nbt.CompoundTag();
         oldTag.putInt("format", 4);
         oldTag.putBoolean("started", true);
@@ -1367,7 +1386,7 @@ public final class KnowledgeGameTests {
         Report r4 = loaded.knowledge.get(0);
         h.assertTrue(r4.recon == null && r4.reconFailures == 0 && r4.look != null && r4.look.soldiers() == 3 && r4.losses == 2,
                 "a format-4 report: recon " + r4.recon + ", look " + r4.look + ", losses " + r4.losses);
-        h.assertTrue(loaded.reconOrders.isEmpty() && loaded.struckBy.isEmpty(), "a format-4 faction has orders or strikes: "
+        h.assertTrue(loaded.reconOrders.isEmpty() && loaded.struckBy.isEmpty() && loaded.reconUrgentAt.isEmpty(), "a format-4 faction has orders or strikes: "
                 + loaded.reconOrders + " / " + loaded.struckBy);
         h.succeed();
     }

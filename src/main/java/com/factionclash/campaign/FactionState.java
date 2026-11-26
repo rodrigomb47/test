@@ -101,14 +101,14 @@ public final class FactionState {
     /**
      * The war council's open recon orders ({@code docs/design/recon.md} 2.1): at most one ordinary and one urgent
      * ({@link com.factionclash.logic.campaign.ReconRules#ORDERS_MAX}). Kept and saved since task R2; R3 places and settles
-     * them, R4b's scouts take them at home.
+     * them each council pass ({@link ReconOrders}), R4b's scouts take them at home.
      */
     public final List<ReconOrder> reconOrders = new ArrayList<>();
     /**
      * When the faction last saw each enemy faction strike it at home (recon.md 6): an enemy soldier or hero falling in its
      * home area or seen falling by a member standing in it ({@code BaseWatch.enemyFell}), or an enemy fighter its alarm
      * noticed inside a settlement's walls box ({@code FactionDirector.defenceAlarm}). The faction's own observation,
-     * saved; it never lowers an estimate. Read from task R3 on (the urgent recon and the counter-attack).
+     * saved; it never lowers an estimate. Read from task R3 on (the urgent recon; from R5 the counter-attack).
      */
     public final Map<FactionType, Long> struckBy = new java.util.EnumMap<>(FactionType.class);
 
@@ -128,6 +128,18 @@ public final class FactionState {
     /** When {@code striker} was last seen striking us (0: never). */
     public long struckAt(FactionType striker) {
         Long at = striker == null ? null : struckBy.get(striker);
+        return at == null ? 0 : at;
+    }
+
+    /**
+     * When the council last placed an urgent recon order on each enemy faction (recon.md 2.1 and 6, task R3): at most one
+     * a quarter of the raid interval per faction ({@code ReconRules.urgentDue}). The council's own decisions, saved.
+     */
+    public final Map<FactionType, Long> reconUrgentAt = new java.util.EnumMap<>(FactionType.class);
+
+    /** When the council last ordered an urgent recon of {@code enemy}'s base (0: never). */
+    public long urgentOrderedAt(FactionType enemy) {
+        Long at = enemy == null ? null : reconUrgentAt.get(enemy);
         return at == null ? 0 : at;
     }
 
@@ -279,6 +291,9 @@ public final class FactionState {
         CompoundTag sb = new CompoundTag();
         struckBy.forEach((faction, at) -> sb.putLong(faction.id, at));
         t.put("struckBy", sb);
+        CompoundTag ua = new CompoundTag();
+        reconUrgentAt.forEach((faction, at) -> ua.putLong(faction.id, at));
+        t.put("reconUrgentAt", ua);
         return t;
     }
 
@@ -366,6 +381,14 @@ public final class FactionState {
             FactionType striker = FactionType.byId(id);
             if (striker != null) { // (a faction this version does not know is left out)
                 f.struckBy.put(striker, sb.getLong(id));
+            }
+        }
+        // the urgent orders' times (task R3, still campaign format 5: absent, none placed)
+        CompoundTag ua = t.getCompound("reconUrgentAt");
+        for (String id : ua.getAllKeys()) {
+            FactionType enemy = FactionType.byId(id);
+            if (enemy != null) {
+                f.reconUrgentAt.put(enemy, ua.getLong(id));
             }
         }
         return f;

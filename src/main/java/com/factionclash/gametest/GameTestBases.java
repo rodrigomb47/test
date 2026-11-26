@@ -94,6 +94,8 @@ public final class GameTestBases {
          */
         private final java.util.Map<FactionType, Long> factionStruckBy;
         private final List<com.factionclash.campaign.ReconOrder> factionReconOrders;
+        /** ...and when its council last ordered an urgent recon of each enemy (task R3). */
+        private final java.util.Map<FactionType, Long> factionUrgentAt;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
             this.helper = helper;
@@ -104,6 +106,7 @@ public final class GameTestBases {
             this.factionEliminatedAt = f == null ? 0 : f.eliminatedAt;
             this.factionStruckBy = f == null ? java.util.Map.of() : new java.util.HashMap<>(f.struckBy);
             this.factionReconOrders = f == null ? List.of() : new ArrayList<>(f.reconOrders);
+            this.factionUrgentAt = f == null ? java.util.Map.of() : new java.util.HashMap<>(f.reconUrgentAt);
         }
 
         /** Spawns an NPC of the base's faction at relative (x, 2, z) and registers it as a member of the base. */
@@ -241,6 +244,8 @@ public final class GameTestBases {
                 f.struckBy.putAll(factionStruckBy);
                 f.reconOrders.clear();
                 f.reconOrders.addAll(factionReconOrders);
+                f.reconUrgentAt.clear();
+                f.reconUrgentAt.putAll(factionUrgentAt);
             }
             data.setDirty();
         }

@@ -3,6 +3,7 @@ package com.factionclash.campaign;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
@@ -458,6 +459,7 @@ public final class FactionDirector {
         if (intruders.isEmpty()) {
             return 0;
         }
+        ALARM_AT.put(b.id, now); // (the council's urgent recon waits until the alarm has been quiet a while, recon.md 2.1)
         List<FactionNpc> guards = level.getEntitiesOfClass(FactionNpc.class, walls.inflate(24, 8, 24),
                 g -> g.isAlive() && g.getFaction() == b.faction && g.fightsLikeSoldier() && !g.isDisplayOnly());
         // raiders and enemy players first, then monsters: two guards on a monster must not leave an intruder unattended
@@ -541,6 +543,25 @@ public final class FactionDirector {
 
     /** Intruders each base noticed, and when (game time); old entries are dropped as it grows. */
     private static final Map<Noticed, Long> NOTICED_AT = new HashMap<>();
+    /**
+     * When each base's alarm last had an intruder (by base id; game time): the fight its people saw. Runtime only; after a
+     * restart the strikes seen ({@link FactionState#struckBy}, saved) still date the last fight at home.
+     */
+    private static final Map<Integer, Long> ALARM_AT = new HashMap<>();
+
+    /**
+     * When the base last saw a fight at home (recon.md 2.1, the urgent recon's quiet): its alarm's last intruder, or the
+     * newest strike its faction saw (an enemy noticed at its walls or seen falling there). 0: never. An alarm time after
+     * {@code now} is another world's (the map outlives a world left in the same game) and is not read.
+     */
+    static long lastAlarmAt(FactionState f, BaseState b, long now) {
+        long alarm = ALARM_AT.getOrDefault(b.id, 0L);
+        long at = alarm <= now ? alarm : 0;
+        for (long struck : f.struckBy.values()) {
+            at = Math.max(at, struck);
+        }
+        return at;
+    }
 
     /** {@link #noticed} now, or noticed by this base within {@link #NOTICE_MEMORY}. */
     static boolean remembered(ServerLevel level, BaseState b, net.minecraft.world.entity.LivingEntity e, long now) {
@@ -786,11 +807,7 @@ public final class FactionDirector {
             data.setDirty();
         }
         int interval = FCConfig.RAID_INTERVAL_TICKS.get();
-        // a counter-attack may go out sooner (a quarter of the interval) - but only into a weakened enemy, below
-        if (t - f.lastRaidAt < interval / 4 || t - data.startedAt < interval) {
-            return;
-        }
-        boolean intervalOver = t - f.lastRaidAt >= interval;
+        // the soldier census, before the gates below: the recon orders need to know whether a party could go (recon.md 2.1)
         BlockPos min = home.point(BaseState.MIN), max = home.point(BaseState.MAX);
         AABB area = new AABB(min.getX(), min.getY() - 40, min.getZ(), max.getX() + 1, max.getY() + 40, max.getZ() + 1);
         List<FactionNpc> soldiers = level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == f.type
@@ -808,6 +825,22 @@ public final class FactionDirector {
             f.soldierPower = (float) draftable.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
         }
         int party = Intel.partySize(soldiers.size(), draftable.size(), FCConfig.HOME_DEFENDERS.get(), FCConfig.RAID_PARTY_SIZE.get());
+        // focused reconnaissance (docs/design/recon.md 2.1, task R3): the open orders settled by what the faction knows,
+        // then the next ones placed: half a day before the raid interval ends (the first war's gate before any raid), or
+        // urgently once the fight at home is over after a strike. The judgement below does not read them yet (R5)
+        boolean ordersChanged = ReconOrders.settle(f, t);
+        ordersChanged |= !ReconOrders.place(f, home, t, party, interval, ReconRules.nextRaidAt(f.lastRaidAt, data.startedAt, interval),
+                lastAlarmAt(f, home, t)).isEmpty();
+        if (ordersChanged) {
+            data.setDirty();
+        }
+        String orders = ReconOrders.line(f);
+        councilLine(f.type, null, orders, t);
+        // a counter-attack may go out sooner (a quarter of the interval) - but only into a weakened enemy, below
+        if (t - f.lastRaidAt < interval / 4 || t - data.startedAt < interval) {
+            return;
+        }
+        boolean intervalOver = t - f.lastRaidAt >= interval;
         if (party <= 0) {
             return;
         }
@@ -862,17 +895,40 @@ public final class FactionDirector {
         // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
         boolean goWithout = !intervalOver && Intel.threeToTwo(partySoldiers, defenceSoldiers, unit)
                 || intervalOver && Intel.twoThirds(partySoldiers, defenceSoldiers, unit);
-        LAST_COUNCIL.put(f.type, String.format(java.util.Locale.ROOT,
+        councilLine(f.type, String.format(java.util.Locale.ROOT,
                 "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; %s), %s%s [truth: %.1f]",
                 t / 24000.0, target.faction.id, target.id, target.isSettlement() ? "settlement" : "lair", partyPower, partyHeroes,
                 defencePower, defenceSoldiers, defenceHeroes, seenText(targetReport), go ? "attack" : "wait",
                 go == goWithout ? "" : go ? " (the heroes decided it)" : " (the defending heroes held it off)",
-                defencePower(level, data, target))); // truth: the operators' line (fc admin dump), never the council's
+                defencePower(level, data, target)), orders, t); // truth: the operators' line (fc admin dump), never the council's
         if (!go) {
             return; // not yet, or not strong enough for that garrison
         }
         launch(level, data, f, home, target, picks.subList(0, party), targetEstimate.heads() + " defenders" + seenText(targetReport, t),
                 counter ? "Counter-attack! " : "", t);
+    }
+
+    /** The factions whose {@link #LAST_COUNCIL} line holds only their open recon orders (no target judged since). */
+    private static final java.util.Set<FactionType> ORDERS_ONLY = java.util.EnumSet.noneOf(FactionType.class);
+
+    /**
+     * The council's line for the operators ({@link #LAST_COUNCIL}, {@code /fc admin dump}): its last judgement of a target,
+     * with the recon orders open at that pass after it ({@code orders}, {@link ReconOrders#line}). A pass that judges
+     * nothing leaves the last judgement as it was; with no judgement in the line yet (before the first war's gate), it shows
+     * the open orders alone, and drops that line once they have all ended.
+     */
+    private static void councilLine(FactionType f, String judgement, String orders, long t) {
+        if (judgement != null) {
+            LAST_COUNCIL.put(f, orders == null ? judgement : judgement + "; " + orders);
+            ORDERS_ONLY.remove(f);
+        } else if (orders != null) {
+            if (LAST_COUNCIL.get(f) == null || ORDERS_ONLY.contains(f)) {
+                LAST_COUNCIL.put(f, String.format(java.util.Locale.ROOT, "day %.2f: %s", t / 24000.0, orders));
+                ORDERS_ONLY.add(f);
+            }
+        } else if (ORDERS_ONLY.remove(f)) {
+            LAST_COUNCIL.remove(f);
+        }
     }
 
     /**

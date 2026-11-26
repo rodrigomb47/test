@@ -919,8 +919,11 @@ faction's own `FactionState.sightings`).
   until then the old council still reads them): an old report is a position only, and its base is judged again by a
   recon.
 * `FactionState`: new `reconOrders` (at most 2: target position, subject, kind, home base, orderedAt, urgent, scout UUID,
-  takenAt), `struckBy` (faction to time) and `sightings` (at most 64: entity UUID, faction, hero id, power, time, place,
-  source, fallen; 5.5, task R11). An old `raidIntel` is kept only if it is ruins.
+  takenAt, and from R3 what its scout told at the station, `reported`, with the sides an empty-handed trip tried,
+  `reportedSides`: a taken order whose outcome a restart lost would never end), `struckBy` (faction to time),
+  `reconUrgentAt` (R3: faction to the time of the last urgent order, for 2.4's one urgent order a quarter interval) and
+  `sightings` (at most 64: entity UUID, faction, hero id, power, time, place, source, fallen; 5.5, task R11). An old
+  `raidIntel` is kept only if it is ruins.
 * `ScoutJob`: the recon state, its target, the side tried, the pillar (`Scaffold.Pillar.save`), the watch accumulator
   (soldiers by UUID: a runtime entity id changes at a reload and would count one soldier twice), `reconReport` and the
   sightings it carries home (R11). An old job loads as today's.

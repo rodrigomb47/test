@@ -509,7 +509,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1162 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1163 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
   a faction knows of an enemy base: a garrison nobody saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
   at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
@@ -577,7 +577,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 415 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 419 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers

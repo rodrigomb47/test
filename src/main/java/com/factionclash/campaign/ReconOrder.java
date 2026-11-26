@@ -1,6 +1,7 @@
 package com.factionclash.campaign;
 
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.campaign.ReconRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 
@@ -8,10 +9,10 @@ import java.util.UUID;
 
 /**
  * A war council's order to watch one enemy base ({@code docs/design/recon.md} 2.1; task R2 keeps it and saves it, R3 places
- * and settles orders, R4b's scouts take them). It names the target as the faction knows it, by its report (position,
+ * and settles orders ({@link ReconOrders}), R4b's scouts take them). It names the target as the faction knows it, by its report (position,
  * subject, kind), never by the engine's base id; the home base whose station gave it; when; whether it is the urgent order
- * after a strike; and, once a scout took it at home, which scout and when. At most {@link
- * com.factionclash.logic.campaign.ReconRules#ORDERS_MAX} are open per faction ({@link FactionState#reconOrders}).
+ * after a strike; once a scout took it at home, which scout and when; and what that scout told at the station. At most
+ * {@link ReconRules#ORDERS_MAX} are open per faction ({@link FactionState#reconOrders}).
  */
 public final class ReconOrder {
     /** The target's reported position (its report's {@link Report#pos}). */
@@ -29,6 +30,13 @@ public final class ReconOrder {
     public UUID scout;
     /** When its scout took it (0: not taken). */
     public long takenAt;
+    /**
+     * What its scout told at the station about the target since it took the order ({@link ReconOrders#atStation}): nothing
+     * yet, a good recon, a blind one, or no recon of it. The next council pass ends the order by it ({@link ReconOrders#settle}).
+     */
+    public ReconRules.ScoutReport reported = ReconRules.ScoutReport.NONE;
+    /** The sides its scout's trip tried, told with an empty-handed report (a mask of {@link ReconRules.Side} bits). */
+    public int reportedSides;
 
     public ReconOrder() {
     }
@@ -66,6 +74,10 @@ public final class ReconOrder {
             t.putUUID("scout", scout);
         }
         t.putLong("takenAt", takenAt);
+        if (reported != ReconRules.ScoutReport.NONE) {
+            t.putString("reported", reported.name()); // a taken order whose outcome a restart lost would never end
+            t.putInt("reportedSides", reportedSides);
+        }
         return t;
     }
 
@@ -84,12 +96,19 @@ public final class ReconOrder {
         o.urgent = t.getBoolean("urgent");
         o.scout = t.hasUUID("scout") ? t.getUUID("scout") : null;
         o.takenAt = t.getLong("takenAt");
+        try {
+            o.reported = t.contains("reported") ? ReconRules.ScoutReport.valueOf(t.getString("reported")) : ReconRules.ScoutReport.NONE;
+        } catch (IllegalArgumentException e) {
+            o.reported = ReconRules.ScoutReport.NONE;
+        }
+        o.reportedSides = t.getInt("reportedSides");
         return o;
     }
 
     @Override
     public String toString() {
         return (urgent ? "urgent " : "") + "recon of " + (subject == null ? "?" : subject.id) + " " + kind + " at " + target.toShortString()
-                + " (ordered " + orderedAt + (taken() ? ", taken " + takenAt + " by " + scout : ", not taken") + ")";
+                + " (ordered " + orderedAt + (taken() ? ", taken " + takenAt + " by " + scout : ", not taken")
+                + (reported != ReconRules.ScoutReport.NONE ? ", reported " + reported : "") + ")";
     }
 }
