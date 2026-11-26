@@ -2331,7 +2331,7 @@
         ]
       },
       "kag.gs_raise": {
-        "_comment": "Guard Splitter's wind-up: the blade raised high over his head, tipped back, the left hand up in front as a counterweight, the chest lifted.",
+        "_comment": "Guard Splitter's wind-up: the blade raised high beside his head, tipped back over it, the hand outside the helmet so neither the hand nor the blade cuts into it, the left hand up in front as a counterweight, the chest lifted.",
         "extends": "katana.stance",
         "bones": {
           "leg_r": [
@@ -2385,19 +2385,19 @@
             0
           ],
           "arm_r": [
-            -110.4,
-            24.9,
-            33.9
+            -60.7,
+            47.2,
+            55.0
           ],
           "forearm_r": [
-            -66.3,
-            15.1,
+            -83.0,
+            31.1,
             0.0
           ],
           "hand_r": [
-            49.7,
-            19.3,
-            4.1
+            50.9,
+            32.5,
+            6.1
           ],
           "arm_l": [
             -66.1,
@@ -2424,7 +2424,7 @@
         ]
       },
       "kag.gs_peak": {
-        "_comment": "Guard Splitter, the last stretch: the blade further back over the head, the body drawn up like a bow.",
+        "_comment": "Guard Splitter, the last stretch: the blade further back over the head, the hand still beside the helmet, the body drawn up like a bow.",
         "extends": "katana.stance",
         "bones": {
           "leg_r": [
@@ -2478,19 +2478,19 @@
             0
           ],
           "arm_r": [
-            -108.6,
-            31.4,
-            41.6
+            -63.1,
+            42.6,
+            51.9
           ],
           "forearm_r": [
-            -60.1,
-            17.8,
+            -81.2,
+            28.0,
             0.0
           ],
           "hand_r": [
-            37.0,
-            21.8,
-            5.7
+            35.7,
+            30.5,
+            6.9
           ],
           "arm_l": [
             -67.0,

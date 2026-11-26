@@ -189,6 +189,40 @@ class KagenoriTest(unittest.TestCase):
                     q = rh.T @ (r2 @ (p2 + d * 14.4 * f) + t2 - th) - hp
                     self.assertFalse(abs(q[0]) < 6 and -1 < q[1] < 11 and q[2] < -1, (clip.name, t, f))
 
+    def test_his_arms_and_blades_clear_the_helmet(self):
+        """From phase 2 he wears the kabuto, and every move may play under it: on every tick of his own clips and his
+        basic string, no point of either forearm, hand or sleeve, nor of either blade, lies more than 0.5 px inside a
+        cube of the helmet (a sleeve may brush a lame's tip). phase.2 is left out (its left hand holds the helmet),
+        and so are the idle quirks, which play out of a fight. Guard Splitter's wind-up, first solved over the bare
+        head, held the sword hand 1.25 px inside the helmet's bowl."""
+        m = self.model
+        hat = [c for c in m.cubes if c.bone in grips._subtree(m, {"p2_hat"})]
+        self.assertGreater(len(hat), 20)
+        movers = []
+        for side in ("r", "l"):
+            arm = grips._subtree(m, {"forearm_" + side, "hand_" + side}) - grips._subtree(m, {"weapon_" + side})
+            movers += [c for c in m.cubes if c.bone in arm and not c.part.startswith("weapons/")]
+            movers += grips.prop_cubes(m, side)
+        samples = [(c.bone, grips._samples(c)) for c in movers]
+        frames = [(b, np.array(b.box), np.array(b.pivot, float) if b.rotation is not None else None,
+                   grips.file_matrix(b.rotation) if b.rotation is not None else None) for b in hat]
+        clips = [c for c in self.own.clips if c.name != "phase.2" and not c.name.startswith("personal.")]
+        clips += [library.style("katana").by_name["attack.%d" % i] for i in (1, 2, 3)]
+        worst = (0.0, None)
+        for clip in clips:
+            for t, pose, _ in grips.clip_poses(clip, self.lookup, self.d, 1):
+                w = self.sk.world(pose)
+                pts = np.concatenate([p @ w[bone][0].T + w[bone][1] for bone, p in samples])
+                for b, box, pv, fm in frames:
+                    rb, tb = w[b.bone]
+                    local = (pts - tb) @ rb
+                    if fm is not None:
+                        local = pv + (local - pv) @ fm
+                    depth = float(grips._depth_inside(local, box).max())
+                    if depth > worst[0]:
+                        worst = (depth, (clip.name, t, b.name))
+        self.assertLessEqual(worst[0], 0.5, worst)
+
     def test_sound_markers(self):
         """His client-played sounds are markers in the clips their slots name (SOUND.md 4.7, 5): the client
         `release` of Three Cuts (one per cut), Still Water, Crane Step, Guard Splitter and Falling Crane, Thunderclap
