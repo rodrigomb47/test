@@ -129,7 +129,7 @@
 	# Range: 32 ~ 2048
 	scoutRange = 160
 	#A scout's expedition: it turns home at half of this, and its faction expects it back within it (then
-	#campaign.missingGraceTicks); a lone scout away longer than this gets a follow-up scout.
+	#campaign.missingGraceTicks); a lone scout reported missing gets a follow-up scout.
 	# Default: 24000
 	# Range: 1200 ~ 240000
 	scoutOverdueTicks = 24000

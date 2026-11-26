@@ -122,8 +122,9 @@ public final class MissingNpcGameTests {
     /**
      * A scout leaves the home area (away, expected back by its expedition's bound) and is killed far away where nobody
      * sees it: nothing is known, it still counts, nothing is said. Past its expected return plus the grace it is missing
-     * (still counted: no scout is hired); after the presumed-dead wait it is presumed dead, no longer counted, and the
-     * base's needs ask for a scout to replace it.
+     * (still counted: it is not replaced, but the base's only scout missing asks for a follow-up scout, recon.md 2.5);
+     * after the presumed-dead wait it is presumed dead, no longer counted, and the base's needs ask for a scout to
+     * replace it.
      */
     @GameTest(template = "platform", timeoutTicks = 100, batch = "missing_scout")
     public static void aScoutKilledFarAwayIsMissingThenPresumedDeadThenReplaced(GameTestHelper h) {
@@ -154,8 +155,12 @@ public final class MissingNpcGameTests {
             t.assertTrue(r.where == State.MISSING && r.alive && r.since == missingAt, "not missing after the grace: " + r.where);
             t.assertTrue(said(lines, scout.getUUID(), Event.MISSING), "no missing line: " + lines);
             t.assertTrue(about(lines, scout.getUUID()).get(0).line().contains("is missing: expected back by day"), "the line: " + lines);
-            t.assertTrue(FactionDirector.needs(level, t.data, t.base, missingAt).stream().noneMatch(n -> n.role() == NpcRole.SCOUT),
+            t.assertTrue(FactionDirector.needs(level, t.data, t.base, missingAt).stream().noneMatch(n -> n.reason().equals("no scout left")),
                     "a missing scout is not replaced yet");
+            // ...but, the base's only scout, it gets a follow-up (docs/design/recon.md 2.5: the roll call's missing, for any trip)
+            t.assertTrue(FactionDirector.needs(level, t.data, t.base, missingAt).stream()
+                    .anyMatch(n -> n.role() == NpcRole.SCOUT && n.reason().equals("follow-up for missing scout " + r.name)),
+                    "no follow-up for the missing scout: " + FactionDirector.needs(level, t.data, t.base, missingAt));
             RollCall.upkeep(level, t.data, t.base, missingAt + presume() - 1);
             t.assertTrue(r.where == State.MISSING, "presumed dead before the wait ran out");
             RollCall.upkeep(level, t.data, t.base, missingAt + presume());

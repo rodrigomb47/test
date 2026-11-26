@@ -7,14 +7,23 @@ import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.FactionState;
 import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.NpcRecord;
+import com.factionclash.campaign.ReconOrder;
+import com.factionclash.campaign.ReconOrders;
 import com.factionclash.campaign.Report;
+import com.factionclash.campaign.RollCall;
 import com.factionclash.combat.CombatRules;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.Affix;
 import com.factionclash.logic.EscapeRoute;
+import com.factionclash.logic.DirtPatch;
 import com.factionclash.logic.ScoutRules;
 import com.factionclash.logic.Zones;
+import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconRules;
+import com.factionclash.logic.campaign.ReconRules.Side;
+import com.factionclash.logic.campaign.ReconWatch;
+import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcNavigator;
 import com.factionclash.util.Messages;
@@ -25,6 +34,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -32,10 +42,14 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,9 +66,16 @@ import java.util.Set;
  * publishes its reports by reaching the central reporting station. Monsters met on the way are stepped around, not
  * fought and not run home from ({@link #dangerCheck}); enemy soldiers, being badly hurt among monsters, being hit again
  * and again or failing to shake them make it retreat home with a fixed destination.
+ *
+ * <p>Focused reconnaissance ({@code docs/design/recon.md}, task R4b): a scout at home (reporting at the station, or at
+ * the storehouse before it sets out) takes its council's open recon order instead of exploring, fetches or digs the dirt
+ * for a lookout pillar, walks to the side of the enemy base the order names, finds a vantage column outside the guards'
+ * reach ({@link ReconVantage}), climbs it looking after each block ({@link PillarClimb}), watches the yard for a minute
+ * counting each soldier once by its face ({@link ReconWatch}), takes the pillar down and carries what it saw home, held
+ * apart from its other reports and told first at the station ({@link ReconTrip}).</p>
  */
 public class ScoutJob extends Job {
-    enum State { HOME, OUTBOUND, RETURN, REPORT }
+    enum State { HOME, DIG, OUTBOUND, RETURN, REPORT }
 
     private State state = State.HOME;
     private BlockPos target;
@@ -88,6 +109,32 @@ public class ScoutJob extends Job {
     private String evadeInfo = "", escapedFrom = "";
     /** Times this trip the scout stepped aside from monsters (saved, for its report). */
     private int evasions;
+
+    /**
+     * The recon trip it is on (null: exploring, or at home with no order), with what it brings home, held apart from
+     * {@link #pending} until the station ({@code docs/design/recon.md} 4). Saved.
+     */
+    private ReconTrip recon;
+    /** Breaks the pillar's blocks on the way down, and digs dirt at home. */
+    private final BlockWork.Breaker breaker = new BlockWork.Breaker();
+    /**
+     * Dirt it digs for its pillar at home when the storehouse is short (recon.md 3.5, under {@link DirtDig}'s rules, in
+     * its own base's home area): the search, the patch's cells and the one it digs now. Not saved: a reload goes back to
+     * the storehouse and looks again.
+     */
+    private DirtDig.Search digSearch;
+    private final List<BlockPos> digCells = new ArrayList<>();
+    private final Set<Long> digPatch = new HashSet<>();
+    private BlockPos digTarget;
+    private boolean digChecked, digTried;
+    private long digStart;
+    private int digSearches, digWalk;
+    /** PROPOSED: how long it digs dirt for a pillar before it sets out with what it has, and the searches it makes. */
+    static final int DIG_GIVE_UP_TICKS = 2400, MAX_DIG_SEARCHES = 2;
+    /** PROPOSED: vantage columns of one side it tries to walk to before it gives the side up. */
+    static final int MAX_COLUMNS = 6;
+    /** The watch's cadence: one look every 40 ticks (as {@link #observe}). */
+    static final int SAMPLE_TICKS = 40;
 
     /** PROPOSED: below this share of health, with monsters about, it retreats home instead of stepping aside. */
     static final float BADLY_HURT = 0.4F;
@@ -127,8 +174,8 @@ public class ScoutJob extends Job {
      */
     @Override
     public boolean ignoresCombat() {
-        if (state == State.RETURN && retreating) {
-            return true;
+        if (state == State.RETURN && retreating || reconPerched()) {
+            return true; // (on its lookout pillar it holds still: a hit brings it down, recon.md 3.5)
         }
         if (state != State.OUTBOUND && state != State.RETURN || defending()) {
             return false;
@@ -142,10 +189,62 @@ public class ScoutJob extends Job {
         return state == State.OUTBOUND || state == State.RETURN;
     }
 
+    /** On its lookout pillar (or jumping up onto it): nothing moves it off before it has taken the pillar down. */
+    @Override
+    public boolean onScaffold() {
+        return reconPerched();
+    }
+
+    /**
+     * Before an errand home (food, a tool): down its lookout pillar first, block by block, until its feet are on the
+     * ground (the watch ends there, its report by the watch's rule); then home with what it saw.
+     */
+    @Override
+    protected boolean beforeErrand() {
+        if (!reconAtColumn()) {
+            return true;
+        }
+        if (recon.step != ReconTrip.Step.DOWN) {
+            recon.end = ReconTrip.End.HOME;
+            recon.why = "an errand home";
+            startDown(recon);
+        }
+        BaseState t = reconBase(recon);
+        if (t == null) {
+            recon.pillar = null; // (nothing to watch any more: on the ground it simply goes)
+            return true;
+        }
+        if (reconAtColumn()) {
+            reconPillar(recon, t);
+        }
+        return !reconAtColumn();
+    }
+
+    /** At its column on the recon trip: a pillar begun and not yet taken down (on it, or still at its foot). */
+    private boolean reconAtColumn() {
+        return recon != null && state == State.OUTBOUND && recon.phase == ReconTrip.Phase.PILLAR && recon.pillar != null;
+    }
+
+    /** Its lookout pillar's dirt (recon.md 3.5) stays with it when it unloads: {@link ReconRules#BLOCKS}, dirt first. */
+    @Override
+    protected int keep(ItemStack s) {
+        if (s.is(Items.DIRT)) {
+            return ReconRules.BLOCKS;
+        }
+        if (s.is(Items.COARSE_DIRT)) {
+            return Math.max(0, ReconRules.BLOCKS - Inv.count(npc.inventory(), x -> x.is(Items.DIRT)));
+        }
+        return 0;
+    }
+
     @Override
     public String workplaceInfo() {
+        if (recon != null && state == State.OUTBOUND) {
+            return reconInfo();
+        }
         return switch (state) {
-            case HOME -> "At home between expeditions";
+            case HOME -> recon != null ? "At home, about to set out to watch " + recon.what() : "At home between expeditions";
+            case DIG -> "Digging dirt for a lookout pillar (" + Scaffold.carried(npc) + "/" + ReconRules.BLOCKS + ")";
             case OUTBOUND -> (escape != null ? "Evading " + evadeInfo + " on the way to " : "Exploring toward ") + targetInfo() + ", "
                     + pending.size() + " observations held";
             case RETURN -> (retreating ? "RETREATING (" + retreatReason + ")" : escape != null ? "Evading " + evadeInfo + " on the way home"
@@ -216,16 +315,30 @@ public class ScoutJob extends Job {
         }
         switch (state) {
             case HOME -> home(b);
-            case OUTBOUND -> outbound(b);
+            case DIG -> dig(b);
+            case OUTBOUND -> {
+                if (recon != null) {
+                    reconOutbound(b);
+                } else {
+                    outbound(b);
+                }
+            }
             case RETURN -> returning(b);
             case REPORT -> report(b);
         }
     }
 
-    /** Its expedition's bound from its departure ({@code war.scoutOverdueTicks}; it turns home at half of it). */
+    /**
+     * Its trip's plan from its departure: an expedition's bound ({@code war.scoutOverdueTicks}; it turns home at half of
+     * it), or a recon trip's own ({@link Whereabouts#reconPlan}: the walk there, the vantage allowance, the watch and the
+     * walk home, recon.md 2.5).
+     */
     @Override
     public long tripPlanTicks(long now) {
-        return com.factionclash.logic.campaign.Whereabouts.scoutPlan(now, departedAt, FCConfig.SCOUT_OVERDUE_TICKS.get());
+        if (recon != null) {
+            return Whereabouts.reconPlan(now, departedAt, recon.distance);
+        }
+        return Whereabouts.scoutPlan(now, departedAt, FCConfig.SCOUT_OVERDUE_TICKS.get());
     }
 
     private void returning(BaseState b) {
@@ -258,6 +371,16 @@ public class ScoutJob extends Job {
         if (npc.getHealth() < npc.getMaxHealth() * 0.75F) {
             status("Recovering before the next expedition", "Resting");
             waitFor(200);
+            return;
+        }
+        if (recon == null) {
+            ReconOrder o = openOrder(b); // an open order wins over exploring (recon.md 2.1)
+            if (o != null) {
+                takeOrder(b, o);
+            }
+        }
+        if (recon != null) {
+            prepareRecon(b);
             return;
         }
         target = pickTarget(b);
@@ -933,6 +1056,9 @@ public class ScoutJob extends Job {
         }
         npc.swing(InteractionHand.MAIN_HAND);
         FactionState f = data().faction(npc.getFaction());
+        if (recon != null) {
+            deliverRecon(f); // the focused report first (recon.md 4), told to its order, then the other reports
+        }
         int fresh = 0, xp = 0;
         Map<String, Integer> places = new LinkedHashMap<>();
         for (Report r : pending) {
@@ -964,7 +1090,757 @@ public class ScoutJob extends Job {
         retreating = false;
         evasions = 0;
         state = State.HOME;
+        ReconOrder o = openOrder(b); // an order the council gave while it was away is taken here, at the station
+        if (o != null) {
+            takeOrder(b, o);
+        }
         waitFor(200);
+    }
+
+    // ------------------------------------------------------------------ the recon trip (docs/design/recon.md, task R4b)
+
+    /**
+     * Its base's open recon order no scout has taken yet (recon.md 2.1): the urgent one first. Orders are given at the
+     * station and taken only at home, at the station or the storehouse; a scout out exploring knows of none until it is
+     * back.
+     */
+    private ReconOrder openOrder(BaseState b) {
+        FactionState f = data().faction(npc.getFaction());
+        ReconOrder best = null;
+        for (ReconOrder o : f.reconOrders) {
+            if (!o.taken() && o.homeBase == b.id && o.target != null && o.kind != null && (best == null || o.urgent && !best.urgent)) {
+                best = o;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Takes the order ({@link ReconOrders#take}) and plans the trip from what its faction knows: the target's reported
+     * position and kind, its own base, and the sides tried since the last good recon of it (the kept report's mask). The
+     * sides go gate facing home first ({@link ReconRules#sideOrder}); a settlement's gates are west and east, a lair has a
+     * gap in each wall.
+     */
+    private void takeOrder(BaseState b, ReconOrder o) {
+        FactionState f = data().faction(npc.getFaction());
+        Report kept = ReconOrders.report(f, o);
+        int tried = kept == null ? 0 : kept.reconSidesTried;
+        boolean settlement = o.kind != Report.Kind.LAIR;
+        List<Side> order = ReconRules.sideOrder(b.center.getX() - o.target.getX(), b.center.getZ() - o.target.getZ(),
+                ReconVantage.gates(settlement));
+        ReconOrders.take(o, npc.getUUID(), now());
+        recon = new ReconTrip(o.target, o.subject, o.kind, o.urgent, Math.sqrt(b.center.distSqr(o.target)), ReconRules.tripSides(order, tried));
+        digTried = false;
+        data().setDirty();
+        com.factionclash.FactionClash.LOGGER.info("[{}] Scout {} takes the {}order to watch {}", npc.getFaction().displayName, npc.npcName(),
+                o.urgent ? "urgent " : "", recon.what());
+    }
+
+    /**
+     * At the storehouse with an order: the dirt for its pillar ({@link ReconRules#BLOCKS}, a settlement only: a lair is
+     * watched from the ground), from the storehouse first and dug by hand when it is short (once a trip); then it sets out.
+     */
+    private void prepareRecon(BaseState b) {
+        if (!recon.lair()) {
+            int more = ReconRules.BLOCKS - Scaffold.carried(npc);
+            if (more > 0) {
+                more -= takeFromStorage(x -> x.is(Items.DIRT), more);
+            }
+            if (more > 0) {
+                takeFromStorage(x -> x.is(Items.COARSE_DIRT), more);
+            }
+            if (Scaffold.carried(npc) < ReconRules.BLOCKS && !digTried) {
+                startDig();
+                return;
+            }
+        }
+        departRecon(b);
+    }
+
+    /** Sets out on the recon trip: the trip's plan runs from now (the roll call reads it when it is seen leaving). */
+    private void departRecon(BaseState b) {
+        departedAt = now();
+        caveChecked.clear();
+        sightings.clear();
+        sectorsVisited = 0;
+        failedTargets = 0;
+        retreating = false;
+        evasions = 0;
+        target = null;
+        endEncounter();
+        NpcRecord rec = npc.record();
+        if (rec != null) {
+            rec.departedAt = departedAt;
+        }
+        recon.phase = ReconTrip.Phase.APPROACH;
+        recon.waypoints = null;
+        state = State.OUTBOUND;
+        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Scout " + npc.npcName() + " sets out to watch "
+                + recon.what() + (recon.urgent ? " (urgent)" : "") + "."));
+    }
+
+    // ---- digging dirt at home
+
+    private void startDig() {
+        state = State.DIG;
+        digStart = now();
+        digSearch = null;
+        digCells.clear();
+        digPatch.clear();
+        digTarget = null;
+        digSearches = 0;
+        breaker.reset(npc);
+        npc.navigator().reset();
+        status("Looking for open ground to dig dirt for a lookout pillar", "Digging");
+    }
+
+    /** The dig is over (enough dirt, no ground, or too long at it): back to the storehouse, and out from there. */
+    private void endDig() {
+        digTried = true;
+        digSearch = null;
+        digCells.clear();
+        digTarget = null;
+        breaker.reset(npc);
+        state = State.HOME;
+    }
+
+    /**
+     * One tick of digging dirt for its pillar (recon.md 3.5): a patch of open ground in its own base's home area, outside
+     * every base's walls box, under {@link DirtDig}'s rules (the woodcutter's), found round the gate facing the target;
+     * the top block of each cell dug by hand at player speed (grass drops dirt). It stops with {@link ReconRules#BLOCKS}
+     * carried, with no ground to dig, or after {@link #DIG_GIVE_UP_TICKS}, and sets out with what it has.
+     */
+    private void dig(BaseState b) {
+        int carried = Scaffold.carried(npc);
+        if (recon == null || carried >= ReconRules.BLOCKS || Inv.freeSlots(npc.inventory()) == 0 || now() - digStart > DIG_GIVE_UP_TICKS) {
+            endDig();
+            return;
+        }
+        int radius = RollCall.homeRadius(b);
+        if (digCells.isEmpty()) {
+            if (digSearch == null) {
+                if (digSearches >= MAX_DIG_SEARCHES) {
+                    endDig();
+                    return;
+                }
+                digSearches++;
+                digSearch = new DirtDig.Search(level(), data(), b, digSeed(b), ReconRules.BLOCKS - carried, p -> false, radius);
+            }
+            status("Looking for open ground to dig dirt for a lookout pillar", "Digging");
+            List<BlockPos> found = digSearch.step();
+            if (found == null) {
+                return;
+            }
+            digSearch = null;
+            if (found.isEmpty()) {
+                endDig(); // no ground to dig: out with what it has
+                return;
+            }
+            digCells.addAll(found);
+            digPatch.clear();
+            for (BlockPos p : found) {
+                digPatch.add(DirtPatch.key(p.getX(), p.getZ()));
+            }
+            digTarget = null;
+        }
+        if (digTarget == null) {
+            double best = Double.MAX_VALUE;
+            for (BlockPos c : digCells) {
+                double d = c.distToCenterSqr(npc.getX(), npc.getY() - 0.5, npc.getZ())
+                        + (npc.getBoundingBox().intersects(new AABB(c.above())) ? 1000 : 0);
+                if (d < best) {
+                    best = d;
+                    digTarget = c;
+                }
+            }
+            digWalk = 0;
+            digChecked = false;
+        }
+        if (!level().isLoaded(digTarget) || !DirtDig.earth(level().getBlockState(digTarget))) {
+            dropDigCell();
+            return;
+        }
+        if (!BlockWork.inReach(npc, digTarget, 4.5)) {
+            if (++digWalk > 600) {
+                digCells.clear(); // cannot get to it: another search
+                digTarget = null;
+                return;
+            }
+            goTo(digTarget.above(), 2.0, "open ground to dig dirt");
+            return;
+        }
+        npc.getNavigation().stop();
+        if (!digChecked) {
+            if (!DirtDig.mayDigNow(level(), data(), b, digPatch, digTarget, p -> false, radius)) {
+                dropDigCell();
+                return;
+            }
+            digChecked = true;
+        }
+        status("Digging dirt for a lookout pillar (" + carried + "/" + ReconRules.BLOCKS + ")", "Digging");
+        if (breaker.tick(npc, digTarget)) {
+            dropDigCell();
+        }
+    }
+
+    private void dropDigCell() {
+        digCells.remove(digTarget);
+        digTarget = null;
+        breaker.reset(npc);
+    }
+
+    /** Where it looks for ground to dig: outside its walls, toward the base it will watch. */
+    private BlockPos digSeed(BaseState b) {
+        double dx = recon.target.getX() - b.center.getX(), dz = recon.target.getZ() - b.center.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+        int out = BaseZones.half(b) + 12;
+        return d < 1 ? b.center.east(out) : b.center.offset((int) Math.round(dx / d * out), 0, (int) Math.round(dz / d * out));
+    }
+
+    // ---- the trip
+
+    /** The base it was ordered to watch, as it finds it there (the faction's report names its position and kind), or null. */
+    private BaseState reconBase(ReconTrip r) {
+        BaseState best = null;
+        for (BaseState x : data().bases.values()) {
+            if (x.faction == r.subject && x.center != null && x.isSettlement() == !r.lair() && x.center.distSqr(r.target) <= 40 * 40
+                    && (best == null || x.center.distSqr(r.target) < best.center.distSqr(r.target))) {
+                best = x;
+            }
+        }
+        return best;
+    }
+
+    /** On its lookout pillar now, or jumping up onto it: it holds still there, and only a hit or a broken block brings it down. */
+    private boolean reconPerched() {
+        ReconTrip r = recon;
+        if (r == null || state != State.OUTBOUND || r.phase != ReconTrip.Phase.PILLAR || r.pillar == null) {
+            return false;
+        }
+        return r.pillar.height > 0 || r.pillar.phase == Scaffold.Phase.CLIMB && !npc.onGround();
+    }
+
+    /** The column's foot (null: none yet), the next corner on the way round, or the side's approach, for its walk. */
+    private BlockPos reconGoal(ReconTrip r, BaseState t) {
+        if (r.foot != null && (r.phase == ReconTrip.Phase.FOOT || r.phase == ReconTrip.Phase.PILLAR)) {
+            return r.foot;
+        }
+        Side s = r.current();
+        if (s == null) {
+            return t.center;
+        }
+        if (r.waypoints != null && !r.waypoints.isEmpty()) {
+            ReconRules.Point p = r.waypoints.get(0);
+            return surface(t.center.getX() + p.dx(), t.center.getZ() + p.dz());
+        }
+        int out = ReconVantage.band(t).standoff() + 1;
+        return surface(t.center.getX() + s.dx * out, t.center.getZ() + s.dz * out);
+    }
+
+    /** Where a walker stands in column (x, z): on the ground when its chunk is loaded, else at the scout's own level. */
+    private BlockPos surface(int x, int z) {
+        if (level().hasChunk(x >> 4, z >> 4)) {
+            return level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
+        }
+        return new BlockPos(x, npc.getBlockY(), z);
+    }
+
+    /**
+     * One tick of the recon trip away from home. On the ground it looks out for monsters and enemy soldiers as on any
+     * trip ({@link #dangerCheck}, {@link #evade}) and keeps its eyes open ({@link #observe}); on its pillar it holds
+     * still. It turns home in time to be back by its trip's plan.
+     */
+    private void reconOutbound(BaseState b) {
+        ReconTrip r = recon;
+        BaseState t = reconBase(r);
+        if (t == null) {
+            r.phase = ReconTrip.Phase.DONE; // nothing stands where the report said: home with what it saw on the way
+            beginReturn(false, "");
+            return;
+        }
+        if (!reconPerched()) {
+            BlockPos goal = reconGoal(r, t);
+            if (dangerCheck(b, goal)) {
+                leaveColumn(r); // retreating home now
+                return;
+            }
+            observe(b);
+            if (escape != null) {
+                leaveColumn(r);
+                if (r.phase == ReconTrip.Phase.DONE) {
+                    state = State.RETURN; // (a watch from the ground ended: home, stepping aside on the way)
+                    return;
+                }
+                evade(goal);
+                return;
+            }
+        }
+        long turnHome = departedAt + Whereabouts.reconPlanTicks(r.distance) - Whereabouts.walkTicks(r.distance);
+        if (now() >= turnHome && r.end == ReconTrip.End.NONE && r.phase != ReconTrip.Phase.DONE) {
+            // the trip's time is up (it must be home by its plan): down, and home with what it saw
+            r.end = ReconTrip.End.HOME;
+            r.why = "out of time";
+            if (r.phase == ReconTrip.Phase.PILLAR && r.pillar != null) {
+                startDown(r);
+            } else {
+                r.phase = ReconTrip.Phase.DONE;
+                beginReturn(false, "");
+                return;
+            }
+        }
+        switch (r.phase) {
+            case PREPARE, APPROACH -> reconApproach(r, t);
+            case FOOT -> reconFoot(r, t);
+            case PILLAR -> reconPillar(r, t);
+            case DONE -> beginReturn(false, "");
+        }
+    }
+
+    /**
+     * On the ground at its column when it must step aside or retreat: a pillar not climbed yet is given up (it walks back
+     * to the foot afterwards); a watch kept from the ground (a lair's) ends there, its report by the watch's rule.
+     */
+    private void leaveColumn(ReconTrip r) {
+        if (r.phase != ReconTrip.Phase.PILLAR || r.pillar == null || r.pillar.height > 0) {
+            return;
+        }
+        if (r.step == ReconTrip.Step.WATCH) {
+            r.end = ReconTrip.End.HOME;
+            r.why = "monsters about";
+            r.phase = ReconTrip.Phase.DONE;
+        } else {
+            r.phase = ReconTrip.Phase.FOOT;
+        }
+        r.pillar = null;
+        breaker.reset(npc);
+    }
+
+    /**
+     * To the side it tries now (recon.md 3.5): round the base by the corners of the standoff's square when it comes from
+     * another side ({@link ReconRules#round}), then to the side's axis just beyond the standoff, where it looks for the
+     * side's vantage columns ({@link ReconVantage#columns}, once): none, and it goes on to the next side.
+     */
+    private void reconApproach(ReconTrip r, BaseState t) {
+        r.phase = ReconTrip.Phase.APPROACH;
+        Side s = r.current();
+        if (s == null) {
+            r.phase = ReconTrip.Phase.DONE;
+            beginReturn(false, "");
+            return;
+        }
+        ReconRules.Band band = ReconVantage.band(t);
+        if (r.waypoints == null) {
+            BaseState home = base();
+            int hx = home == null ? 0 : home.center.getX() - t.center.getX(), hz = home == null ? 0 : home.center.getZ() - t.center.getZ();
+            int fx = npc.getBlockX() - t.center.getX(), fz = npc.getBlockZ() - t.center.getZ();
+            r.waypoints = new ArrayList<>(ReconRules.round(fx, fz, s, band.standoff(), hx, hz));
+            r.walkTicks = 0;
+            r.routeFailBase = routeFailures();
+        }
+        BlockPos goal = reconGoal(r, t);
+        boolean leg = !r.waypoints.isEmpty();
+        boolean stuck = ++r.walkTicks > 2400 || routeFailures() - r.routeFailBase >= 3;
+        if (nearColumn(goal, leg ? 3.0 : 4.0) || stuck) {
+            r.walkTicks = 0;
+            r.routeFailBase = routeFailures();
+            if (leg) {
+                r.waypoints.remove(0); // by this corner (or past it, when it could not get there)
+                return;
+            }
+            if (stuck && !level().hasChunk(goal.getX() >> 4, goal.getZ() >> 4)) {
+                nextSide(r); // could not get there, and nothing of it is loaded to look at
+                return;
+            }
+            r.tried |= s.bit();
+            r.columns = ReconVantage.columns(level(), data(), t, s);
+            r.columnIndex = 0;
+            if (r.columns.isEmpty()) {
+                status("No vantage on the " + side(s) + " side of " + r.what(), "Scouting");
+                nextSide(r);
+                return;
+            }
+            pickColumn(r);
+            return;
+        }
+        goTo(goal, leg ? 2.5 : 3.0, (leg ? "the way round " : "the " + side(s) + " side of ") + r.what());
+    }
+
+    private static String side(Side s) {
+        return s.name().toLowerCase(Locale.ROOT);
+    }
+
+    private void pickColumn(ReconTrip r) {
+        ReconVantage.Vantage v = r.columns.get(r.columnIndex);
+        r.foot = v.foot();
+        r.rise = v.rise();
+        r.pillar = null;
+        r.phase = ReconTrip.Phase.FOOT;
+        r.walkTicks = 0;
+        r.routeFailBase = routeFailures();
+    }
+
+    /** The next column of this side (it could not get to this one), or the next side after {@link #MAX_COLUMNS}. */
+    private void nextColumn(ReconTrip r) {
+        r.pillar = null;
+        if (r.columns != null && ++r.columnIndex < Math.min(r.columns.size(), MAX_COLUMNS)) {
+            pickColumn(r);
+            return;
+        }
+        nextSide(r);
+    }
+
+    /** On to the next side of its trip, or home when it has tried them all (with a blind report, or none). */
+    private void nextSide(ReconTrip r) {
+        Side s = r.current();
+        if (s != null && r.columns != null) {
+            r.tried |= s.bit();
+        }
+        r.side++;
+        r.columns = null;
+        r.waypoints = null;
+        r.foot = null;
+        r.pillar = null;
+        r.firstGood = -1;
+        r.lookedAt = -1;
+        r.step = ReconTrip.Step.CLIMB;
+        if (r.current() == null) {
+            r.phase = ReconTrip.Phase.DONE;
+            beginReturn(false, "");
+        } else {
+            r.phase = ReconTrip.Phase.APPROACH;
+        }
+    }
+
+    /**
+     * To the column's foot (recon.md 3.5): there it stands over the column's middle and starts its pillar (a lair's
+     * vantage is the ground: no pillar). A column it cannot get to is left for the next.
+     */
+    private void reconFoot(ReconTrip r, BaseState t) {
+        if (r.columns == null) {
+            // after a load: the side's columns again, from the one it was walking to
+            r.columns = ReconVantage.columns(level(), data(), t, r.current());
+            r.columnIndex = 0;
+            for (int i = 0; i < r.columns.size(); i++) {
+                if (r.columns.get(i).foot().equals(r.foot)) {
+                    r.columnIndex = i;
+                }
+            }
+            if (r.columns.isEmpty()) {
+                nextSide(r);
+                return;
+            }
+        }
+        if (r.pillar == null) {
+            r.pillar = new Scaffold.Pillar(r.foot, r.lair() ? 0 : ReconRules.PILLAR_MAX, false);
+        }
+        Scaffold.Pillar p = r.pillar;
+        if (PillarClimb.atFoot(npc, p)) {
+            PillarClimb.begin(npc, p);
+            r.phase = ReconTrip.Phase.PILLAR;
+            r.step = ReconTrip.Step.CLIMB;
+            r.firstGood = -1;
+            r.lookedAt = -1;
+            breaker.reset(npc);
+            return;
+        }
+        double d = Math.sqrt(npc.distanceToSqr(Vec3.atBottomCenterOf(r.foot)));
+        if (++r.walkTicks > Whereabouts.walkTicks(d) * 3 + 400 || routeFailures() - r.routeFailBase >= 2) {
+            nextColumn(r);
+            return;
+        }
+        goTo(r.foot, 0.6, "a vantage on the " + side(r.current()) + " side of " + r.what());
+    }
+
+    /**
+     * At its column (recon.md 3.5, steps 4 to 7, and "If enemies come near"): the climb and its looks, the watch from the
+     * top, the hold while an enemy is near, the way down. A hit or a block of its pillar broken under it ends the watch at
+     * once: it comes down block by block and retreats home, what it saw counting only past
+     * {@link ReconRules#MIN_WATCH_TICKS} ({@link Intel.Recon#good}).
+     */
+    private void reconPillar(ReconTrip r, BaseState t) {
+        Scaffold.Pillar p = r.pillar;
+        if (PillarClimb.offColumn(npc, p)) {
+            // moved off its column (it cannot be knocked off): the watch ends there, the blocks still standing stay
+            r.end = ReconTrip.End.RETREAT;
+            r.why = "off its pillar";
+            r.pillar = null;
+            r.phase = ReconTrip.Phase.DONE;
+            beginReturn(true, r.why);
+            return;
+        }
+        if (r.step != ReconTrip.Step.DOWN && r.end == ReconTrip.End.NONE) {
+            String hit = npc.hurtTime > 0 ? "hurt on its pillar" : broken(p) ? "a block of its pillar broken" : null;
+            if (hit != null) {
+                r.end = ReconTrip.End.RETREAT;
+                r.why = hit;
+                startDown(r);
+                if (r.pillar == null) {
+                    return; // (it had not climbed yet)
+                }
+            }
+        }
+        switch (p.phase) {
+            case WALK -> PillarClimb.begin(npc, p);
+            case CLIMB -> {
+                if (PillarClimb.climb(npc, p, breaker, climber(r, t)) == PillarClimb.Climb.JUMP) {
+                    status("Building a lookout pillar on the " + side(r.current()) + " side of " + r.what() + " (" + p.height + " high)",
+                            "Building");
+                }
+            }
+            case WORK -> reconTop(r, t, p);
+            case DOWN -> {
+                switch (PillarClimb.stepDown(npc, p, breaker, climber(r, t))) {
+                    case GROUND -> groundReached(r);
+                    // a block it cannot break underfoot (someone put it there): left to the stuck recovery on its way
+                    case STUCK -> groundReached(r);
+                    default -> {
+                    }
+                }
+            }
+        }
+    }
+
+    /** A block of its pillar under its feet is gone (broken by someone). */
+    private boolean broken(Scaffold.Pillar p) {
+        for (int k = 0; k < p.height; k++) {
+            if (!Scaffold.isBlock(level().getBlockState(p.base.above(k)))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The scout's side of the climb ({@link PillarClimb.Climber}): the look once from the ground and after each block from
+     * {@link ReconRules#LOOK_FROM} up, which sets where it stops; nothing over its head is cleared (the column had open
+     * sky: the pillar ends under anything that came since); the step down's status line.
+     */
+    private PillarClimb.Climber climber(ReconTrip r, BaseState t) {
+        return new PillarClimb.Climber() {
+            @Override
+            public void look(Scaffold.Pillar q) {
+                if (ReconRules.looksAt(q.height)) {
+                    reconLook(r, t, q);
+                }
+            }
+
+            @Override
+            public void breaking(Scaffold.Pillar q) {
+                status("Taking its lookout pillar down (" + q.height + " high" + (r.why.isEmpty() ? "" : ", " + r.why) + ")", "Building");
+            }
+        };
+    }
+
+    /**
+     * One look from where it stands (a recon sample, {@link BaseWatch#reconSample}): the trip keeps its best; the first
+     * good one ({@link ReconRules#goodLook}) sets the pillar's stop {@link ReconRules#CLIMB_PAST} blocks higher, never past
+     * {@link ReconRules#PILLAR_MAX}; with no good look at the cap it stops there (the next side).
+     */
+    private void reconLook(ReconTrip r, BaseState t, Scaffold.Pillar q) {
+        ReconWatch.Sample s = BaseWatch.reconSample(level(), npc, t, now());
+        r.looked(s, q.height);
+        if (s != null && r.firstGood < 0 && ReconRules.goodLook(s.points(), s.middle())) {
+            r.firstGood = q.height;
+            q.goal = Math.max(q.height, ReconRules.stopHeight(q.height));
+        }
+        if (ReconRules.climb(q.height, r.firstGood) != ReconRules.Climb.UP) {
+            q.goal = Math.min(q.goal, Math.max(q.height, r.firstGood < 0 ? q.height : ReconRules.stopHeight(r.firstGood)));
+        }
+    }
+
+    /** On top (or on the ground at a lair): the climb is over, the watch, or a step of the way down. */
+    private void reconTop(ReconTrip r, BaseState t, Scaffold.Pillar p) {
+        if (!PillarClimb.settled(npc, p)) {
+            return; // still landing on the block below
+        }
+        switch (r.step) {
+            case CLIMB -> {
+                if (r.lookedAt != p.height && ReconRules.looksAt(p.height) && r.end == ReconTrip.End.NONE) {
+                    reconLook(r, t, p); // the look from the ground at a lair (no climb), or where a climb stopped short
+                }
+                if (r.end == ReconTrip.End.NONE && r.firstGood >= 0) {
+                    startWatch(r, t, p);
+                } else {
+                    startDown(r); // no good look under the cap: down, and the next side
+                }
+            }
+            case WATCH -> reconWatch(r, t, p);
+            case DOWN -> {
+                if (!PillarClimb.down(p)) {
+                    groundReached(r);
+                }
+            }
+        }
+    }
+
+    private void startWatch(ReconTrip r, BaseState t, Scaffold.Pillar p) {
+        r.step = ReconTrip.Step.WATCH;
+        r.watch = new ReconWatch();
+        r.watchStartedAt = now();
+        r.vantage = ReconRules.vantage(p.height, r.rise);
+        r.watch.add(BaseWatch.reconSample(level(), npc, t, now()));
+        com.factionclash.FactionClash.LOGGER.info("[{}] Scout {} watches {} from {} ({} of the yard's points in view at first)",
+                npc.getFaction().displayName, npc.npcName(), r.what(), r.vantage, r.watch.points());
+    }
+
+    /**
+     * The watch (recon.md 3.4 and 3.6): a look every {@link #SAMPLE_TICKS} for {@link ReconRules#WATCH_TICKS}, each
+     * soldier counted once by its face; enemies near or not, what it sees counts. After the watch it holds still while an
+     * enemy is close below ({@link ReconRules#perch}, at most {@link ReconRules#HOLD_MAX_TICKS}), then comes down.
+     */
+    private void reconWatch(ReconTrip r, BaseState t, Scaffold.Pillar p) {
+        long now = now(), end = r.watchStartedAt + ReconRules.WATCH_TICKS, last = r.watch.last();
+        if (last < end && (last < 0 || now - last >= SAMPLE_TICKS || now >= end)) {
+            r.watch.add(BaseWatch.reconSample(level(), npc, t, now));
+        }
+        switch (ReconRules.perch(now, r.watchStartedAt, ReconRules.WATCH_TICKS, enemyNear(), false, false)) {
+            case WATCH -> status("Watching " + r.what() + " from " + r.vantage + ": " + r.watch.soldiers().size()
+                    + (r.lair() ? " monsters" : " soldiers") + " counted, " + Math.round(Intel.coverage(r.watch.points()) * 100)
+                    + "% of the yard seen", "Watching");
+            case HOLD -> status("Holding still on its lookout pillar: an enemy close below", "Watching");
+            case DOWN, RETREAT -> {
+                r.end = ReconTrip.End.HOME;
+                startDown(r);
+            }
+        }
+    }
+
+    /**
+     * An enemy in sight within {@link ReconRules#THREAT_RANGE}: a soldier or hero of a faction at war with ours, or an
+     * enemy player ({@link CombatRules#isEnemyPlayer}). While one is that close the scout does not start down into it.
+     */
+    private boolean enemyNear() {
+        AABB box = npc.getBoundingBox().inflate(ReconRules.THREAT_RANGE);
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != npc)) {
+            boolean enemy = e instanceof FactionNpc o ? !o.isDisplayOnly() && o.fightsLikeSoldier()
+                    && com.factionclash.campaign.Diplomacy.hostile(npc.getFaction(), o.getFaction())
+                    : e instanceof ServerPlayer sp && CombatRules.isEnemyPlayer(npc, sp);
+            if (enemy && ReconRules.threat(npc.distanceTo(e), npc.hasLineOfSight(e))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** It starts down its pillar now (block by block, as it came up); not climbed yet, it is simply on the ground. */
+    private void startDown(ReconTrip r) {
+        r.step = ReconTrip.Step.DOWN;
+        breaker.reset(npc);
+        Scaffold.Pillar p = r.pillar;
+        if (p == null || PillarClimb.comeDown(npc, p, r.why.isEmpty() ? "done" : r.why)) {
+            groundReached(r);
+        }
+    }
+
+    /**
+     * Its pillar is down (every block back in its backpack): home with what it saw (in a retreat when it was hurt or its
+     * pillar broken), or on to the next side when it found no good look.
+     */
+    private void groundReached(ReconTrip r) {
+        r.pillar = null;
+        breaker.reset(npc);
+        if (r.end != ReconTrip.End.NONE) {
+            r.phase = ReconTrip.Phase.DONE;
+            if (r.end == ReconTrip.End.RETREAT) {
+                beginReturn(true, r.why);
+            } else {
+                beginReturn(false, "");
+            }
+            return;
+        }
+        nextSide(r);
+    }
+
+    /**
+     * At the station (recon.md 4): the order learns what it brought ({@link ReconOrders#atStation}: a good recon, a blind
+     * one, or none of the target, with the sides tried), and a recon, good or blind, is filed first among the faction's
+     * reports, apart from the trip's other observations and their cap. Told in chat as the design's lines.
+     */
+    private void deliverRecon(FactionState f) {
+        ReconTrip r = recon;
+        recon = null;
+        long now = now();
+        Report brought = r.brought(npc.npcName(), now);
+        ReconOrders.atStation(f, npc.getUUID(), brought);
+        String line;
+        if (brought != null && brought.recon != null) {
+            brought.deliveredAt = now;
+            brought.by = npc.npcName();
+            f.addReport(brought);
+            line = reconLine(r, brought.recon);
+        } else {
+            line = "Scout " + npc.npcName() + " returned from " + r.what() + " without a look inside ("
+                    + (r.tried == 0 ? "it did not get there" : "no vantage found") + ").";
+        }
+        data().setDirty();
+        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal(line));
+    }
+
+    /**
+     * "Scout Edrin Cole returned from watching the Stoneguard settlement: about 4 soldiers and Hinae Shirasuzu seen (40%
+     * of the yard in view, watched 60 s)", or "...: could not see inside the walls".
+     */
+    private String reconLine(ReconTrip r, Intel.Recon c) {
+        String head = "Scout " + npc.npcName() + " returned from watching " + r.what() + ": ";
+        if (!c.good()) {
+            return head + (r.lair() ? "could not see the lair's ground well enough" : "could not see inside the walls")
+                    + " (" + Math.round(c.coverage() * 100) + "% in view at best" + (c.watchTicks() > 0
+                    ? ", watched " + c.watchTicks() / 20 + " s before it had to come down" : "") + ").";
+        }
+        List<String> names = new ArrayList<>();
+        for (String id : c.heroes().keySet()) {
+            com.factionclash.hero.HeroEntry e = com.factionclash.hero.HeroRegistry.get(id);
+            names.add(e == null ? id : e.name());
+        }
+        String who = c.soldiers() == 0 && names.isEmpty() ? (r.lair() ? "no monsters" : "an empty yard")
+                : "about " + c.soldiers() + (r.lair() ? (c.soldiers() == 1 ? " monster" : " monsters") : (c.soldiers() == 1 ? " soldier" : " soldiers"))
+                + (names.isEmpty() ? "" : " and " + String.join(", ", names));
+        return head + who + " seen (" + Math.round(c.coverage() * 100) + "% of " + (r.lair() ? "its ground" : "the yard")
+                + " in view, watched " + c.watchTicks() / 20 + " s from " + c.vantage() + ").";
+    }
+
+    /** The trip as the station's info shows it. */
+    private String reconInfo() {
+        ReconTrip r = recon;
+        Side s = r.current();
+        String at = s == null ? "" : " (" + side(s) + " side)";
+        return switch (r.phase) {
+            case PREPARE, APPROACH -> "On its way to watch " + r.what() + at;
+            case FOOT -> "Walking to a vantage by " + r.what() + at + (r.foot == null ? "" : " at " + r.foot.toShortString());
+            case PILLAR -> switch (r.step) {
+                case CLIMB -> "Climbing a lookout pillar by " + r.what() + at;
+                case WATCH -> "Watching " + r.what() + " from " + r.vantage + at;
+                case DOWN -> "Taking its lookout pillar down" + at;
+            };
+            case DONE -> "Going home from " + r.what();
+        };
+    }
+
+    /** The recon trip it is on, or null (for the GameTests): its phase and step, the sides tried, the watch, its pillar. */
+    public String reconPhase() {
+        return recon == null ? "none" : recon.phase.name() + (recon.phase == ReconTrip.Phase.PILLAR ? "/" + recon.step.name() : "");
+    }
+
+    /** The report it carries home from its recon trip, apart from {@link #pending} (null: none, or no recon trip). */
+    public Report reconReport() {
+        return recon == null ? null : recon.brought(npc.npcName(), now());
+    }
+
+    /** The recon trip's pillar now (null: none), the first good height (-1: none) and the watch (null: not started). */
+    public Scaffold.Pillar reconPillar() {
+        return recon == null ? null : recon.pillar;
+    }
+
+    public int reconFirstGood() {
+        return recon == null ? -1 : recon.firstGood;
+    }
+
+    public ReconWatch reconWatch() {
+        return recon == null ? null : recon.watch;
+    }
+
+    /** The sides the recon trip tried so far (a mask of {@link Side} bits; 0 with no trip). */
+    public int reconTried() {
+        return recon == null ? 0 : recon.tried;
     }
 
     /** "village, 2 pillager outposts": the new places on the map by kind. */
@@ -991,6 +1867,9 @@ public class ScoutJob extends Job {
         tag.putBoolean("retreating", retreating);
         tag.putString("reason", retreatReason);
         tag.putInt("evasions", evasions);
+        if (recon != null) {
+            tag.put("recon", recon.save());
+        }
     }
 
     public String targetInfo() {
@@ -1040,9 +1919,13 @@ public class ScoutJob extends Job {
         retreating = tag.getBoolean("retreating");
         retreatReason = tag.getString("reason");
         evasions = tag.getInt("evasions");
+        recon = tag.contains("recon") ? ReconTrip.load(tag.getCompound("recon")) : null;
         endEncounter(); // an escape in progress is not resumed: the scout looks around afresh
         sightings.clear();
-        if (state == State.OUTBOUND && target == null) {
+        if (state == State.DIG) {
+            state = State.HOME; // (the dig is not saved: back to the storehouse, which looks again)
+        }
+        if (state == State.OUTBOUND && target == null && recon == null) {
             state = State.RETURN;
         }
         if (state == State.REPORT) {

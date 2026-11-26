@@ -71,7 +71,15 @@ public final class ReconVantage {
 
     /** The sides with a gate: a settlement's west and east ({@code BaseLayout}), every side of a lair (its walls have gaps). */
     public static int gates(BaseState target) {
-        return target.isSettlement() ? Side.WEST.bit() | Side.EAST.bit() : Side.ALL;
+        return gates(target.isSettlement());
+    }
+
+    /**
+     * The sides with a gate of a settlement ({@code settlement}) or a lair: what a scout knows from the kind of base its
+     * report names, before it sees the walls.
+     */
+    public static int gates(boolean settlement) {
+        return settlement ? Side.WEST.bit() | Side.EAST.bit() : Side.ALL;
     }
 
     /**
@@ -229,13 +237,15 @@ public final class ReconVantage {
     }
 
     /**
-     * A solid top to build a pillar on: a full face up, no fluid, and not a tree (leaves, a log), a block entity or a
-     * built block (planks, cobblestone, glass and the like: a roof).
+     * A solid top to build a pillar on: a full face up, no fluid, and not a tree (leaves, a log), a block entity, a built
+     * block (planks, cobblestone, glass and the like: a roof) or a barrier (no ground of the world: a GameTest's walls and
+     * ceiling, which a neighbouring test's ceiling can join to the land round a band).
      */
     private static boolean standsOn(ServerLevel level, BlockPos ground) {
         BlockState g = level.getBlockState(ground);
         return g.isFaceSturdy(level, ground, Direction.UP) && g.getFluidState().isEmpty() && !g.is(BlockTags.LEAVES)
-                && !g.is(BlockTags.LOGS) && !g.hasBlockEntity() && !WorkSafety.builtBlock(g);
+                && !g.is(BlockTags.LOGS) && !g.hasBlockEntity() && !WorkSafety.builtBlock(g)
+                && !g.is(net.minecraft.world.level.block.Blocks.BARRIER);
     }
 
     /** {@code cells} cells from {@code foot} up are open: air, or a plant that gives way; no fluid, no block entity. */

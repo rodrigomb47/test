@@ -509,7 +509,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1165 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1167 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
   a faction knows of an enemy base: a garrison nobody saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
   at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
@@ -577,7 +577,16 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 421 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 434 GameTests on a real headless server, including **focused reconnaissance** (a
+  scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
+  open ground at home when the storehouse has none; walks round
+  to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
+  good look, watches a minute counting each soldier once by its face, also across a save and reload midway, and not one
+  shut indoors; takes the pillar down with every block back in its pack and tells its report first at the station; a
+  ring too high for its 20-block cap on both gate sides comes home as "could not see inside" and the target backs off;
+  a patrol below the pillar keeps it up, a hit or a broken block brings it down, good only past 600 ticks; a lair is
+  watched from the ground through a gap; a dead scout's report is lost, its order lapses once it goes missing by its
+  recon trip's plan and a follow-up scout is wanted; a second scout for an order nobody took), **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers

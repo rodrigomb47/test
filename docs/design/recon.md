@@ -496,6 +496,45 @@ them all; the live check measures it (10.4). Three more things the review checke
   at night too (lair monsters wear a leather helmet when they spawned without one, but wild ones may wear one too, so a
   player could not tell them apart either). At night the count errs high, so the council waits rather than launches.
 
+### 3.8 As built (task R4b): the scout's trip
+
+`ScoutJob` runs the trip; `work/ReconTrip` holds its state and saves it with the job. Where this list and the sections
+above differ, the code is the truth:
+
+* **Taking the order.** A scout takes its base's open order (the urgent one first) at the station after it has told its
+  reports, or at the storehouse before it would set out exploring; an open order wins over exploring. Out on an
+  expedition it knows of none. It plans the trip from what its faction knows: the report's position and kind (a
+  settlement's gates west and east, a lair's on every side) and the kept report's `reconSidesTried`.
+* **Dirt.** Its keep rule holds 22 dirt (coarse dirt tops it up) through every unloading. Short of 22 at the storehouse
+  it takes dirt, then coarse dirt, from there, then digs the rest once a trip under `DirtDig`'s rules within its own
+  base's home area (`RollCall.homeRadius`, outside every walls box plus 4), round a point 12 blocks outside its walls
+  toward the target; it stops after 2 searches without ground or 2400 ticks (`ScoutJob.DIG_GIVE_UP_TICKS`) and sets
+  out with what it has. A lair needs no dirt.
+* **The way there and round.** To each side's axis just beyond the standoff, by the corners of the standoff's square
+  when it comes from another side (`ReconRules.round`: one corner for a side next to it, two for the opposite side,
+  round by the side facing home). Monsters and enemy soldiers on the ground are stepped round or retreated from as on
+  any trip; on the pillar it holds still.
+* **The column.** The side's columns are searched once at the side (`ReconVantage.columns`); it tries to walk to at most
+  6 of them (`ScoutJob.MAX_COLUMNS`), then gives the side up. A barrier block is no ground (a GameTest's walls).
+* **Climb and look.** A look is one recon sample: good when it has 8 points and the middle (`ReconRules.goodLook`). The
+  trip keeps its best single look (points, then the middle) and that look's time for a blind report. The climb's looks
+  are not part of the watch; the watch starts afresh at the stop height. A climb stopped short (no blocks left) watches
+  from there if it had a good look, else the side is done.
+* **The watch.** A sample every 40 ticks from the stop height, the last at 1200 ticks; the report is
+  `ReconWatch.recon` ("pillar N", "high ground", "ground"). A hit (any damage) or a block of its pillar gone ends it at
+  once: down block by block, then home in a retreat. An errand home (food, a tool) brings it down first too; so does
+  the trip's own bound (it turns home at its departure plus its plan less the walk home). Moved off its column it
+  retreats and the blocks stay (it cannot be knocked off: `onScaffold`).
+* **A lair** is watched from the ground on the gap's axis (no pillar); a monster that makes it step aside ends that
+  watch, its report by the 600-tick rule.
+* **What it brings home** (`ReconTrip.brought`): the watch's recon, good or cut short (blind), else a blind recon from
+  its best look ("could not see inside", that look's share, no count), else nothing. At the station the order learns of
+  it first (`ReconOrders.atStation`), then a recon is filed with `FactionState.addReport` before the trip's other
+  reports. A trip that found no vantage tells the order only the sides it tried; no report is filed for it.
+* **The needs.** "follow-up for missing scout NAME" when the base's only scout is missing in the roll call (for either
+  trip; `Whereabouts.scoutFollowUp`), and "a scout to watch the X settlement" for an order of the base untaken for
+  `RECON_WAIT` while it has one scout (with none, "no scout left").
+
 ## 4. The report and its way home
 
 **`Intel.Recon`** (pure record, replaces `Intel.Look`): `soldiers` (distinct), `power` (mean visible power of those

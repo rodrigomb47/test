@@ -174,7 +174,7 @@ public final class FCConfig {
         SCOUT_RANGE = b.comment("Maximum distance from home a scout explores.")
                 .defineInRange("scoutRange", 160, 32, 2048);
         SCOUT_OVERDUE_TICKS = b.comment("A scout's expedition: it turns home at half of this, and its faction expects it back within it (then",
-                        "campaign.missingGraceTicks); a lone scout away longer than this gets a follow-up scout.")
+                        "campaign.missingGraceTicks); a lone scout reported missing gets a follow-up scout.")
                 .defineInRange("scoutOverdueTicks", 24000, 1200, 240000);
         REPORT_STALE_TICKS = b.comment("Enemy sightings older than this are shown as stale.")
                 .defineInRange("reportStaleTicks", 24000, 1200, 480000);

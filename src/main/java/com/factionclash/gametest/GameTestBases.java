@@ -48,12 +48,22 @@ public final class GameTestBases {
      * chests of the older fakeBase at relative (2..5, 2, 2).
      */
     public static Handle register(GameTestHelper h, FactionType faction, int half, int radius, int timeoutTicks, BlockPos storageStand) {
+        return register(h, faction, half, radius, timeoutTicks, storageStand, new BlockPos(12, 2, 12));
+    }
+
+    /**
+     * As {@link #register(GameTestHelper, FactionType, int, int, int, BlockPos)}, centred at {@code center} (relative)
+     * instead: a test field with two bases (a recon scout's home in one corner and the base it watches) needs the home
+     * out of the middle.
+     */
+    public static Handle register(GameTestHelper h, FactionType faction, int half, int radius, int timeoutTicks, BlockPos storageStand,
+                                  BlockPos center) {
         CampaignData data = CampaignData.get(h.getLevel().getServer());
         BaseState b = new BaseState();
         b.id = FIRST_ID + NEXT.getAndIncrement();
         b.faction = faction;
         b.name = "Test base " + b.id;
-        b.center = h.absolutePos(new BlockPos(12, 2, 12));
+        b.center = h.absolutePos(center);
         b.points.put(BaseState.SPAWN, b.center);
         b.points.put(BaseState.STORAGE_STAND, h.absolutePos(storageStand));
         b.points.put(BaseState.MIN, b.center.offset(-(half + 1), -1, -(half + 1)));

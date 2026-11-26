@@ -80,6 +80,8 @@ public final class DirtDig {
         private final CampaignData data;
         private final BaseState own;
         private final Predicate<BlockPos> keepOut;
+        /** How far from its own base's centre it digs (-1: the woodcutter's forest radius). */
+        private final int radius;
         private final Map<Long, LevelChunk> chunks = new HashMap<>();
         private final Map<Long, DirtPatch.Column> columns = new HashMap<>();
         private final Map<Long, Boolean> woody = new HashMap<>(), allowed = new HashMap<>();
@@ -87,10 +89,15 @@ public final class DirtDig {
         private static final DirtPatch.Column UNSEEN = new DirtPatch.Column(Integer.MIN_VALUE, false, false);
 
         View(ServerLevel level, CampaignData data, BaseState own, Predicate<BlockPos> keepOut) {
+            this(level, data, own, keepOut, -1);
+        }
+
+        View(ServerLevel level, CampaignData data, BaseState own, Predicate<BlockPos> keepOut, int radius) {
             this.level = level;
             this.data = data;
             this.own = own;
             this.keepOut = keepOut;
+            this.radius = radius;
         }
 
         private LevelChunk chunk(int x, int z) {
@@ -187,7 +194,7 @@ public final class DirtDig {
                 return false;
             }
             long dx = x - own.center.getX(), dz = z - own.center.getZ();
-            long r = BaseZones.workRadius(own, FCConfig.FOREST_RADIUS.get());
+            long r = radius >= 0 ? radius : BaseZones.workRadius(own, FCConfig.FOREST_RADIUS.get());
             if (dx * dx + dz * dz > r * r || !BaseZones.outsideAllWalls(data, at, WALLS_MARGIN)) {
                 return false;
             }
@@ -263,9 +270,17 @@ public final class DirtDig {
         private List<int[]> best = List.of();
 
         Search(ServerLevel level, CampaignData data, BaseState own, BlockPos tree, int need, Predicate<BlockPos> keepOut) {
-            this.seeds = DirtPatch.seeds(tree.getX(), tree.getZ(), DirtPatch.SEARCH_RADIUS, DirtPatch.SEED_SPACING);
+            this(level, data, own, tree, need, keepOut, -1);
+        }
+
+        /**
+         * A search round {@code around}, digging no farther than {@code radius} from the own base's centre (-1: the
+         * woodcutter's forest radius). A recon scout digs within its base's home area ({@code docs/design/recon.md} 3.5).
+         */
+        Search(ServerLevel level, CampaignData data, BaseState own, BlockPos around, int need, Predicate<BlockPos> keepOut, int radius) {
+            this.seeds = DirtPatch.seeds(around.getX(), around.getZ(), DirtPatch.SEARCH_RADIUS, DirtPatch.SEED_SPACING);
             this.need = need;
-            this.view = new View(level, data, own, keepOut);
+            this.view = new View(level, data, own, keepOut, radius);
         }
 
         /** Looks at the next few seeds: null while the search goes on, else the cells to dig (empty: no patch at all). */
@@ -301,6 +316,12 @@ public final class DirtDig {
      */
     static boolean mayDigNow(ServerLevel level, CampaignData data, BaseState own, Set<Long> patch, BlockPos cell,
                              Predicate<BlockPos> keepOut) {
-        return DirtPatch.mayDigNow(new View(level, data, own, keepOut), patch, cell.getX(), cell.getY(), cell.getZ());
+        return mayDigNow(level, data, own, patch, cell, keepOut, -1);
+    }
+
+    /** {@link #mayDigNow(ServerLevel, CampaignData, BaseState, Set, BlockPos, Predicate)} within {@code radius} (-1: the forest radius). */
+    static boolean mayDigNow(ServerLevel level, CampaignData data, BaseState own, Set<Long> patch, BlockPos cell,
+                             Predicate<BlockPos> keepOut, int radius) {
+        return DirtPatch.mayDigNow(new View(level, data, own, keepOut, radius), patch, cell.getX(), cell.getY(), cell.getZ());
     }
 }

@@ -127,12 +127,30 @@ public final class FactionDirector {
                 out.add(new Need(r, "no " + r.displayName.toLowerCase() + " left"));
             }
         }
+        // a follow-up scout when the base's only scout is missing (the roll call's view, docs/design/recon.md 2.5: for an
+        // exploring trip and a recon trip alike, each by its own plan; before, the departure plus scoutOverdueTicks)
+        List<com.factionclash.logic.campaign.Whereabouts.State> scoutStates = new ArrayList<>();
+        NpcRecord missingScout = null;
+        for (NpcRecord r : f.roster.values()) {
+            if (r.baseId == b.id && r.role == NpcRole.SCOUT) {
+                scoutStates.add(r.where);
+                if (r.where == com.factionclash.logic.campaign.Whereabouts.State.MISSING) {
+                    missingScout = r;
+                }
+            }
+        }
+        if (com.factionclash.logic.campaign.Whereabouts.scoutFollowUp(scoutStates) && missingScout != null) {
+            out.add(new Need(NpcRole.SCOUT, "follow-up for missing scout " + missingScout.name));
+        }
+        // a second scout for watching (recon.md 2.4, the owner agreed on 2026-11-25): a recon order of this base that no
+        // scout took within RECON_WAIT, while the base has fewer than RECON_MAX_SCOUTS (with none, "no scout left" above)
         int scouts = living(f, b, NpcRole.SCOUT);
-        if (scouts == 1) {
-            for (NpcRecord r : f.roster.values()) {
-                if (r.alive && r.baseId == b.id && r.role == NpcRole.SCOUT && r.departedAt > 0
-                        && t - r.departedAt > FCConfig.SCOUT_OVERDUE_TICKS.get()) {
-                    out.add(new Need(NpcRole.SCOUT, "follow-up for overdue scout " + r.name));
+        if (scouts > 0) {
+            for (ReconOrder o : f.reconOrders) {
+                if (o.homeBase == b.id && com.factionclash.logic.campaign.ReconRules.secondScoutNeeded(o.taken(), o.orderedAt, t, scouts)) {
+                    out.add(new Need(NpcRole.SCOUT, "a scout to watch the " + (o.subject == null ? "enemy" : o.subject.displayName)
+                            + (o.kind == Report.Kind.LAIR ? " lair" : " settlement")));
+                    break;
                 }
             }
         }

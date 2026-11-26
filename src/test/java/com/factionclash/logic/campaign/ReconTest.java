@@ -582,4 +582,53 @@ class ReconTest {
         corners.add(sample(0, Map.of(), Map.of(), start + 1200));
         assertFalse(corners.recon("pillar 12", "Edrin Cole").good(), "24 of 25 without the middle: blind");
     }
+
+    /**
+     * The walk round (task R4b): from where the scout stands to the side it tries next, by the corners of the square
+     * {@code ring} out, never across the base: none on that side already, the corner between two sides next to each
+     * other, two corners for the opposite side, round by the side facing home (north or east on a tie).
+     */
+    @Test
+    void theWalkRoundGoesByTheCornersOutsideTheStandoff() {
+        assertEquals(Side.WEST, ReconRules.region(-13, 0));
+        assertEquals(Side.NORTH, ReconRules.region(-12, -17));
+        assertEquals(Side.EAST, ReconRules.region(5, 5), "a tie goes to east or west");
+        assertEquals(Side.WEST, ReconRules.region(-5, 5));
+        assertEquals(Side.SOUTH, ReconRules.region(1, 9));
+        assertEquals(List.of(), ReconRules.round(-200, 10, Side.WEST, 63, -250, 0), "already on that side");
+        assertEquals(List.of(new ReconRules.Point(-15, -15)), ReconRules.round(-12, -17, Side.WEST, 15, -10, -15),
+                "from the north to the west: the north-west corner");
+        assertEquals(List.of(new ReconRules.Point(15, 15)), ReconRules.round(3, 40, Side.EAST, 15, 0, 100),
+                "from the south to the east: the south-east corner");
+        // opposite: round by the side facing home
+        assertEquals(List.of(new ReconRules.Point(-15, -15), new ReconRules.Point(15, -15)),
+                ReconRules.round(-13, 0, Side.EAST, 15, -10, -15), "west to east with home to the north: by the north");
+        assertEquals(List.of(new ReconRules.Point(-15, 15), new ReconRules.Point(15, 15)),
+                ReconRules.round(-13, 0, Side.EAST, 15, -10, 40), "west to east with home to the south: by the south");
+        assertEquals(List.of(new ReconRules.Point(-15, -15), new ReconRules.Point(15, -15)),
+                ReconRules.round(-13, 0, Side.EAST, 15, -100, 0), "a tie: by the north");
+        assertEquals(List.of(new ReconRules.Point(15, -15), new ReconRules.Point(15, 15)),
+                ReconRules.round(0, -20, Side.SOUTH, 15, 0, 0), "north to south on a tie: by the east");
+        // every corner lies on the ring: never inside the standoff
+        for (Side from : Side.values()) {
+            for (Side to : Side.values()) {
+                for (ReconRules.Point p : ReconRules.round(from.dx * 20, from.dz * 20, to, 63, 7, -3)) {
+                    assertEquals(63, Math.max(Math.abs(p.dx()), Math.abs(p.dz())), from + " to " + to + ": " + p);
+                }
+            }
+        }
+    }
+
+    /** One look good enough to watch from (8 points and the middle), and the vantage a watch is kept from. */
+    @Test
+    void aLookIsGoodEnoughToWatchFromWithEightPointsAndTheMiddle() {
+        assertTrue(ReconRules.goodLook(8, true));
+        assertFalse(ReconRules.goodLook(7, true));
+        assertFalse(ReconRules.goodLook(25, false));
+        assertEquals("pillar 12", ReconRules.vantage(12, 0));
+        assertEquals("pillar 3", ReconRules.vantage(3, 4));
+        assertEquals("high ground", ReconRules.vantage(0, 2));
+        assertEquals("ground", ReconRules.vantage(0, 0));
+        assertEquals("ground", ReconRules.vantage(0, -3));
+    }
 }

@@ -748,9 +748,23 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
 ## War (config `war`)
 * Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks
   (`scoutOverdueTicks`: it turns home at half of it; its faction expects it back by its departure plus this, then
-  `campaign.missingGraceTicks`; a lone scout away longer gets a follow-up scout).
+  `campaign.missingGraceTicks`; a recon trip has its own plan, `Whereabouts.reconPlan`). A base whose only scout the
+  roll call reports missing gets a follow-up scout (by either trip's plan; before focused reconnaissance, by its
+  departure plus `scoutOverdueTicks`).
   When every sector in range is explored and no living rival settlement is known, the faction's range grows by 64
   (saved, up to the far edge of the map); otherwise the explored sectors are forgotten and scouted again.
+* A scout's recon trip (PROPOSED, `docs/design/recon.md` 3.5 and 3.8, `ScoutJob`, `ReconRules`): the order taken at home
+  (the station or the storehouse; the urgent one first); 22 dirt kept through every unloading (`ReconRules.BLOCKS`,
+  coarse dirt tops it up), fetched from the storehouse, else dug once a trip within the base's home area (2 searches
+  at most, 2400 ticks at most: `ScoutJob.DIG_GIVE_UP_TICKS`, `MAX_DIG_SEARCHES`), a lair needing none; at most 2 sides
+  a trip (`ReconRules.SIDES`), round by the standoff's corners; at most 6 columns of a side tried
+  (`ScoutJob.MAX_COLUMNS`); a look from the ground and after each block from 4 up, good with 8 of the 25 points and the
+  middle; it stops 2 blocks above the first good look (`CLIMB_PAST`), at 20 at most (`PILLAR_MAX`); a watch of 1200
+  ticks, a sample every 40 (`ScoutJob.SAMPLE_TICKS`), good past 600 when cut short; it holds still on top while an enemy
+  soldier, hero or player is in sight within 16 (`THREAT_RANGE`), for at most 1200 ticks after the watch
+  (`HOLD_MAX_TICKS`); a hit or a broken pillar block brings it down at once. A lair: the gap axes, from the ground.
+  The trip's plan is `Whereabouts.reconPlan`; it turns home in time to be back by it. A second scout is wanted for an
+  order untaken for 6000 ticks while the base has one (`WAIT_TICKS`, `MAX_SCOUTS` 2).
 * Scouts and structures (PROPOSED): a village (village tag), pillager outpost or woodland mansion is reported once
   per trip when its built bounds (its pieces) come within 48 blocks (loaded chunks within 3 of the scout only);
   villages at their town centre, others at the middle of their bounds. Reports of one structure merge within 64

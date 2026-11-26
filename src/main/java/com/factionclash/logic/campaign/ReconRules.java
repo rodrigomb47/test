@@ -456,6 +456,49 @@ public final class ReconRules {
         return out;
     }
 
+    // ---- The walk round (recon.md 3.5, step 2; task R4b) ----
+
+    /** A point {@code dx}, {@code dz} from a base's centre. */
+    public record Point(int dx, int dz) {
+    }
+
+    /** The side of a base a point {@code dx}, {@code dz} from its centre lies on: the axis it is farther along (ties: east or west). */
+    public static Side region(int dx, int dz) {
+        if (Math.abs(dx) >= Math.abs(dz)) {
+            return dx >= 0 ? Side.EAST : Side.WEST;
+        }
+        return dz >= 0 ? Side.SOUTH : Side.NORTH;
+    }
+
+    /** The corner between two sides next to each other, {@code ring} out on both axes. */
+    static Point corner(Side a, Side b, int ring) {
+        return new Point((a.dx + b.dx) * ring, (a.dz + b.dz) * ring);
+    }
+
+    /**
+     * The corners a scout walks by, from where it stands ({@code fromDx}, {@code fromDz} from the target's centre) to side
+     * {@code to}, so that it goes round the base outside the square of half {@code ring} and never across its middle (its
+     * alarm box lies well inside the standoff, recon.md 3.5): none when it is on that side already, the corner between
+     * the two for a side next to its own, and two corners for the opposite side, round by the side facing home
+     * ({@code toHomeX}, {@code toHomeZ} point from the target to our base; the way home leads that way anyway), north or
+     * east on a tie.
+     */
+    public static List<Point> round(int fromDx, int fromDz, Side to, int ring, int toHomeX, int toHomeZ) {
+        Side from = region(fromDx, fromDz);
+        if (from == to) {
+            return List.of();
+        }
+        boolean opposite = from.dx == -to.dx && from.dz == -to.dz;
+        if (!opposite) {
+            return List.of(corner(from, to, ring));
+        }
+        // the two sides beside both: the one facing home more (north or east on a tie)
+        Side a = from.dx == 0 ? Side.EAST : Side.NORTH, b = from.dx == 0 ? Side.WEST : Side.SOUTH;
+        long da = (long) a.dx * toHomeX + (long) a.dz * toHomeZ, db = (long) b.dx * toHomeX + (long) b.dz * toHomeZ;
+        Side via = db > da ? b : a;
+        return List.of(corner(from, via, ring), corner(via, to, ring));
+    }
+
     /** What the scout does after a look from its pillar of {@code height} blocks. */
     public enum Climb {
         /** One more block. */
@@ -464,6 +507,19 @@ public final class ReconRules {
         WATCH,
         /** No good look under the cap: take the pillar down and walk round to the next side. */
         NEXT_SIDE
+    }
+
+    /**
+     * Whether one look is good enough to watch from (recon.md 3.4): at least {@link #MIN_POINTS} of the yard's points and its
+     * middle in view. The watch from there must still last {@link #MIN_WATCH_TICKS} for its report to be good.
+     */
+    public static boolean goodLook(int points, boolean middle) {
+        return points >= MIN_POINTS && middle;
+    }
+
+    /** The vantage a watch is kept from, for its report: "pillar 12", "high ground" (a hill, no pillar), "ground". */
+    public static String vantage(int pillar, int rise) {
+        return pillar > 0 ? "pillar " + pillar : rise > 0 ? "high ground" : "ground";
     }
 
     /** Whether the scout looks at this height: once from the ground, then after each block from {@link #LOOK_FROM} up. */
