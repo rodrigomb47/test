@@ -735,6 +735,19 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
 
+**Focused reconnaissance on a real server** (fresh campaign, same seed, eight days, Natsuho with Ember Legion and Hinae
+with Stoneguard, no operator command; `docs/design/recon.md` 18, screenshots in `docs/screenshots/recon/`):
+* Every one of the six raids rested on a scout's focused watch, and each settlement raid's count equalled the soldiers in
+  the yard at its watch's end ("Launching a raid with 8 soldiers on the Stoneguard settlement ..., against about 3
+  defenders and Hinae Shirasuzu (scout Ulric Oakes, day 6) and a reserve of 2"). That raid found Stoneguard's own army
+  dead at Ember's walls and ended the faction on day 6.1; two raids failed on what changed after the watch (four
+  recruits at Grove, and Natsuho home from fishing at Ember).
+* 18 watches from dirt pillars 11 to 20 high (and from the ground at a lair), all good, none of the watchers hurt or
+  lost; 6 of 24 orders came home blind, mostly at lairs on the coast (water where a pillar would stand). Only the Grove
+  Covenant found amethyst and forged a spyglass (day 3.7); it watched from the same columns as the others.
+* Seen there and left open: a new scout whose dirt search lay in its own faction's woodland set out with no dirt and
+  could not climb (recon.md 18).
+
 **Deaths far from home: the roll call on a real server** (fresh campaign, same seed, seven days, Natsuho with Ember
 Legion and Hinae with Stoneguard; `docs/design/missing_npcs.md` 14, screenshots in `docs/screenshots/rollcall/`):
 * A farmer killed at home was known at once ("Pell Grey (Farmer) was killed") and replaced. Scouts killed far away

@@ -4,7 +4,7 @@ Design, 2026-11-25, reviewed the same day (section 13 lists what the review chan
 owner's answers to its questions (section 14 lists what they changed), and that update reviewed (section 15); the
 owner's answers of 2026-11-26 are section 16. Built on 2026-11-26 in tasks R1 to R7, R9 to R12 (section 11; the
 as-built notes are 3.8, 5.7, 5.8, 5.9 and 5.10, and where they and the design differ, the code is the truth); two
-reviews of the build found eight faults, fixed the same day (section 17); the live check, R8, is next. It replaces the estimate model of `docs/design/knowledge.md` section 1 (the prior, the losses seen
+reviews of the build found eight faults, fixed the same day (section 17); the live check, R8, ran on 2026-11-26 (section 18). It replaces the estimate model of `docs/design/knowledge.md` section 1 (the prior, the losses seen
 at home, every passing look).
 
 ## 0. The owner's decisions, and the design in brief
@@ -1101,7 +1101,8 @@ this list and the sections above differ, the code is the truth:
   (the reach, the samples' gate, the order, the miner, holding, putting away, taking, keeping, both tags' saves, the
   recipe, the blacksmith's two rules, the lair, a tag the trip did not earn, and four pure rules) were each caught.
 * **Not checked live.** The live check (R8, after R6 and R7) measures how often the eyes' band is blinded and how often
-  a faction has a spyglass at all (it needs a geode met by a branch tunnel, and copper).
+  a faction has a spyglass at all (it needs a geode met by a branch tunnel, and copper). Measured in section 18: one
+  faction of four made one (day 3.65), and its deeper band found no column the eyes lacked.
 
 ### 5.10 As built (tasks R6 and R7): the operators' tools and the docs
 
@@ -1542,7 +1543,7 @@ phase (the owner deferred it until heroes are playable): no task rebuilds it or 
 | **R5** | L | The switch and every deletion: `raids()` judges only usable recons, on the plan of 5.5 from R10 with an empty sightings ledger (the count, its share, the watch's heroes): the target by its plan, inside the interval only among the struck factions' settlements, two thirds of it at the interval, the counter-attack's 3 to 2 only after a strike, on the urgent recon and its own plan (6); the waiting and launch lines of 5.4 (all but the sightings' form); `watchTarget` and `deliverRaidIntel` ruins only; `forceRaid`'s line; delete the prior, the drift, the losses, `better`, `Intel.Look`, the passing look's counts and heroes, `enemyFell`'s loss counting, the old save tags (ignored on load), the dump's and `BaseInfo`'s loss text; rewrite the old tests (`IntelTest`, `KnowledgeGameTests`, `MissingNpcGameTests` line 508, `HeroGameTests` line 263, the hero raid draft) and recalibrate every council test that launches on a count for the reserve (7); `KnowledgeIsolationTest` (the council reads only `Report.recon`). Large, and not split: a deletion and the tests it breaks must land together for both suites to pass | GameTests 10.2 items 3 (the council side), 4, 5, 6, 7, 10, 13 (with the rewritten ten-soldier test and `aCounterAttackIsNotBlockedByAWeakerBystander`), 16 (its first half: no sighting); unit 10.1 item 15 (all but the sightings' form); every sabotage of 10.3 that needs no sighting |
 | **R6** (built, 5.10) | S | Operators and tools: `/fc admin dump` (recon, orders, `struckBy`), `BaseInfo` station lines, `sim.py`, `rolltrack.py` (orders, watches, holds, truth at the watch's end), `warcheck.py` (basis "recon", the recon against the truth, gaps, scouts attacked; the plan's reserve and what it rested on beside the target's soldiers outside its walls and heroes away at the launch; sightings by source) | the tools run on a short campaign's logs |
 | **R7** (built, 5.10) | S | Docs: `knowledge.md` (section 9's list), `missing_npcs.md`, `MOBILITY_AND_WORK.md` 5.2, README, BALANCE.md, HANDOFF, ROADMAP (status, and the Phase 6 and Phase 3 rows of section 9). The download jar is not rebuilt in this phase | none |
-| **R8** | L | Campaign verification (10.4) on a fresh world, the same seed and setup as the last two; report the replay's prediction (section 5.4) against what happened, the plan's terms against the truth, and the blind bands that decide R12 | the live checks of 10.4 |
+| **R8** (done, 18) | L | Campaign verification (10.4) on a fresh world, the same seed and setup as the last two; report the replay's prediction (section 5.4) against what happened, the plan's terms against the truth, and the blind bands that decide R12 | the live checks of 10.4 |
 | **R9** | S | `HeroRaid.homeHeroKnown` from the launching recon's heroes (instead of a hero within 64 blocks) | a hero raid GameTest with and without a hero in the recon |
 | **R10** | S | Pure rules, additive: `logic/campaign/Reserve` (the plan of 5.5: the larger of the share and the seen-away, faces counted once, the heroes known, the backbone, the lair's and the counter-attack's share of 0, the line's reason text; with an empty ledger the count, its share and the watch's heroes) and the pure sightings ledger (newest per UUID, fallen, age, the cap, the attribution). Nothing reads it yet | unit 10.1 items 10 to 13 |
 | **R11** | M | Sightings, after the switch (only if the owner keeps them, question 1): `FactionState.sightings`, saved; written at home (the alarm's noticed intruders; enemies in the home area a member NPC or hero within 32 sees), by scouts on any trip (carried with their news, told at the station, lost at a death) and by the recon watch (the target's soldiers outside its box, and every hero it saw); falls marked through the hooks of 5.5 (`enemyFell` at home, a scout's carried fall, and an enemy hero's fall filed from `HeroManager`'s death path for every hostile faction whose members saw it); the council's plan reads the ledger (seen-away, known heroes, the sightings' line form); `/fc admin dump` lists them; `KnowledgeIsolationTest` also allows `FactionState.sightings` | GameTests 10.2 items 14, 15, 16 (its second half), 17, 18; unit 10.1 item 14 and 15's sightings form; a save and reload of sightings; a home sighting and a fall seen at home; an enemy hero's fall seen by a third faction's member is filed for that faction; the reserve's sabotages of 10.3 |
@@ -1821,3 +1822,129 @@ with its backup.
 | 12 | a truth read moved into a helper the council calls (`defencePower` inside `councilLine`) | the same test (an enemy truth in a council helper, unmarked) |
 | 13 | a sighting filed with no line of sight (`EnemySightings`' `hasLineOfSight` check dropped) | `KnowledgeIsolationTest.theSightingsLedgerHoldsOnlyWhatOurPeopleSaw` |
 
+
+## 18. The live check (R8, 2026-11-26)
+
+The campaign check of 10.4 on a dedicated server, with no operator command after the start: no recruits, no raids, no
+planted spyglass. (The task named this section 16; 16 and 17 were taken by the owner's answers and the review, so it
+is 18.) Where this section and the sections above differ, this section reports what the code did.
+
+**Setup.** A new server folder (`/home/user/fcserver_recon`; the R6 headless run's folder was set aside), the mod jar
+built from a clean export of commit 71c1e0c (so another workflow's uncommitted hero art stayed out of it), seed 20261107,
+`fc start 256`, Natsuho Komezaki given to the Ember Legion and Hinae Shirasuzu to Stoneguard, the generated config equal
+to `docs/factionclash-common.toml`. `tools/days.sh` ran 8 sprints to day 8.08 (tick 193844); `tools/rolltrack.py` polled
+every 8 s (163 polls) in a restart loop, beside a side tracker that read the dump file for the copper, amethyst and
+spyglasses in each storehouse and every scout's hand; `tools/warcheck.py` read the record to tick 193844. The server
+was stopped cleanly (`save-all flush`, `stop`). The analysis scripts (the order and trip table from the `FC_RECON`
+lines, a world-copy reader for terrain and blocks) stayed in the round's scratchpad; every number they gave is here.
+Screenshots were taken afterwards in a labelled continuation (`docs/screenshots/recon/`, below), outside the measured
+window.
+
+**The launches: every one rested on a focused recon.** Six launches, each on a usable recon (basis "recon"), none
+without one. The plan beside the truth in the target's walls at the launch poll:
+
+| day | launcher → target | recon (age at the plan) | plan: count + reserve, heroes | truth in the walls at the launch | party | outcome |
+|---|---|---|---|---|---|---|
+| 4.09 | Stoneguard → Hollow lair (272, -48) | day 4.02, ground, 40% (1081 ticks) | 6 monsters + 0 (lair) | 9 monsters on the lair's roll | 4 | won, 0 of 4 dead |
+| 5.08 | Ember → Grove | day 4.56, pillar 11, 32% (11974 ticks: 26 inside the half day) | 5 + 3 (half again) | 9 soldiers: Grove hired 4 between the watch and the launch | 6 | 6 of 6 dead |
+| 5.61 | Stoneguard → Ember | day 5.43, pillar 13, 32% (3431) | 3 + 2 | 3 soldiers and Natsuho | 6 | 6 of 6 dead; Natsuho fell once |
+| 6.00 | Grove → Stoneguard | day 5.90, pillar 20, spyglass, 36% (2221) | 3 + 2 and Hinae | 3 soldiers and Hinae (its own raid party had died at Ember) | 8 | won, 0 dead: **Stoneguard eliminated at 6.117** |
+| 6.40 | Tide → Stoneguard | day 6.28, pillar 18, 32% (2304) | an empty yard, nothing seen away | ruins | 8 | "found in ruins", 0 dead |
+| 6.72 | Ember → Stoneguard | day 6.64, pillar 20, 32% (1629) | an empty yard | ruins | 8 | "found in ruins", 0 dead |
+
+Every settlement launch's count equalled the soldiers in the box at its watch's end (the lair's 6 against 7); what
+changed between the watch and the launch was the target (four recruits at Grove; Natsuho back from fishing 74 blocks out, where she was at three of Ember's four
+watches: 4.21, 5.43 and 7.12). The seen-away term never raised a plan (0 launches); the sightings filed were 20 at home,
+1 in the field and 4 by watches, 12 of them marked fallen. Both launches on Stoneguard's ruins are 8's known case: the
+fall was unseen, so a recon of the ruins watched an empty yard and the party found the ruins.
+
+**The war rate.** 6 launches in 8.03 days: 2 by day 5.18 and 6 by day 7.25, against the knowledge campaigns' 6 by day
+5.18 (the first) and 5 in 7.25 days (the second). The replay's 35 to 50% (5.4) did not hold as a count: 6 is 120% of
+the second campaign's 5. By kind, 1 was a lair, 2 were Stoneguard's ruins and 3 struck standing settlements (60% of
+the second campaign's 5, at the top of the prediction). The first launch came at day 4.09 (the knowledge campaigns' at
+3.1 and 3.9): no faction had six soldiers at home before day 3.5, so no council placed an order before then. Of the three
+raids on standing settlements one won (the emptied Stoneguard) and two lost every raider. No counter-attack: the one
+urgent order (Ember on Stoneguard after Stoneguard's strike at 5.6 to 5.8) waited for Ember to have a party again,
+was placed at 6.38, and its recon (6.64) found the ruins; Ember launched at its interval. Each faction's longest gap
+was its wait for its first launch: Tide 6.35 days (no party 61 polls, its plan larger than its party 29, a stale
+recon 22, never watched 8), Grove 5.96, Ember 5.04, Stoneguard 4.04.
+
+**The orders and the trips.** 24 orders (1 urgent), all taken, a median 34 s from the order to a scout taking it
+(longest 395 s); 18 ended DONE, 4 BLIND, 2 EMPTY_HANDED, 0 LOST, none dropped or reopened. From taking an order to its
+end 0.12 to 0.30 day (one 0.87: Ember's council settled it only after its raid came home); from leaving home to the
+watch's end 0.08 to 0.16 day. 30 sides were tried: 18 watches, all good, all a full minute (`why` "done"), 32 to 40%
+of the yard (15 at 30-39%, 3 at 40%), from pillars of 11 (Grove's west side), 13 and 20 (Ember's east), 18 and 20
+(Stoneguard's west) and from the ground at a lair; 12 sides given up (6 "no good look", 6 "no vantage"). The recon against the truth
+in the box at the last sample: 14 of 16 settlement recons exact, one 1 under (5 of 6), one 6 over (8 faces counted
+while Stoneguard's raid party left during the watch; 2 left in the box), mean -0.31; lairs 6 of 7 monsters in the box
+and 0 of 0. Hinae was seen in all seven watches of Stoneguard she was home for, Natsuho in the one of four she was home
+for. No scout was hurt on a pillar (no attack by a guard of the yard, none by a passer-by), no hold, no pillar block
+left; no scout was lost on a recon. Five scouts died on exploring trips (Stoneguard's Kael Grey, Grove's Ines Oakes and
+Elsa Pike, Ember's Tamsin Vale and Tamsin Pike), each reported missing, then presumed dead, each truly dead; four were
+replaced at once ("follow-up for missing scout"; Grove, with Ulric Oakes at home, hired none for Elsa Pike), and Grove hired a second scout for an order nobody took ("a scout to watch the
+Ember Legion settlement", day 4.86).
+
+**Blind recons, and why.** 6 of 24 orders came home blind or with nothing on every side tried (25%, over 10.4's one in
+five): 4 of the 6 lair orders and 2 of the 18 settlement orders (11%). The causes, from the `FC_RECON` lines and the
+world copy at day 8 (the terrain then, not at the trip; trees cut since are not counted):
+
+| order | sides | cause |
+|---|---|---|
+| Tide on the lair at 272, -48 (3.55) | north: no good look from the ground; west: no vantage | a hill over the sight line (ground 2 blocks above it); the west band is open water |
+| Ember on the lair at 208, 240 (4.60, 6.38, 7.86) | east: no good look from the ground; north, south, west: no vantage | a hill (the ground just at the line); every other band is water |
+| Grove on Ember (4.58) | east and west: no good look, best 0 points **at height 0** | **no dirt**: the scout set out with none and could not climb a block (below) |
+| Grove on Ember (5.37) | north and south: no good look, climbed to the cap of 20, best 6 points at 16 | north: the walls and buildings over the line to the middle (the design's "needs 21 at 72"); south: leaves 6 blocks over the line |
+
+Every "no vantage" side in the run (Stoneguard's east band twice, the lairs' bands) was water: 300 of 300 columns of
+Stoneguard's east band, 242 to 247 of each lair band. Hills blinded only lair ground looks; trees one side, once.
+
+**The dirtless trip (a fault, reported, not fixed here).** Grove recruited Ulric Oakes at 4.861 as "a scout to watch the
+Ember Legion settlement"; he took the order at tick 116090 and set out 19 ticks later with 4 items and no dirt.
+`ScoutJob.prepareRecon` found no dirt in the storehouse (Grove's 11 were gone by 4.67), so it dug: one
+`DirtDig.Search` round a point 12 blocks outside the walls toward the target (493, 151, west of Grove), which found no
+patch, and `dig` ended at the first empty search and sent him out with what he had. On both sides his climb stopped at
+height 0 (`PillarClimb` stops with no blocks), the trip came home blind, the order counted a failure and both gate
+sides were filed as tried, so the next trip (5.37) took the north and south sides, blind at the cap; Grove had no usable
+recon of Ember from its first order (4.58) to 7.19. His next dig, toward Stoneguard (north-west, 5.00 to 5.05, the
+storehouse empty), gave him 22. The likely cause: the seed toward Ember sits in Grove's own woodland (its tree plot's
+origin is 496, 64, 144; on day 8 its 64 planted saplings span x 479 to 577, z 95 to 189), where the dig rules keep 3
+blocks round every planted sapling and stump, 1 round every grove-lattice point of the belt, the road strip and 2 round
+any wood; the column rules alone pass 280 columns there on day 8, so the woodland's reservations did the vetoing. Not
+fully confirmed (day 8's world, not 4.86's). Two things for the owner and the next task: section 3.8 says the scout
+"stops after 2 searches without ground", but the code stops after the first empty one (a second search round another
+point, or a seed outside the faction's own belt, would have found ground); and whether a side the scout could not climb
+at all should count as tried and as a failure is a rule question, not a silent fix. No code was changed: a GameTest for
+it would need a home area larger than `mobility_field` (the search reaches 24 blocks from its seed), onto the flat
+world outside the template.
+
+**The spyglass (R12).** All four factions smelted copper ingots by day 0.74 to 0.96; only Grove found amethyst: its
+first shards and its first spyglass appeared in its storehouse at the same poll, day 3.65. Its scout
+carried it on every trip from 4.86: 8 sides, 4 good watches through it (sight 96), all from columns the eyes' scouts
+also used (Stoneguard's west foot at 339, 63, 15; Ember's east at 429, 72, 176). It found no column or hill the 72-block
+look could not: the good sides all had a column at the standoff (61), and the blind ones were water (no column within
+96 either), the cap, or no dirt. Blind with it: 2 of Grove's 6 orders (both on Ember, for those two reasons); with the
+eyes: 4 of 18, all lairs (a lair is watched with the eyes whatever the scout carries).
+
+**Regressions.** Recruitment: 94 recruits (Ember 32, Grove 28, Stoneguard 17, Tide 17), losses replaced. Tick time per
+day: 5.00, 5.12, 5.70, 6.69, 7.39, 7.75, 7.27, 7.69 ms (R6's headless run: 5.11 to 9.21; the knowledge campaigns 5.8
+to 8.8): below R6's on each day but the last (+0.36). Stuck recoveries: 19 per NPC on average at day 8.18 (the second
+knowledge campaign: 14 at 7.27); the most, 542, a Grove miner whose branch tunnel at y=15 met an underground lake (2271
+water blocks and bubble columns in the box round it; "Walking to the tunnel face" from day 1.94 to 4.08, then free by
+itself): a mining matter, not reconnaissance. Woodcutters worked from their scaffolds ("Felling the oak from its
+scaffold"), the four felled 123 to 330 trees, none stood frozen. The server log holds no error or exception. Stoneguard's
+fall (6.117): all 27 of its roster died, three of its NPCs lay loaded and dead until 6.35 (HANDOFF section 6, the fall's
+item 8), Hinae was freed.
+
+**What the check says.** The owner's rule held in a real war: every launch rested on a scout's focused watch, the
+counts matched the yard (14 of 16 exactly), and no blind or stale report let a council launch; no watcher was
+attacked on its pillar. What decided the raids was what changed after the watch (recruits, a hero back home), not the
+count. The war was not quieter than before: 6 launches against the second knowledge campaign's 5, though 2 of them
+struck ruins. Blind orders were mostly coastal lairs (water bands, a hill at ground level); settlements were blind
+twice, once through the dirt fault above. The spyglass made no difference here.
+
+**Screenshots** (`docs/screenshots/recon/`, taken after the measured run with the Xvfb viewer, the game frozen with
+`tick freeze` while Grove's scout Ulric Oakes watched Ember's yard from pillar 13 with his spyglass, at 429, 72, 176):
+`01_scout_on_pillar_side.png` (the scout on his dirt pillar above the trees, Ember's walls on the left),
+`02_pillar_and_ember_yard.png` (the pillar in front of Ember's walls and yard), `03_over_the_scouts_shoulder.png`
+(Ember's yard over the walls from the pillar top: what the watch sees), `04_scout_with_spyglass.png` (the scout on the
+pillar's top block, the spyglass in hand).

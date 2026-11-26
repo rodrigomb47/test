@@ -140,7 +140,8 @@ commits, language and testing are in `/CLAUDE.md`.
     2026-11-26: the reserve of half again with what our people saw away, "ok"; lairs with no reserve, "ok"; and "we can
     use the spyglass leaving potential for more advanced recon items made for this mod in the future that will require
     tech level, vanilla spyglass requires no tech level". Designed in `docs/design/recon.md` (reviewed twice, sections
-    13 and 15) and built in tasks R1 to R12 (section 5, "Focused reconnaissance"); the live check (R8) is next.
+    13 and 15) and built in tasks R1 to R12 (section 5, "Focused reconnaissance"); checked live in task R8 (section 5,
+    "Focused reconnaissance, the live check"; recon.md 18).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
@@ -205,7 +206,10 @@ python3 tools/rcon.py "stop"
   `DISPLAY=:99 ./gradlew runClientViewer &`; once "Viewer joined the game" is logged, use RCON (`op Viewer`,
   `gamemode spectator Viewer`, `execute as Viewer run fc join <faction>`, `tp Viewer x y z yaw pitch`,
   `execute as Viewer run fc info` / `fc map` to open the screens) and capture with `DISPLAY=:99 import -window
-  root shot.png`; the game window is the 854x480 box at (213,120) of the 1280x720 screen.
+  root shot.png`; the game window is the 854x480 box at (213,120) of the 1280x720 screen. To catch an NPC mid-task (a
+  scout on its recon pillar), run the game faster with `tick rate 60`, poll `fc admin dump` for the moment (a scout whose
+  `recon` has phase `PILLAR`), then `tick freeze` (the viewer still moves; `tick step 60` advances it a little) and `tp
+  Viewer x y z facing x y z` for each angle; `tick unfreeze` and `tick rate 20` after (recon.md 18's screenshots).
 - **Watching the roll call** (deaths far from home, `docs/design/missing_npcs.md` 14): `python3 tools/rolltrack.py
   <server> <out_dir> 8 &` polls `fc admin dump` every 8 s and writes `<out_dir>/events.log`: each change of a member's
   record (`where`, `alive`, `expectedBy`, `since` beside the truth `dead`, `vanished`, `witnessed`), each crossing of a
@@ -1212,13 +1216,46 @@ python3 tools/rcon.py "stop"
   `FactionNpc.reelingFromKnockback`; the woodcutter on its scaffold keeps the old guard). `GameTestBases` clears the test
   bases a stopped run left in the kept GameTest world (`run/world`). **1172 unit tests, 465 GameTests.**
 
+- **Focused reconnaissance, the live check** (task R8, 2026-11-26, `docs/design/recon.md` 18): a fresh campaign on a
+  new dedicated server folder (`/home/user/fcserver_recon`, the jar built from a clean export of 71c1e0c, seed 20261107,
+  `fc start 256`, Natsuho with the Ember Legion, Hinae with Stoneguard, the generated config equal to the docs' copy), 8
+  days with `tools/days.sh`, `tools/rolltrack.py` every 8 s, no operator command, stopped cleanly. **Every one of the 6
+  launches rested on a usable focused recon**, and the recons' counts matched the soldiers in the box at the watch's end
+  (14 of 16 exact, one 1 under, one 6 over while the target's raid party left during the watch; lairs 6 of 7 and 0 of
+  0): Stoneguard on a lair (4.09, won), Ember on Grove (5.08: 5 counted and a reserve of 3; Grove hired 4 soldiers before
+  the launch, the recon 26 ticks inside its half day; 6 of 6 dead), Stoneguard on Ember (5.61: 3 and 2; Natsuho, away
+  fishing at the watch, was home at the raid; 6 of 6 dead), Grove on Stoneguard (6.00: 3, 2 and Hinae, with Stoneguard's
+  own party dead at Ember: won, **Stoneguard eliminated at 6.117**, all 27 of its roster dead, Hinae freed), and Tide
+  (6.40) and Ember (6.72) on Stoneguard's unseen ruins ("an empty yard", "found in ruins"). War rate: 6 in 8.03 days (2 by
+  day 5.18, 6 by 7.25) against the knowledge campaigns' 6 by 5.18 and 5 in 7.25: the replay's 35 to 50% did not hold as
+  a count (3 of the 6 struck standing settlements); first launch at day 4.09 (no faction had a party, six soldiers at
+  home, before day 3.5); no counter-attack (the one urgent order found the striker's ruins); longest gaps were each
+  faction's wait for its first launch (Tide 6.35 days). Orders: 24 (1 urgent), all taken (median 34 s), 18 done, 4 blind,
+  2 empty-handed, 0 lost; 18 watches, all good and a full minute, 32 to 40% of the yard from pillars of 11 to 20 or the
+  ground at a lair; 0 scouts hurt on a pillar (none by a yard's guard or a passer-by), 0 holds, 0 lost on a recon (5
+  died exploring, each reported missing then presumed dead, each truly dead). Blind on every side tried: 6 of 24 orders
+  (25%): 4 of the 6 lair orders (water in every band without a vantage, a hill over the ground look) and 2 of 18
+  settlement orders: Grove on Ember's north and south at the cap (the walls over the line; leaves), and **a scout that set
+  out with no dirt** (below). The spyglass: only Grove found amethyst (its first spyglass at day 3.65; all four smelted
+  copper by day 0.96); 4 good watches through it, all from columns the eyes use too: it found nothing the 72-block look
+  missed. Regressions: 94 recruits; tick 5.00 to 7.75 ms a day (R6's run 5.11 to 9.21); no error in the server log;
+  stuck recoveries 19 per NPC (the most, 542, a Grove miner in a branch tunnel flooded by an underground lake, days 1.94
+  to 4.08: mining, not recon); woodcutters felled from their scaffolds. **Found, not fixed** (recon.md 18): Grove's new
+  scout took his order and left 19 ticks later with no dirt, because the one dig search, round a point toward the
+  target, lay in Grove's own woodland, where the dig rules keep clear of its planted saplings, lattice and road; his
+  climbs stopped at height 0 and the trip marked both gate sides tried and counted a failure, so the next trip took the
+  north and south sides (blind at the cap) and Grove had no usable recon of Ember from 4.58 to 7.19. No code changed in
+  R8: the analysis scripts (order and trip tables from `FC_RECON`, a world-copy reader for terrain and blocks) stayed in
+  the round's scratchpad. Screenshots of a recon scout watching Ember from its pillar with a spyglass are in
+  `docs/screenshots/recon/` (taken after the measured run, the game frozen; section 4 says how).
+
 ## 6. Known open items and ideas (none blocking)
 
 - Left open by the review of focused reconnaissance (2026-11-26, `docs/design/recon.md` 17): (1) the woodcutter on its
   scaffold still takes no knock-back (`WoodcutterJob.resistsKnockback`), an NPC-only protection a player up a tree
   lacks: the owner decides whether it goes too (a tall tree's scaffold is up to 30 blocks); (2) with knock-back on its
-  pillar a recon scout hit up there now usually falls 12 to 20 blocks, often fatally: the live check (R8) should count
-  the scouts lost that way and say whether the hold and the standoff keep hits rare; (3) vanilla's target search still
+  pillar a recon scout hit up there now usually falls 12 to 20 blocks, often fatally: the live check (R8) saw no scout
+  hit on a pillar in 18 watches (none held, none lost on a recon), so hits stayed rare there; (3) vanilla's target search still
   does not pick an NPC 6 or more blocks up, so a soldier passing below ignores the scout where it would attack a player
   (recon.md 8, deferred).
 
@@ -1248,10 +1285,8 @@ python3 tools/rcon.py "stop"
   raid it allows finds them: recon.md 8);
   (11) not of the fall: the Ember scout Garo Pike stood in water 148 blocks from home for 1.4 days ("Retreating home",
   "no route", 0 stuck recoveries) until his faction fell.
-- Left open by focused reconnaissance (2026-11-26, `docs/design/recon.md`, section 5 "Focused reconnaissance"): (1) the
-  live check, R8 (recon.md 10.4: the recon against the truth, coverage, blind bands, scouts attacked, the plan against
-  the truth, the war rate against the replay's 35 to 50%), is the next task; nothing of R1 to R12 has been judged in a
-  real campaign yet (R6's headless run only proved the tools on real logs); (2) `logic/leader/Talents`' SPYMASTER text
+- Left open by focused reconnaissance (2026-11-26, `docs/design/recon.md`, section 5 "Focused reconnaissance"): (1) done:
+  the live check, R8, ran on 2026-11-26 (section 5, recon.md 18); what it left is the last items of this list; (2) `logic/leader/Talents`' SPYMASTER text
   ("base reports carry garrison counts") must become an improvement of the focused recon when the talent is built
   (recon.md 9); (3) the cave miner takes no amethyst cluster (only a branch tunnel's geode feeds the spyglass; recon.md
   5.9); (4) equal treatment: vanilla's target search never picks an NPC 6 or more blocks above a soldier, so an enemy
@@ -1264,7 +1299,22 @@ python3 tools/rcon.py "stop"
   seen in R6's headless run (section 5): no recon order before a faction has six soldiers at home (its party rule; an
   operator recruited soldiers at day 3.1 to start them), Grove's recon scouts climbed only 8 to 10 blocks (once 16) and
   never got a good look at Ember or Stoneguard (short of dirt, most likely: the trip and the dump do not show the dirt it
-  carried; R8 should check it), and 9 of 28 reported orders came home blind on every side tried.
+  carried; R8 found the same seat of trouble, below), and 9 of 28 reported orders came home blind on every side tried.
+  Seen in the live check R8 (recon.md 18): (10) a recon scout short of dirt digs once, round a point 12 blocks outside
+  its walls toward the target (`ScoutJob.digSeed`); when that point lies in its own faction's woodland the dig rules
+  (planted saplings and stumps kept clear by 3, the grove lattice, the road strip, any wood by 2) leave no patch, and
+  `dig` sets out at the first empty search with what it has (recon.md 3.8 says after two searches): Grove's new scout
+  left with no dirt, climbed nothing, and the trip filed both gate sides as tried and counted a failure, so the next
+  trip went to the hard sides; a second search round another side (or outside the faction's own belt) and whether a side
+  the scout could not climb at all counts as tried are for the owner or the next task (no GameTest fits it in
+  `mobility_field`: the search reaches 24 blocks from its seed); (11) lairs on the coast stay blind: every band without a
+  vantage was open water and the ground looks met a hill (4 of 6 lair orders blind; Ember's lair never seen in 3
+  orders), and a scout needs a column on land; (12) what a recon cannot know decided both lost raids: recruits hired in
+  the half day after the watch (Grove went from 5 to 9) and a hero away on her work at the watch (Natsuho fishing 74
+  blocks out) home at the raid; (13) a faction's fall is unseen by others, so two councils raided Stoneguard's ruins on
+  recons of an empty yard (recon.md 8, as designed); (14) the spyglass's deeper band found no column the eyes lacked in
+  this world (only Grove ever made one); (15) not of reconnaissance: a Grove miner's branch tunnel at y=15 met an
+  underground lake and he walked to the flooded face for two days (542 stuck recoveries) before it cleared.
 - The roll call's open items (`docs/design/missing_npcs.md` 13-14: the survey, the council's view of an enemy base, the
   retraining and the blacksmith, the lookout's line, the raid's 3-day bound, a far miner's crossings) were taken up by
   the knowledge review (2026-11-19, `docs/design/knowledge.md`); `/fc hero info` (player-side) stays. Left open by that
