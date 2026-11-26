@@ -1400,6 +1400,89 @@ public final class KnowledgeGameTests {
     }
 
     /**
+     * recon.md 5.5 (task R5; the owner's round keeps the recommended default, question 2): a lair is judged on the monsters
+     * its scout counted, with no reserve. Three soldiers raid a lair counted at four in their own gear (two thirds of four is
+     * two); with half again in the plan (six) they would need four. Its line names the monsters and no reserve.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_lair_recon")
+    public static void aLairIsJudgedOnItsMonstersWithNoReserve(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        List<Messages.Said> lines = recording(t);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            List<FactionNpc> ours = new ArrayList<>();
+            for (int[] p : GARRISON) {
+                ours.add(member(t, p[0], p[1], NpcRole.SWORDSMAN));
+            }
+            double gear = power(ours.get(0));
+            BaseState lair = new BaseState();
+            lair.faction = FactionType.HOLLOW;
+            lair.kind = BaseState.Kind.LAIR;
+            lair.center = t.base.center.offset(0, 0, 200);
+            lair.name = "Knowledge test lair";
+            t.data.addBase(lair);
+            t.onCleanup(() -> t.data.bases.remove(lair.id));
+            deliverRecon(t, f, lair, counted(4, gear, now, java.util.Map.of()), now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget == lair.id && f.raiders.size() == 3, "three soldiers did not raid a lair counted at four: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.assertTrue(said(lines, SIDE, "Launching a raid with 3 soldiers on the Hollow lair reported at " + lair.center.toShortString()
+                    + ", against about 4 monsters (scout Edrin Cole, day " + Whereabouts.day(now) + ")")
+                    && !said(lines, SIDE, "reserve"), "the lair's launch line: " + lines);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * recon.md 7 (task R5): an operator's raid ({@code /fc admin raid}) goes whatever the council would say, and its line
+     * says what the faction knows of the target: "with no scout's report of it" with no usable recon, else the plan of its
+     * recon as at the interval (the count and half again).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_forceraid")
+    public static void anOperatorsRaidSaysWhatItRestsOn(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        List<Messages.Said> lines = recording(t);
+        try {
+            long now = level.getGameTime();
+            List<FactionNpc> ours = new ArrayList<>();
+            for (int[] p : GARRISON) {
+                ours.add(member(t, p[0], p[1], NpcRole.SWORDSMAN));
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            deliver(t, f, new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, Report.positionNote(ENEMY, Report.Kind.ENEMY_BASE)), now);
+            String done = FactionDirector.forceRaid(level, t.data, f, enemy);
+            t.assertTrue(f.raidTarget == enemy.id && said(lines, SIDE, "By order! Launching a raid with 3 soldiers on the Grove Covenant settlement"
+                    + " reported at " + enemy.center.toShortString() + ", with no scout's report of it"), "the operator's raid with no recon: "
+                    + done + " / " + lines);
+            f.raidTarget = -1;
+            f.raiders.clear();
+            f.lastParty.clear();
+            lines.clear();
+            deliverRecon(t, f, enemy, counted(2, power(ours.get(0)), now + 1, java.util.Map.of()), now + 1);
+            done = FactionDirector.forceRaid(level, t.data, f, enemy);
+            t.assertTrue(f.raidTarget == enemy.id && said(lines, SIDE, "By order! Launching a raid with 3 soldiers on the Grove Covenant settlement"
+                    + " reported at " + enemy.center.toShortString() + ", against about 2 defenders (scout Edrin Cole, day " + Whereabouts.day(now + 1)
+                    + ") and a reserve of 1 (half again the 2 counted)"), "the operator's raid on a recon: " + done + " / " + lines);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
      * A passing look tells where a base is and that it stands, and counts nobody (recon.md 3.6, task R5): behind a wall two
      * blocks high the enemy's soldiers and the yard are out of sight, but the walls' top is in view, so the base is
      * reported; with the wall gone, both soldiers in sight, the report is the same: no count, no heroes, no recon.

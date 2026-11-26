@@ -578,7 +578,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 438 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 440 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -593,7 +593,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   day N) and no soldier of theirs seen away"; enemy soldiers killed at our walls move no estimate and bring an urgent
   recon, and the counter-attack goes 3 to 2 on it; a weaker bystander does not block it; a blind or stale recon is no
   estimate; a raid party's look is none; ten soldiers send six against six counted and wait on seven; a hero counts
-  only in the watch that saw her; old reports load as positions), **what a faction knows** (ruins seen stay ruins when
+  only in the watch that saw her; a lair is judged on its monsters with no reserve; an operator's raid says what it
+  rests on; old reports load as positions), **what a faction knows** (ruins seen stay ruins when
   only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
