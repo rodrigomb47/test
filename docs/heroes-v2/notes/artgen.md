@@ -4880,7 +4880,8 @@ Sabotage (each restored afterwards, every file byte for byte): a leaper II landi
    the helmet's bowl through its 0.35 s wind-up (its grip was solved over the bare head, out of the arm's reach,
    so the hand stopped inside the bowl). Its two wind-up poses now hold the hand beside the helmet (the grip 7 px
    out to his right), the blade tipped back over his head. Now neither arm goes more than 0.3 px into the helmet
-   in any clip (a sleeve brushing a lame's tip) but for `phase.2`, whose left hand holds it, and `personal.3`
+   in his own clips or his basic string (a sleeve brushing a lame's tip) but for `phase.2`, whose left hand holds
+   it, and `personal.3`
    (re-tying the ponytail, 1.25 px under the neck guard), an idle quirk that plays over the idle, out of a fight,
    so normally without the helmet; the blade never touches it.
 8. **Previews in the move's first kit phase** (the shared rule): the five phase-1 moves are drawn with one sword. Every
@@ -4900,5 +4901,10 @@ Sabotage (each restored afterwards, every file byte for byte): a leaper II landi
 - **His basic string** keeps the katana library's vanilla sweep sound; SOUND.md 5 lets C3 point his own `attack`
   overrides at `katana_swing`, which needs own copies of `attack.1-3` (not done: the library clips serve him well).
 - **Followup films**: as Benika's and Yugen's, `string.gif` starts each followup after the whole first clip.
+- **The shared core clips under his helmet**: the core library's clips that lift the hands to the head (the climb,
+  the mantle, the air dive, `move.downed`, the emotes, the work clips, `founding`) were made for bare heads and put
+  his hands up to 1.25 px into the kabuto when he wears it (phases 2 and 3; in a fight that is the climb, the
+  mantle and the downed pose). They are shared by every hero and must build byte for byte, so they are
+  left as they are; a hat-aware variant (or his own copies of the fight ones) is a shared decision for later.
 - Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.
