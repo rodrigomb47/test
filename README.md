@@ -583,7 +583,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
   good look, watches a minute counting each soldier once by its face, also across a save and reload midway, and not one
   shut indoors; takes the pillar down with every block back in its pack and tells its report first at the station; a
-  ring too high for its 20-block cap on both gate sides comes home as "could not see inside" and the target backs off;
+  ring too high for its 20-block cap on both gate sides comes home as "could not see inside", round the base by its
+  corner outside the standoff, and the target backs off;
   a patrol below the pillar keeps it up, a hit or a broken block brings it down, good only past 600 ticks; a lair is
   watched from the ground through a gap; a dead scout's report is lost, its order lapses once it goes missing by its
   recon trip's plan and a follow-up scout is wanted; a second scout for an order nobody took), **what a faction knows** (a

@@ -513,8 +513,14 @@ above differ, the code is the truth:
 * **The way there, round and home.** To each side's axis just beyond the standoff, by the corners of the standoff's
   square when it comes from another side (`ReconRules.round`: one corner for a side next to it, two for the opposite
   side, round by the side facing home); and when it is done, round by those corners to the side facing home before it
-  walks home, in a retreat too. Each leg may take three times the plan's pace for its length and 400 ticks. Monsters
-  and enemy soldiers on the ground are stepped round or retreated from as on any trip; on the pillar it holds still.
+  walks home, in a retreat from a hit or a broken pillar too. Each leg may take three times the plan's pace for its
+  length and 400 ticks. Monsters and enemy soldiers on the ground are stepped round or retreated from as on any trip (a
+  monster met on the way out is stepped round and the corners kept; a step aside never goes inside the target's
+  standoff square, `ScoutJob.insideReconStandoff`; enemy soldiers that turn it home send it straight home); on the
+  pillar it holds still. It turns home when the plan has only the walk home from the target's centre
+  left; from the far side its way home by two corners is about 130 to 150 blocks longer than that walk (about 1300 to
+  1500 ticks at the plan's pace, some 1900 with a 20-block pillar to take down first), inside the roll call's
+  2400-tick grace, so a live scout out of time is not reported missing.
 * **The column.** The side's columns are searched once at the side (`ReconVantage.columns`); it tries to walk to at most
   6 of them (`ScoutJob.MAX_COLUMNS`), then gives the side up. A barrier block is no ground (a GameTest's walls).
 * **Climb and look.** A look is one recon sample: good when it has 8 points and the middle (`ReconRules.goodLook`). The

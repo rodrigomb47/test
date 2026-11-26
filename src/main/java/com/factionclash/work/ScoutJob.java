@@ -692,7 +692,7 @@ public class ScoutJob extends Job {
             if (!o.clear() && o.margin() < here + 4) {
                 break; // nothing clear, and the rest gains too little over standing here
             }
-            if (!MapBounds.inside(data(), o.x(), o.z(), ESCAPE_MAP_MARGIN) || nearDanger(f, o.x(), o.z())) {
+            if (!MapBounds.inside(data(), o.x(), o.z(), ESCAPE_MAP_MARGIN) || nearDanger(f, o.x(), o.z()) || insideReconStandoff(o.x(), o.z())) {
                 continue;
             }
             BlockPos feet = standable(o.x(), o.z());
@@ -712,6 +712,19 @@ public class ScoutJob extends Job {
             return feet;
         }
         return null;
+    }
+
+    /**
+     * On a recon trip: whether (x, z) lies inside its target's standoff square (recon.md 3.8). A step aside from a
+     * monster never goes there: the scout knows where the base it watches stands, and its guards reach that far.
+     */
+    private boolean insideReconStandoff(int x, int z) {
+        ReconTrip r = recon;
+        BaseState t = r == null ? null : reconBase(r);
+        if (t == null) {
+            return false;
+        }
+        return Math.max(Math.abs(x - t.center.getX()), Math.abs(z - t.center.getZ())) < ReconVantage.band(t).standoff();
     }
 
     /**
@@ -1373,12 +1386,13 @@ public class ScoutJob extends Job {
             }
             observe(b);
             if (escape != null) {
+                boolean out = r.phase == ReconTrip.Phase.DONE;
                 leaveColumn(r);
-                if (r.phase == ReconTrip.Phase.DONE) {
-                    state = State.RETURN; // (a watch from the ground ended: home, stepping aside on the way)
-                    return;
+                if (r.phase == ReconTrip.Phase.DONE && !out) {
+                    // a watch from the ground ended: it steps aside first, then works out its way round the base
+                    r.waypoints = null;
                 }
-                evade(goal);
+                evade(goal); // (on its way out round the base too: it steps aside and goes on by its corners)
                 return;
             }
         }
@@ -1404,8 +1418,9 @@ public class ScoutJob extends Job {
 
     /**
      * Done at the target (recon.md 3.5, step 7): home with what it saw, first round the base by the corners of the
-     * standoff's square to the side facing home when it stands on another, never across the enemy's alarm box; in a
-     * retreat when it was hurt, its pillar was broken or it was moved off it.
+     * standoff's square to the side facing home when it stands on another, not across the enemy's alarm box; in a
+     * retreat when it was hurt, its pillar was broken or it was moved off it. A monster met on the way is stepped round
+     * and it goes on by its corners; enemy soldiers near ({@link #dangerCheck}) send it straight home as on any trip.
      */
     private void leaveTarget(ReconTrip r) {
         r.phase = ReconTrip.Phase.DONE;

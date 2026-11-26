@@ -38,7 +38,9 @@ final class ReconTrip {
         PILLAR,
         /**
          * Done at the target: going home with what it saw, first round the base by the corners of the standoff's square to
-         * the side facing home when it is on another ({@link #waypoints}), never through the enemy's alarm box.
+         * the side facing home when it is on another ({@link #waypoints}), not across the enemy's alarm box (a monster
+         * met on the way is stepped round; enemy soldiers that turn it home in a retreat send it straight home, as on
+         * any trip).
          */
         DONE
     }

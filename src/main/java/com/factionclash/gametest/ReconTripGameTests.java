@@ -426,7 +426,8 @@ public final class ReconTripGameTests {
      * {@code aBlindReconIsNotUsed}, the scout's side (recon.md 10.2 item 3; the council's side is R5's): a ring 14 high,
      * too high for the pillar's cap of 20 from the band. The scout climbs to the cap on the west side, sees none of the
      * yard, takes the pillar down, walks round outside the standoff to the east side, climbs to the cap again, and goes
-     * home with a blind report ("could not see inside"). At the station its order learns of a blind recon; the faction's
+     * home with a blind report ("could not see inside"), round the base by the north-east corner to the side facing
+     * home first, never inside the standoff's square. At the station its order learns of a blind recon; the faction's
      * report keeps no recon, counts one failure at the blind look's time and both sides tried, and the target backs off.
      */
     @GameTest(template = FIELD, timeoutTicks = 6000, batch = "recon_trip_blind", skyAccess = true)
@@ -435,9 +436,10 @@ public final class ReconTripGameTests {
         GameTestBases.Handle t = fl.t();
         Trip trip = new Trip();
         Set<BlockPos> columns = new HashSet<>();
-        int[] tops = {0, 0};
+        int[] tops = {0, 0}, nearest = {Integer.MAX_VALUE};
         t.onEachTick(() -> {
             follow(fl, trip);
+            nearest[0] = Math.min(nearest[0], wayOut(fl));
             Scaffold.Pillar p = fl.job().reconPillar();
             if (p != null && p.height > 0) {
                 BlockPos c = rel(h, p.base);
@@ -463,8 +465,21 @@ public final class ReconTripGameTests {
                 t.assertTrue(dirtIn(h, c) == 0, "a pillar left standing at " + c);
             }
             t.assertTrue(dirtCarried(fl.scout()) == ReconRules.BLOCKS, "its dirt back: " + dirtCarried(fl.scout()));
+            t.assertTrue(nearest[0] >= STANDOFF - 3, "home round the base by its corner, outside the standoff: nearest " + nearest[0]);
             t.succeed();
         });
+    }
+
+    /**
+     * How near the target's centre (Chebyshev, relative) the scout stands while it is done at the target and on its way
+     * home with what it saw, before it reaches the station; {@link Integer#MAX_VALUE} at any other time.
+     */
+    static int wayOut(Field fl) {
+        if (!fl.job().reconPhase().startsWith("DONE")) {
+            return Integer.MAX_VALUE;
+        }
+        BlockPos at = rel(fl.t().helper, fl.scout().blockPosition());
+        return Math.max(Math.abs(at.getX() - TX), Math.abs(at.getZ() - TZ));
     }
 
     // ------------------------------------------------------------------ 10.2 item 8: a dead scout's report is lost
