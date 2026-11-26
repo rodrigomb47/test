@@ -18,9 +18,10 @@ import java.util.Map;
  * fall, with the heroes it knows of, under the soldier backbone ({@link HeroRules#countedPower}). Pure rules, no
  * Minecraft classes.
  *
- * <p>Task R10; the war council plans on it since the switch, task R5, with an empty sightings ledger (R11 fills the
- * ledger, {@link Sightings}), and its lines say what the plan rests on ({@link #defenceText}). Without a fresh good recon
- * there is no plan, whatever the sightings hold.
+ * <p>Task R10; the war council plans on it since the switch, task R5, and since task R11 with the faction's sightings
+ * ledger ({@link Sightings}: what its people saw of that faction's soldiers and heroes away from that base), and its lines
+ * say what the plan rests on ({@link #defenceText}). Without a fresh good recon there is no plan, whatever the sightings
+ * hold.
  */
 public final class Reserve {
     private Reserve() {
@@ -147,7 +148,7 @@ public final class Reserve {
                 soldierPower, heroPower, power, unit);
     }
 
-    // ---- What the lines say the plan rests on (recon.md 5.4; the sightings' forms come with R11) ----
+    // ---- What the lines say the plan rests on (recon.md 5.4; the sightings' forms since task R11) ----
 
     /** "half again", "a quarter again", "as many again", or "N% again": the share in words. */
     static String shareWords(double share) {
@@ -216,22 +217,27 @@ public final class Reserve {
         return notes.isEmpty() ? name : name + " (" + String.join("; ", notes) + ")";
     }
 
-    // ---- The council's lines (recon.md 5.4, task R5; the sightings' forms come with R11) ----
+    // ---- The council's lines (recon.md 5.4, task R5; the sightings' forms since task R11) ----
 
     /**
      * What a council's line says it plans against (recon.md 5.4): the count, the heroes in the plan, the recon it rests on
      * and the reserve. "about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4
      * counted)"; "an empty yard (scout Edrin Cole, day 5) and no soldier of theirs seen away"; at a lair, "about 6 monsters
      * (scout Edrin Cole, day 5)" (a lair's line leaves the reserve out: it has none). A hero the backbone counts at nothing
-     * is named "(alone: not counted)": "an empty yard but for Hinae Shirasuzu (alone: not counted) (scout ...)". The day
+     * is named "(alone: not counted)": "an empty yard but for Hinae Shirasuzu (alone: not counted) (scout ...)". A hero the
+     * watch missed and the faction's sightings know of follows the reserve, with how our people know of it (task R11):
+     * "about 2 defenders (scout Edrin Cole, day 5) and a reserve of 3 (3 Stoneguard soldiers seen at our walls on day 4,
+     * not seen to fall) and Hinae Shirasuzu (seen at our walls on day 4)". The day
      * is the recon's last sample's ({@link Whereabouts#day}); {@code heroNames} names the heroes by id (an id it does not
      * know is shown as it is).
      */
     public static String defenceText(Plan p, boolean lair, String faction, Map<String, String> heroNames) {
-        List<String> heroes = new ArrayList<>();
+        // the heroes the watch saw go with the count; those known only from sightings follow the reserve (recon.md 5.4)
+        List<String> heroes = new ArrayList<>(), known = new ArrayList<>();
         for (String id : p.heroes().keySet()) {
             String name = heroNames == null ? null : heroNames.get(id);
-            heroes.add(heroText(p, id, name == null || name.isEmpty() ? id : name));
+            String text = heroText(p, id, name == null || name.isEmpty() ? id : name);
+            (p.recon().heroes().containsKey(id) ? heroes : known).add(text);
         }
         StringBuilder b = new StringBuilder();
         if (p.counted() > 0) {
@@ -251,7 +257,20 @@ public final class Reserve {
         if (!lair) {
             b.append(" and ").append(reserveText(p, faction));
         }
+        if (!known.isEmpty()) {
+            b.append(" and ").append(names(known));
+        }
         return b.toString();
+    }
+
+    /**
+     * How the council ranks the targets it may judge (recon.md 5.4): the least plan in soldiers ({@link Plan#heads}: the
+     * count, the reserve and the heroes under the backbone), then the nearest ({@code distance}, blocks from home). Lower
+     * is chosen first. By the plan, not the bare count: a base with the smaller count and the larger reserve seen away
+     * from it could hold the council back while another base would go.
+     */
+    public static double score(Plan p, double distance) {
+        return p.heads() * 1000.0 + distance;
     }
 
     /** "A", "A and B", "A, B and C". */

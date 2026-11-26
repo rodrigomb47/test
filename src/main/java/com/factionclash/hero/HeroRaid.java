@@ -74,6 +74,8 @@ public final class HeroRaid {
     public int wallCrossings, presses, goalsEnded;
     /** Climbs or jump-ups it started up a wall face it chose (tests). */
     public int overStarts;
+    /** How its last goal ended (tests; null: none ended yet). */
+    public WallEntry.GoalEnd lastEnd;
 
     HeroRaid(HeroEntity hero) {
         this.hero = hero;
@@ -217,12 +219,19 @@ public final class HeroRaid {
         HeroDef.Personality pers = d == null || d.v2() == null ? null : d.v2().personality();
         int greed = pers == null ? 50 : pers.trait(HeroDef.Trait.GREED);
         boolean held = !w.gate().soldiersOpen() && partyOutside(t);
+        // a defending hero is known to be home when the recon its raid was launched on saw one there (docs/design/recon.md
+        // 8, task R9), and seen when it stands inside the walls in its own line of sight now; a hero merely somewhere
+        // near is neither (it was, before: any of the base's heroes within 64 blocks, seen or not)
+        FactionState f = faction();
+        boolean known = f != null && !f.raidReconHeroes.isEmpty();
         HeroEntity home = homeHero(t);
         goal = WallEntry.goal(new WallEntry.GoalInput(held, b == null ? null : b.focus(), b == null ? null : b.role(),
-                b == null ? null : b.duelStyle(), greed, home != null, home != null && BaseZones.insideWalls(t, home.blockPosition(), 0)
-                && hero.hasLineOfSight(home), archers(t) > 0, !t.allStoragePositions().isEmpty()));
+                b == null ? null : b.duelStyle(), greed, known, home != null && BaseZones.insideWalls(t, home.blockPosition(), 0),
+                archers(t) > 0, !t.allStoragePositions().isEmpty()));
         goalStart = hero.tickCount;
         progressAt = hero.tickCount;
+        hunted = null;
+        huntedSeenAt = hero.tickCount; // (a hunt that finds nobody ends after a minute unseen, WallEntry.HUNT_UNSEEN_TICKS)
         best = Double.MAX_VALUE;
         FactionClash.LOGGER.info("[Heroes] {} raids {}: in by {}, out by {}, goal {} (wall {} high, gate {})", hero.heroId(),
                 t.name, entry.way(), entry.exit(), goal, w.outside(), w.gate());
@@ -338,10 +347,11 @@ public final class HeroRaid {
     }
 
     /** A living hero of the target base (the home hero). */
+    /** A hero of the raided base it has in its own line of sight within 64 blocks (null: none in sight). */
     private HeroEntity homeHero(BaseState t) {
         for (HeroEntity h : HeroEntity.live()) {
             if (h != hero && h.isAlive() && h.baseId() == t.id && h.level() == hero.level()
-                    && h.distanceToSqr(hero) <= 64 * 64) {
+                    && h.distanceToSqr(hero) <= 64 * 64 && hero.hasLineOfSight(h)) {
                 return h;
             }
         }
@@ -406,6 +416,7 @@ public final class HeroRaid {
             stage = Stage.GOAL;
             goalStart = hero.tickCount;
             progressAt = hero.tickCount;
+            huntedSeenAt = hero.tickCount; // (a hunt's minute unseen runs from the goal's start inside)
             best = Double.MAX_VALUE;
             return;
         }
@@ -531,8 +542,10 @@ public final class HeroRaid {
             }
         }
         if (goal == WallEntry.Goal.HUNT_THE_HERO && hunted == null && !over) {
-            hunted = homeHero(t);
-            huntedSeenAt = hero.tickCount;
+            hunted = homeHero(t); // (the one it hunts is one it sees; until then the hunt's minute unseen runs)
+            if (hunted != null) {
+                huntedSeenAt = hero.tickCount;
+            }
         }
         if (hunted != null && hunted.isAlive() && hero.hasLineOfSight(hunted)) {
             huntedSeenAt = hero.tickCount;
@@ -544,6 +557,7 @@ public final class HeroRaid {
                 over && t != null && seesFall(t)));
         if (end != WallEntry.GoalEnd.ONGOING) {
             goalsEnded++;
+            lastEnd = end;
             WallEntry.After after = WallEntry.after(goal, end, looted);
             FactionClash.LOGGER.info("[Heroes] {} goal {} ended ({}): {}", hero.heroId(), goal, end, after);
             stage = after == WallEntry.After.JOIN_AT_THE_HEART ? Stage.HEART : Stage.HOME;
@@ -558,6 +572,8 @@ public final class HeroRaid {
                 }
                 if (hunted != null) {
                     nav().travel(hunted.blockPosition(), 2, 1.0);
+                } else if (to != null) {
+                    nav().travel(to, 3, 1.0); // none in sight yet: it looks for the hero across the yard
                 }
             }
             case CLEAR_THE_ARCHERS -> {

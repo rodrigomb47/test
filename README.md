@@ -509,11 +509,12 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1158 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1160 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
   a faction knows of an enemy base: only a scout's focused recon, good (8 of the 25 yard points and its middle, half a
   minute's watch) and fresh (half a day), the faces counted with no extrapolation, the plan of half again the count
-  (none at a lair or in a counter-attack) and the council's lines, a counter-attack only on a recon made since the
+  (none at a lair or in a counter-attack), raised by the soldiers seen away, the target chosen by its plan and not its
+  count, and the council's lines with what the sightings add, a counter-attack only on a recon made since the
   strike, two thirds in whole soldiers (a party goes against as many counted as it sends, whatever the gear), a
   counter-attack's 3 to 2, the party rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
   list or true fall, and hero code reads kill credit only for its presentation lines; the roll call: when an away member is missing and presumed
@@ -578,7 +579,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 440 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 452 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -594,7 +595,13 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   recon, and the counter-attack goes 3 to 2 on it; a weaker bystander does not block it; a blind or stale recon is no
   estimate; a raid party's look is none; ten soldiers send six against six counted and wait on seven; a hero counts
   only in the watch that saw her; a lair is judged on its monsters with no reserve; an operator's raid says what it
-  rests on; old reports load as positions), **what a faction knows** (ruins seen stay ruins when
+  rests on; old reports load as positions; the sightings: enemy soldiers seen at our walls raise the reserve ("a reserve
+  of 2 (2 Grove Covenant soldiers seen at our walls on day N, not seen to fall)"), but not one seen to fall there nor
+  one the watch counted; six seen leaving an emptied base hold back a party of three and let four go; an enemy hero
+  seen at our walls holds a party back, one seen falling stays in the plan; a scout carries what it met and saw fall
+  away, and from its pillar what it saw leaving, and tells it only at the station; a scout killed first tells nothing;
+  a raiding hero hunts only the hero its raid's recon saw, or one it sees inside, and gives up a hunt for one it never
+  sees after a minute), **what a faction knows** (ruins seen stay ruins when
   only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid

@@ -106,6 +106,9 @@ public final class GameTestBases {
         private final List<com.factionclash.campaign.ReconOrder> factionReconOrders;
         /** ...and when its council last ordered an urgent recon of each enemy (task R3). */
         private final java.util.Map<FactionType, Long> factionUrgentAt;
+        /** ...and its sightings of enemy fighters and its last raid's recon heroes (tasks R11 and R9): a test's enemies seen at its base. */
+        private final com.factionclash.logic.campaign.Sightings factionSightings;
+        private final List<String> factionRaidReconHeroes;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
             this.helper = helper;
@@ -117,6 +120,8 @@ public final class GameTestBases {
             this.factionStruckBy = f == null ? java.util.Map.of() : new java.util.HashMap<>(f.struckBy);
             this.factionReconOrders = f == null ? List.of() : new ArrayList<>(f.reconOrders);
             this.factionUrgentAt = f == null ? java.util.Map.of() : new java.util.HashMap<>(f.reconUrgentAt);
+            this.factionSightings = f == null ? new com.factionclash.logic.campaign.Sightings() : f.sightings.copy();
+            this.factionRaidReconHeroes = f == null ? List.of() : new ArrayList<>(f.raidReconHeroes);
         }
 
         /** Spawns an NPC of the base's faction at relative (x, 2, z) and registers it as a member of the base. */
@@ -256,6 +261,10 @@ public final class GameTestBases {
                 f.reconOrders.addAll(factionReconOrders);
                 f.reconUrgentAt.clear();
                 f.reconUrgentAt.putAll(factionUrgentAt);
+                f.sightings.clear();
+                f.sightings.fileAll(factionSightings);
+                f.raidReconHeroes.clear();
+                f.raidReconHeroes.addAll(factionRaidReconHeroes);
             }
             data.setDirty();
         }

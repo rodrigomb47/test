@@ -82,7 +82,7 @@ public final class HeroAbilityGameTests {
 
     // ------------------------------------------------------------------ fixtures
 
-    private static String visual(String style) {
+    static String visual(String style) {
         return "{\"form\":\"adult\",\"build\":\"standard\",\"base\":\"adult_f\",\"style\":\"" + style + "\",\"height_px\":52,"
                 + "\"head_y\":42,\"render_scale\":0.56,\"scale\":1.0,\"animation_chain\":[\"_fallback\",\"_style_fists\",\"_core\"],"
                 + "\"texture\":{\"width\":256,\"height\":128}}";

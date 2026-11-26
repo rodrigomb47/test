@@ -946,6 +946,68 @@ share, the watch's heroes; R11 fills the ledger). Where this list and the sectio
   so its party and "about" columns print "?") and reads the council line's "defence N" (kept), and `rolltrack.py`
   prints "no look" for every standing base (the dump has no look fields now); both still run.
 
+### 5.8 As built (tasks R11 and R9): the sightings, and the raid's home hero
+
+The owner's round of 2026-11-25 builds the recommended defaults of section 12 (the share of half again with the
+seen-away term, lairs with no reserve, no spyglass yet). Where this list and the sections above differ, the code is the
+truth:
+
+* **The ledger.** `FactionState.sightings` (the pure `logic/campaign/Sightings` of R10), saved with the faction (still
+  campaign format 5: an older save has none); the game side is `campaign/EnemySightings`. A sighting keeps the entity's
+  UUID, its faction, a hero's id, its visible power (a soldier's armour and weapon, `FactionDirector.power`; a hero's war
+  power at full strength, as a watch counts it), the time, the place, the source, who saw it (a scout's name) and the base
+  watched for a watch's. Only enemy soldiers and heroes of human factions at war with ours are filed: not workers, not
+  monsters, not players (the watch counts no players either; a member player files nothing yet).
+* **At home**, with the alarm's sweep each second (`FactionDirector.defenceAlarm` calls `EnemySightings.atHome`): an
+  enemy fighter inside that base's home area that the alarm noticed, or that one of the 4 nearest members standing in a
+  home area sees within the witness range (32). Keyed on the home area, not the alarm's box: the box is the walls plus 4
+  of a full base's half, and `noticed` takes any member within 24, so on a test base the box spans the whole template; in
+  a campaign the box lies inside the 64-block home area anyway.
+* **A scout away** looks for enemy fighters with its looks every 40 ticks, but from the edge of its home area rather than
+  the looks' 40 blocks from home (`ScoutJob.observe`; at home the alarm's sweep sees them): one in its sight within 64
+  blocks, outside the walls box (half + 8) of every base of that faction its faction reported or it carries a report of,
+  goes into its carried ledger as "met by scout X". It is filed with its faction's only at the station, in `report()`
+  after the station check and after the recon, saved with the job, and lost if the scout dies. While it stands on its
+  pillar its looks do not run (as before): the watch files instead.
+* **The watch** (each sample, `EnemySightings.watch`): every hero of the target's faction in sight in the sample's box,
+  and that faction's soldiers and heroes in sight within 64 outside the box (`max(half, reach) + 8`: a party leaving, a
+  patrol below), as "seen leaving by scout X" with the base watched. Fighters of other factions seen from the pillar are
+  not filed. A soldier seen leaving and again on the way home keeps the newer sighting (newest per face), a field one;
+  both count for the same base.
+* **Falls.** `BaseWatch.enemyFell` already ran for a hero too (it records the strike; recon.md 15.3 said it returned at once
+  for a hero, which the code no longer does). It now also files a soldier's fall (`EnemySightings.fell`, not a hero's):
+  for each human faction at war with the victim's that saw it at home (it fell in a home area of theirs, or a member NPC or
+  hero standing in one saw it, the roll call's witness rule) at once, and for each of its scouts away that saw it, carried
+  home. A hero's fall is filed the same way from `HeroManager.onDeath`, after its early returns (a hero not on the records,
+  one already fallen, one whose faction fell) and whoever killed it, so a third faction's member who saw it files it too;
+  the killer's faction still hears the line as before. Other members away carry no sighting yet.
+* **The plan.** The council prunes the ledger (half a day; a hero seen falling until half a day after its expected return)
+  and passes each settlement candidate the faction's sightings that count for it (`Sightings.forBase`, attributed to the
+  faction's reported settlement nearest to where each was seen, a watch's to the base watched; the bases by the
+  reports' positions, `FactionDirector.reportedSettlements`); a lair gets none. `forceRaid` does the same. The target is
+  chosen by `Reserve.score` (the plan in soldiers, then the distance), unit-tested so that a base with the smaller count
+  and the larger reserve seen away is not chosen over one whose plan is smaller.
+* **The lines** use 5.4's form: the watch's heroes with the count, the reserve, then the heroes known only from
+  sightings: "about 2 defenders (scout Edrin Cole, day 5) and a reserve of 3 (3 Stoneguard soldiers seen at our walls on
+  day 4, not seen to fall) and Hinae Shirasuzu (seen at our walls on day 4)"; a hero seen falling, "(seen to fall at our
+  walls on day 4)"; alone, "(seen at our walls on day 4; alone: not counted)". A day is the chat lines' day.
+* **Operators.** `/fc admin dump` lists each faction's `sightings` (id, faction, hero, power, time, place, source, by,
+  base, fallen). `KnowledgeIsolationTest` lets the council read its own faction's `sightings` (`f.sightings`) and no
+  other's, and checks that both the council and the operators' raid plan with them.
+* **The raid's home hero (task R9, section 8).** `launch` keeps the heroes of the recon it rests on
+  (`FactionState.raidReconHeroes`, saved; none for an operator's raid with no usable recon). `HeroRaid.choose` takes a
+  defending hero as known to be home from them, and as seen inside only when it stands inside the walls in the raider's
+  own line of sight (before, any hero of the base within 64 blocks made one known, seen or not). A hunt for a hero it does
+  not see now looks for her across the yard and ends after its minute unseen, counted from the goal's start inside
+  (before, that minute was set back every tick while it saw nobody, so only the 60 s without progress ended it).
+* **Tests.** Unit: `ReserveTest` (the target by its plan; the sightings' line forms). GameTests `SightingsGameTests`
+  (the home sweep's rules and a fall at home; 10.2 items 14, 15, 16's second half, 17; a hero's fall filed by the faction
+  whose member saw it; a raid knows its recon's heroes; the sightings and a scout's carried ones survive a save; item 18
+  with a real recon trip: a soldier met and seen to fall away, one seen leaving only from the pillar, nothing known before
+  the station, nothing from a scout killed before it reports) and `HeroRaidGameTests` (the hunt only for a hero the recon
+  saw or the raider sees inside; a hunt for nobody ends after a minute). The reserve's sabotages of 10.3 that need the game
+  side were each caught.
+
 ## 6. What replaces the 3-to-2 counter-attack's input
 
 Losses seen at home are gone as an input. The same sighting is now a **trigger**:
@@ -1044,7 +1106,7 @@ faction's own `FactionState.sightings`).
 * **The raid plan** (`raidPlanTicks`, `raidPlannedBy`, `raidTurnHomeAt`): unchanged. While its raid is out a faction
   places no recon orders (the counter-attack cannot launch then anyway).
 * **Heroes on a raid.** `HeroRaid.choose` computes `homeHeroKnown` from a home hero within 64 blocks (an open item,
-  `knowledge.md` 10). It should read "the recon this raid was launched on saw a hero" (R9, small).
+  `knowledge.md` 10). It should read "the recon this raid was launched on saw a hero" (R9, small). Built: 5.8.
 * **The Hollow.** It estimates no defence: it raids the nearest settlement whenever a lair has 4 monsters and its
   interval passed, and the owner's rule is about estimating a defence. How it finds settlements (today a 300-block sense,
   `knowledge.md` 9) and how far it reaches now belong to the lair-energy design (`docs/design/lair_energy.md`: lairs

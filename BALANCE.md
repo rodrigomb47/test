@@ -794,9 +794,19 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   a raid party's look and the enemy soldiers seen falling at our walls (a strike, `FactionState.struckBy`) make no
   estimate. Estimate (`Intel.estimate`): the faces counted with no extrapolation, their mean power (1 when none was seen)
   and the heroes seen in that watch at full war power. Plan (`Reserve.plan`, PROPOSED `Reserve.SHARE` **0.5**,
-  `SHARE_LAIR` **0**, `COUNTER_SHARE` **0**): the count plus a reserve of half again the count (rounded up), none at a lair
-  or in a counter-attack, the heroes under the soldier backbone; the sightings that may raise the reserve come with task
-  R11 (until then the ledger is empty). A raider sees a fall when the heart's place is in view within **48** blocks, and a
+  `SHARE_LAIR` **0**, `COUNTER_SHARE` **0**): the count plus a reserve, the larger of half again the count (rounded up;
+  none at a lair or in a counter-attack) and the soldiers of that faction its people saw away from that base and did not
+  see fall, the heroes the watch saw and those its people know of from sightings, under the soldier backbone. Sightings
+  (task R11, `FactionState.sightings`, `campaign/EnemySightings`; PROPOSED `Sightings.MAX` **64** per faction, the
+  oldest dropped first, newest per face; each counts **12000** ticks, `Sightings.FRESH_TICKS`; a hero seen to fall from
+  its fall until 12000 after its expected return, the fall plus `heroes.reviveSeconds`; a soldier seen to fall never):
+  at home, an enemy soldier or hero inside a home area that the alarm noticed or that one of the **4** nearest members
+  standing in a home area sees within `campaign.witnessRange` (**32**), each second with the alarm's sweep; by a scout
+  outside its home area, one in its sight within **64** blocks outside the walls box (half + **8**) of every base of that
+  faction it knows of, every 40 ticks, carried home and told at the station; by a recon scout on its watch, every hero
+  of the target's faction it sees and that faction's soldiers in sight outside the sample's box; a fall at once where
+  seen from home, carried by a scout away that saw it. A sighting counts for its faction's reported settlement nearest
+  to where it was seen (a watch's, for the base watched); lairs have none. A raider sees a fall when the heart's place is in view within **48** blocks, and a
   party that broke the heart itself brings the ruins home with the raid's end (live check); ruins seen stay ruins (no base
   is rebuilt: a later look that misses the heart's place does not raise them again). Removed with task R5:
   `Intel.FORGET_TICKS` (48000), `SAME_VIEW` (0.1) and the lair's prior.
@@ -1261,6 +1271,9 @@ modifiers, 18 slots, 1 + Diligence).
   ground (`mobility.travelAltitude`, 8-48), raid **10**, fight **6** above the ground or the highest engaged enemy.
 * Walls (`WallEntry`): chosen **24** blocks from the walls after the muster; a goal ends after **60 s** without progress;
   a greedy raider (greed **65**) loots the storehouse first; a flyer's way out regains its take-off share within **20 s**.
+  A defending hero is known to be home when the recon the raid was launched on saw one there (`FactionState.raidReconHeroes`,
+  task R9), seen when it stands inside the walls in the raider's sight; a hunt for one nobody sees ends after **60 s**
+  unseen from the goal's start inside (`WallEntry.HUNT_UNSEEN_TICKS`), the raider meanwhile looking across the yard.
 * Escape: away **300 s** (`heroes.escapeAwaySeconds`), one in **600 s** (`heroes.escapeCooldownSeconds`), cornered
   after **3 s**, over at the refuge or **10 s** with no pursuer within **48**; in the wild at least **64** blocks from the
   fight; morale -4 at home (-6 everywhere for a leader) against -8 and -20 for a death.

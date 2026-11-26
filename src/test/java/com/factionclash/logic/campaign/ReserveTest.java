@@ -311,4 +311,58 @@ class ReserveTest {
         Recon unnamed = new Recon(2, 1, Map.of(), Intel.coverage(12), true, 1200, NOW - 1000, "pillar 13", "", Set.of());
         assertTrue(Reserve.defenceText(plan(unnamed, List.of()), false, "Stoneguard", names).contains("(a scout's watch, day 5)"));
     }
+
+    // ---- 14. The target by its plan (recon.md 10.1 item 14, task R11) ----
+
+    @Test
+    void theTargetIsChosenByItsPlanNotByItsCount() {
+        // A counted 2 but 5 of its soldiers were seen away from it (plan 7); B counted 4 and nothing was seen away (plan 6)
+        Plan a = plan(counted(2), away(5));
+        Plan b = plan(counted(4), List.of());
+        assertEquals(7, a.soldiers());
+        assertEquals(6, b.soldiers());
+        assertTrue(a.counted() < b.counted(), "A has the smaller count");
+        assertTrue(Reserve.score(b, 200) < Reserve.score(a, 200), "the base with the larger plan was chosen: A " + Reserve.score(a, 200)
+                + ", B " + Reserve.score(b, 200));
+        // even when A is nearer: the plan first, then the distance
+        assertTrue(Reserve.score(b, 400) < Reserve.score(a, 150), "a nearer base with the larger plan was chosen");
+        // at the same plan, the nearer goes first
+        assertTrue(Reserve.score(plan(counted(4), List.of()), 150) < Reserve.score(b, 200), "at the same plan the nearer goes first");
+    }
+
+    // ---- 15. The lines' sightings forms (recon.md 5.4, task R11) ----
+
+    @Test
+    void theLinesSayWhatTheSightingsAdd() {
+        Map<String, String> names = Map.of("hinae", "Hinae Shirasuzu");
+        List<Sighting> seen = new ArrayList<>(away(3));
+        seen.add(hero("hinae", 6.8, NOW - 1500, Source.HOME, ""));
+        Plan p = plan(counted(2), seen);
+        String against = Reserve.defenceText(p, false, "Stoneguard", names);
+        assertEquals("about 2 defenders (scout Edrin Cole, day 5) and a reserve of 3 (3 Stoneguard soldiers seen at our walls on day 5,"
+                + " not seen to fall) and Hinae Shirasuzu (seen at our walls on day 5)", against);
+        assertEquals("Launching a raid with 7 soldiers on the Stoneguard settlement reported at 400, 67, 16, against " + against,
+                Reserve.launchLine(7, "the Stoneguard settlement", "400, 67, 16", against));
+        // a hero seen leaving from the pillar on an earlier watch, and soldiers met by a scout
+        List<Sighting> field = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            field.add(new Sighting(UUID.randomUUID(), "stoneguard", "", 1, NOW - 900 + i, 0, 0, Source.FIELD, "Mara Venn", Sightings.NO_BASE, false));
+        }
+        field.add(hero("hinae", 6.8, NOW - 800, Source.WATCH, "Edrin Cole"));
+        assertEquals("about 1 defender (scout Edrin Cole, day 5) and a reserve of 2 (2 Stoneguard soldiers met by scout Mara Venn on day 5,"
+                + " not seen to fall) and Hinae Shirasuzu (seen by scout Edrin Cole on day 5)",
+                Reserve.defenceText(plan(counted(1), field), false, "Stoneguard", names));
+        // a hero seen to fall, back by her revival: still in the plan, and the line says how she is known
+        Sighting fell = hero("hinae", 6.8, NOW - 3000, Source.HOME, "").fell(NOW - 3000);
+        assertEquals("about 4 defenders (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4 counted) and Hinae Shirasuzu"
+                + " (seen to fall at our walls on day 5)", Reserve.defenceText(plan(counted(4), List.of(fell)), false, "Stoneguard", names));
+        // an empty yard and a hero known only from our walls: alone, the backbone counts her at nothing
+        assertEquals("an empty yard (scout Edrin Cole, day 5) and no soldier of theirs seen away and Hinae Shirasuzu (seen at our walls"
+                + " on day 5; alone: not counted)", Reserve.defenceText(plan(counted(0), List.of(hero("hinae", 6.8, NOW - 100, Source.HOME, ""))),
+                false, "Stoneguard", names));
+        // a hero the watch saw goes with the count, even when a sighting of her is filed too
+        Plan both = plan(counted(2, 1, Map.of("hinae", 6.8), Set.of()), List.of(hero("hinae", 6.8, NOW - 100, Source.HOME, "")));
+        assertEquals("about 2 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 1 (half again the 2 counted)",
+                Reserve.defenceText(both, false, "Stoneguard", names));
+    }
 }

@@ -83,7 +83,10 @@ public final class HeroRaidGameTests {
         int tgt = f.raidTarget, party = f.raidParty;
         long mustered = f.raidMusteredAt, rally = f.raidRally, started = f.raidStartedAt;
         java.util.List<java.util.UUID> before = java.util.List.copyOf(f.raiders);
+        java.util.List<String> reconHeroes = java.util.List.copyOf(f.raidReconHeroes);
         t.onCleanup(() -> {
+            f.raidReconHeroes.clear();
+            f.raidReconHeroes.addAll(reconHeroes);
             f.raidTarget = tgt;
             f.raidParty = party;
             f.raidMusteredAt = mustered;
@@ -100,6 +103,7 @@ public final class HeroRaidGameTests {
         f.raidTarget = target.id;
         f.raidParty = raiders.length;
         f.raidMusteredAt = now;
+        f.raidReconHeroes.clear(); // (launched on no recon that saw a hero, unless the test says so)
         f.raidRally = Long.MIN_VALUE;
         f.raidStartedAt = now;
         return f;
@@ -444,6 +448,114 @@ public final class HeroRaidGameTests {
                 }
             });
             h.runAtTickTime(195, t.guard(() -> t.fail("guards' targets: " + g1.getTarget() + " / " + g2.getTarget())));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            foe.cleanup();
+            throw e;
+        }
+    }
+
+    // ------------------------------------------------------------------ task R9: the home hero known from the recon
+
+    /** Kagenori (a striker) as {@code as} with the focus {@code heroes_first}, at level 10, with no job and no target of its own. */
+    static HeroEntity hunter(GameTestBases.Handle t, String as, int x, int z) {
+        String text = HeroAbilityGameTests.slice("kagenori_tsurumine").replace("\"kagenori_tsurumine\"", "\"" + as + "\"");
+        if (!text.contains("\"focus\": \"strongest\"")) {
+            throw new net.minecraft.gametest.framework.GameTestAssertException("Kagenori's fixture has no focus to change");
+        }
+        HeroEntity hero = HeroAbilityGameTests.hero(t, as, "katana", text.replace("\"focus\": \"strongest\"", "\"focus\": \"heroes_first\""), x, z);
+        hero.goalSelector.removeAllGoals(g -> g instanceof WorkGoal);
+        hero.targetSelector.removeAllGoals(g -> true);
+        hero.restoreProgress(10, 0, java.util.Map.of());
+        HeroAbilityGameTests.noRegen(hero);
+        return hero;
+    }
+
+    /**
+     * {@code aRaidingHeroHuntsTheHeroItsReconSaw} (docs/design/recon.md 8, task R9): a raiding hero whose focus is
+     * {@code heroes_first} hunts the defending hero when the recon its raid was launched on saw one at home, or when it
+     * sees one inside the walls now; a hero of the base merely somewhere within 64 blocks (outside the walls, in its sight)
+     * is neither, so its goal is not the hunt (it was, before: any of the base's heroes within 64 blocks made one known).
+     */
+    @GameTest(template = FIELD, timeoutTicks = 60, batch = "hero_raid_known")
+    public static void aRaidingHeroHuntsTheHeroItsReconSaw(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, SIDE, 1, 11, 60);
+        GameTestBases.Handle foe = GameTestBases.register(h, FOE, 5, 11, 60);
+        try {
+            moveBase(h, t.base, 3, 3, 1);
+            walledYard(h, foe.base, 22, 16, 5, Blocks.OAK_DOOR, 0);
+            FactionState f = t.data.faction(SIDE);
+            java.util.List<String> before = java.util.List.copyOf(f.raidReconHeroes);
+            t.onCleanup(() -> {
+                f.raidReconHeroes.clear();
+                f.raidReconHeroes.addAll(before);
+            });
+            HeroEntity kage = hunter(t, "fx_raid_known", 9, 16);
+            HeroEntity home = sliceHero(foe, "hinae_shirasuzu", "fx_raid_home", 12, 4, 1);
+            home.setNoAi(true);
+            h.runAtTickTime(5, t.guard(() -> {
+                t.assertTrue(home.baseId() == foe.base.id && kage.distanceTo(home) < 64 && kage.hasLineOfSight(home)
+                        && !BaseZones.insideWalls(foe.base, home.blockPosition(), 0), "the defending hero should stand within 64 blocks, in"
+                        + " sight, outside the walls: base " + home.baseId() + " of " + foe.base.id + ", " + kage.distanceTo(home) + " blocks, sight "
+                        + kage.hasLineOfSight(home));
+                f.raidReconHeroes.clear();
+                kage.raid().choose(foe.base);
+                t.assertTrue(kage.raid().goal() != WallEntry.Goal.HUNT_THE_HERO, "it hunted a hero no recon saw at home: " + kage.raid().goal());
+                f.raidReconHeroes.add("fx_raid_home");
+                kage.raid().choose(foe.base);
+                t.assertTrue(kage.raid().goal() == WallEntry.Goal.HUNT_THE_HERO, "it did not hunt the hero its recon saw: " + kage.raid().goal());
+                // seen inside the walls now: the hunt, with or without the recon
+                f.raidReconHeroes.clear();
+                home.moveTo(h.absolutePos(new BlockPos(24, 2, 18)).getX() + 0.5, floorY(h), h.absolutePos(new BlockPos(24, 2, 18)).getZ() + 0.5);
+                kage.moveTo(h.absolutePos(new BlockPos(20, 2, 14)).getX() + 0.5, floorY(h), h.absolutePos(new BlockPos(20, 2, 14)).getZ() + 0.5);
+                t.assertTrue(kage.hasLineOfSight(home), "the two heroes inside the yard do not see each other");
+                kage.raid().choose(foe.base);
+                t.assertTrue(kage.raid().goal() == WallEntry.Goal.HUNT_THE_HERO, "it did not hunt the hero it saw inside: " + kage.raid().goal());
+                t.succeed();
+                foe.cleanup();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            foe.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * {@code aHuntForAHeroNobodySeesEndsAfterAMinute} (task R9): its raid was launched on a recon that saw a hero at home,
+     * so the raider hunts her; she is nowhere in its sight (away, or indoors). It looks for her across the yard, and after
+     * a minute without seeing her ({@code WallEntry.HUNT_UNSEEN_TICKS}) the hunt ends and it joins the party at the heart
+     * (before, the minute's clock was set back every tick while it saw nobody, so only the lack of progress ended it).
+     */
+    @GameTest(template = FIELD, timeoutTicks = 1800, batch = "hero_raid_hunt_ends")
+    public static void aHuntForAHeroNobodySeesEndsAfterAMinute(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, SIDE, 1, 11, 1800);
+        GameTestBases.Handle foe = GameTestBases.register(h, FOE, 5, 11, 1800);
+        try {
+            moveBase(h, t.base, 3, 3, 1);
+            walledYard(h, foe.base, 22, 16, 5, Blocks.OAK_DOOR, 0);
+            HeroEntity kage = hunter(t, "fx_raid_hunt", 18, 12);
+            FactionState f = raid(t, foe.base, kage);
+            f.raidReconHeroes.add("fx_nobody_home");
+            int[] chosen = {-1};
+            t.onEachTick(() -> {
+                int now = (int) h.getTick();
+                HeroRaid r = kage.raid();
+                if (chosen[0] < 0 && r.goal() != null) {
+                    chosen[0] = now;
+                    t.assertTrue(r.goal() == WallEntry.Goal.HUNT_THE_HERO, "the goal should be the hunt: " + r.goal());
+                }
+                if (chosen[0] >= 0 && r.goalsEnded > 0) {
+                    int took = now - chosen[0];
+                    t.assertTrue(r.lastEnd == WallEntry.GoalEnd.DONE && took >= WallEntry.HUNT_UNSEEN_TICKS - 5
+                            && took <= WallEntry.HUNT_UNSEEN_TICKS + 60, "the hunt for nobody in sight should end after its minute unseen: "
+                            + r.lastEnd + " after " + took + " ticks");
+                    t.assertTrue(r.stage() == HeroRaid.Stage.HEART, "after the hunt it should join the party at the heart: " + r.describe());
+                    t.succeed();
+                    foe.cleanup();
+                }
+            });
+            h.runAtTickTime(1790, t.guard(() -> t.fail("the hunt never ended: " + kage.raid().describe() + ", chosen at " + chosen[0])));
         } catch (RuntimeException | Error e) {
             t.cleanup();
             foe.cleanup();

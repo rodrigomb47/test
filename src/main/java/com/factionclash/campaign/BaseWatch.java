@@ -290,7 +290,8 @@ public final class BaseWatch {
      * fall at home (inside its home area, or seen by a member standing in it; {@link RollCall#witnesses}) notes that the
      * dead fighter's faction struck it ({@link FactionState#struckBy}), a hero's fall included, whether or not it knows
      * where that faction lives. It touches no report: a fall seen at our walls never lowers an estimate (only a focused
-     * recon makes one); it makes the council send a scout to that faction's nearest base once the fight is over.
+     * recon makes one); it makes the council send a scout to that faction's nearest base once the fight is over. A
+     * soldier's fall is also marked in the sightings of the factions that saw it ({@link EnemySightings#fell}, task R11).
      */
     public static void enemyFell(ServerLevel level, CampaignData data, FactionNpc victim) {
         if (victim.isDisplayOnly() || !victim.fightsLikeSoldier() || victim.getFaction() == null || !victim.getFaction().human) {
@@ -311,6 +312,11 @@ public final class BaseWatch {
             if (seen && f.struck(victim.getFaction(), now)) {
                 data.setDirty();
             }
+        }
+        if (!(victim instanceof com.factionclash.hero.HeroEntity)) {
+            // a soldier seen to fall is no reserve (recon.md 5.5, task R11): at once where it was seen from home, carried
+            // home by a scout away that saw it (a hero's fall is filed from HeroManager's death path)
+            EnemySightings.fell(level, data, victim, now);
         }
     }
 }

@@ -682,6 +682,26 @@ public final class FCCommands {
                 seen.add(so);
             }
             o.add("enemyBasesKnown", seen);
+            // what its people saw of enemy soldiers and heroes away from their bases (recon.md 5.5, task R11): the
+            // council's reserve reads them on top of a fresh good recon
+            JsonArray sightings = new JsonArray();
+            for (com.factionclash.logic.campaign.Sightings.Sighting x : f.sightings.all()) {
+                JsonObject si = new JsonObject();
+                si.addProperty("id", x.id().toString());
+                si.addProperty("faction", x.faction());
+                if (x.isHero()) {
+                    si.addProperty("hero", x.hero());
+                }
+                si.addProperty("power", Math.round(x.power() * 100) / 100.0);
+                si.addProperty("at", x.at());
+                si.addProperty("pos", x.x() + ", " + x.z());
+                si.addProperty("source", x.source().name().toLowerCase(java.util.Locale.ROOT));
+                si.addProperty("by", x.by());
+                si.addProperty("base", x.base());
+                si.addProperty("fallen", x.fallen());
+                sightings.add(si);
+            }
+            o.add("sightings", sightings);
             JsonArray roster = new JsonArray();
             for (NpcRecord r : f.roster.values()) {
                 JsonObject ro = new JsonObject();

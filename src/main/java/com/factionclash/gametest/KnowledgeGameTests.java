@@ -79,7 +79,7 @@ public final class KnowledgeGameTests {
     }
 
     /** An NPC of another faction (no roster entry) at relative (x, 2, z); the cleanup discards it. */
-    private static FactionNpc stranger(GameTestBases.Handle t, FactionType faction, int x, int z, NpcRole role) {
+    static FactionNpc stranger(GameTestBases.Handle t, FactionType faction, int x, int z, NpcRole role) {
         FactionNpc n = t.helper.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(x, 2, z));
         n.faction(faction);
         n.role(role);
@@ -87,7 +87,7 @@ public final class KnowledgeGameTests {
         return t.track(n);
     }
 
-    private static void put(GameTestBases.Handle t, LivingEntity e, int x, int z) {
+    static void put(GameTestBases.Handle t, LivingEntity e, int x, int z) {
         Vec3 at = Vec3.atBottomCenterOf(t.helper.absolutePos(new BlockPos(x, 2, z)));
         e.moveTo(at.x, at.y, at.z, e.getYRot(), 0F);
         e.setDeltaMovement(Vec3.ZERO);
@@ -99,7 +99,7 @@ public final class KnowledgeGameTests {
         RollCall.sighting(n, t.data.record(n.getUUID()));
     }
 
-    private static void kill(LivingEntity e) {
+    static void kill(LivingEntity e) {
         e.invulnerableTime = 0;
         e.hurt(e.damageSources().genericKill(), Float.MAX_VALUE);
     }
@@ -127,7 +127,7 @@ public final class KnowledgeGameTests {
 
     /**
      * The raid fields the director's council touches, restored by the cleanup; the faction's reports of {@code about} removed.
-     * The council starts from a faction that knows no enemy base and has no recon order, strike or urgent order (the world's
+     * The council starts from a faction that knows no enemy base and has no recon order, strike, urgent order or sighting (the world's
      * faction state is shared by every test, and a base report another test or an older run left would draw a recon order,
      * recon.md 2.1, into this test's council line); the cleanup restores them too.
      */
@@ -140,6 +140,8 @@ public final class KnowledgeGameTests {
         java.util.Map<FactionType, Long> oldStruck = new java.util.HashMap<>(f.struckBy);
         List<com.factionclash.campaign.ReconOrder> oldOrders = new ArrayList<>(f.reconOrders);
         java.util.Map<FactionType, Long> oldUrgent = new java.util.HashMap<>(f.reconUrgentAt);
+        com.factionclash.logic.campaign.Sightings oldSightings = f.sightings.copy();
+        List<String> oldReconHeroes = new ArrayList<>(f.raidReconHeroes);
         t.onCleanup(() -> {
             t.data.startedAt = oldStarted;
             f.lastRaidAt = oldLast;
@@ -164,12 +166,18 @@ public final class KnowledgeGameTests {
             f.reconOrders.addAll(oldOrders);
             f.reconUrgentAt.clear();
             f.reconUrgentAt.putAll(oldUrgent);
+            f.sightings.clear();
+            f.sightings.fileAll(oldSightings);
+            f.raidReconHeroes.clear();
+            f.raidReconHeroes.addAll(oldReconHeroes);
             FactionDirector.LAST_COUNCIL.remove(f.type);
         });
         f.knowledge.removeIf(Report::base);
         f.struckBy.clear();
         f.reconOrders.clear();
         f.reconUrgentAt.clear();
+        f.sightings.clear();
+        f.raidReconHeroes.clear();
     }
 
     /** The director's war council (private), run as the director runs it for the base. */
@@ -224,7 +232,7 @@ public final class KnowledgeGameTests {
         return lines;
     }
 
-    private static boolean said(List<Messages.Said> lines, FactionType f, String part) {
+    static boolean said(List<Messages.Said> lines, FactionType f, String part) {
         synchronized (lines) {
             return lines.stream().anyMatch(l -> l.faction() == f && l.line().contains(part));
         }

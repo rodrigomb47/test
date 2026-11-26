@@ -5,6 +5,7 @@ import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.Reserve;
+import com.factionclash.logic.campaign.Sightings;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
@@ -471,6 +472,8 @@ public final class FactionDirector {
         long now = level.getGameTime();
         intruders.removeIf(e -> !(heart != null && e.blockPosition().closerThan(heart, HEART_HEARD)) && !remembered(level, b, e, now));
         struck(level, b, intruders, now);
+        // the enemy soldiers and heroes its people see at home are sightings for the council's reserve (recon.md 5.5)
+        EnemySightings.atHome(level, CampaignData.get(level.getServer()), b, intruders, now);
         // A12: an enemy hero seen on its approach by a base NPC within 24 blocks (a line of sight) raises the alarm before
         // it reaches the box; only an approach out of sight reaches the wall unannounced
         approaching(level, b, walls, intruders);
@@ -877,6 +880,13 @@ public final class FactionDirector {
             return; // inside the interval with no strike: nothing to judge, and no waiting line
         }
         long revive = FCConfig.HERO_REVIVE_SECONDS.get() * 20L;
+        // what its people saw of the enemy's soldiers and heroes away from their bases (recon.md 5.5, task R11), aged out
+        // after half a day, each counted for that faction's reported settlement nearest to where it was seen (a watch's,
+        // for the base watched): only ever upward, and only on top of a fresh good recon
+        if (f.sightings.size() > 0) {
+            f.sightings.prune(t, revive);
+        }
+        List<Sightings.Base> settlements = reportedSettlements(data, f);
         BaseState target = null, waitingOn = null;
         Reserve.Plan targetPlan = null;
         Report targetReport = null, waitingReport = null;
@@ -895,10 +905,12 @@ public final class FactionDirector {
                 continue;
             }
             double distance = Math.sqrt(b.center.distSqr(home.center));
-            // the sightings behind the reserve (recon.md 5.5) come with task R11; until then the ledger is empty: the
-            // plan is the count, its share and the watch's heroes
+            // the plan (recon.md 5.5): the count, the larger of its share and the soldiers of theirs seen away from that
+            // base, and the heroes the watch saw or our people know of (a lair has no sightings: its monsters cannot be
+            // told from wild ones)
             Reserve.Plan plan = intervalOver || r.recon != null && ReconRules.answersStrike(r.recon.at(), struckAt)
-                    ? Reserve.plan(r.recon, t, Reserve.share(lair, !intervalOver), List.of(), revive) : null;
+                    ? Reserve.plan(r.recon, t, Reserve.share(lair, !intervalOver), lair ? List.of() : f.sightings.forBase(b.id, settlements),
+                    revive) : null;
             if (plan == null) {
                 // no usable report: a scout is to watch it first (the base with an open order first, then the nearest)
                 double score = (ReconOrders.ordered(f, r) ? 0 : 1_000_000.0) + distance;
@@ -909,7 +921,7 @@ public final class FactionDirector {
                 }
                 continue;
             }
-            double score = plan.heads() * 1000.0 + distance;
+            double score = Reserve.score(plan, distance);
             if (score < best) {
                 best = score;
                 target = b;
@@ -952,8 +964,27 @@ public final class FactionDirector {
         if (!go) {
             return; // not yet, or not strong enough for that plan
         }
-        launch(level, data, f, home, target, picks.subList(0, party), against,
+        launch(level, data, f, home, target, picks.subList(0, party), against, targetPlan.recon().heroes().keySet(),
                 verdict == ReconRules.Verdict.COUNTER_ATTACK ? "Counter-attack! " : "", t);
+    }
+
+    /**
+     * The enemy settlements {@code f} has reported standing, by their bases' ids, at the positions its reports give (the
+     * sightings ledger's attribution, recon.md 5.5: a sighting counts for that faction's reported settlement nearest to
+     * where it was seen). Only what the faction knows: its own reports.
+     */
+    static List<Sightings.Base> reportedSettlements(CampaignData data, FactionState f) {
+        List<Sightings.Base> out = new ArrayList<>();
+        for (Report r : f.knowledge) {
+            if (r.kind != Report.Kind.ENEMY_BASE || r.fallen || r.subject == null) {
+                continue;
+            }
+            BaseState b = reportedBase(data, r);
+            if (b != null) {
+                out.add(new Sightings.Base(b.id, r.subject.id, r.pos.getX(), r.pos.getZ()));
+            }
+        }
+        return out;
     }
 
     /**
@@ -1109,10 +1140,13 @@ public final class FactionDirector {
         }
         long now = level.getGameTime();
         boolean lair = !target.isSettlement();
-        Reserve.Plan plan = known == null ? null
-                : Reserve.plan(known.recon, now, Reserve.share(lair, false), List.of(), FCConfig.HERO_REVIVE_SECONDS.get() * 20L);
+        long revive = FCConfig.HERO_REVIVE_SECONDS.get() * 20L;
+        f.sightings.prune(now, revive);
+        Reserve.Plan plan = known == null ? null : Reserve.plan(known.recon, now, Reserve.share(lair, false),
+                lair ? List.of() : f.sightings.forBase(target.id, reportedSettlements(data, f)), revive);
         String against = plan == null ? null : Reserve.defenceText(plan, lair, target.faction.displayName, heroNames(plan));
-        launch(level, data, f, home, target, picks.subList(0, party), against, "By order! ", now);
+        launch(level, data, f, home, target, picks.subList(0, party), against, plan == null ? List.of() : plan.recon().heroes().keySet(),
+                "By order! ", now);
         return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";
     }
 
@@ -1120,10 +1154,11 @@ public final class FactionDirector {
      * Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the council's plan
      * for the raid (knowledge review of 2026-11-19: the march there, the muster, the assault and the march home), the
      * message ({@code against}: what the council plans against, {@link Reserve#defenceText}; null: an operator's raid
-     * with no usable recon, {@link Reserve#launchLine}).
+     * with no usable recon, {@link Reserve#launchLine}) and the heroes the recon it rests on saw at home
+     * ({@code reconHeroes}, task R9: its raiding heroes know a defending hero is home, {@code HeroRaid}).
      */
     private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
-                               List<FactionNpc> party, String against, String prefix, long t) {
+                               List<FactionNpc> party, String against, java.util.Collection<String> reconHeroes, String prefix, long t) {
         f.raiders.clear();
         f.raidEndNews = null; // a new raid: the last one's end is old news
         f.raidLast = null;
@@ -1136,6 +1171,8 @@ public final class FactionDirector {
         f.raidTarget = target.id;
         f.raidParty = party.size();
         f.raidMusteredAt = 0;
+        f.raidReconHeroes.clear();
+        f.raidReconHeroes.addAll(reconHeroes);
         // the party gathers 28 blocks short of the target, on the home side and outside its walls on any heading,
         // before going in together
         int[] r = com.factionclash.logic.Zones.rally(target.center.getX(), target.center.getZ(), home.center.getX(),

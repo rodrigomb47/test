@@ -2,6 +2,7 @@ package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.BaseWatch;
+import com.factionclash.campaign.EnemySightings;
 import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.FactionState;
@@ -23,6 +24,7 @@ import com.factionclash.logic.campaign.Intel;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.ReconRules.Side;
 import com.factionclash.logic.campaign.ReconWatch;
+import com.factionclash.logic.campaign.Sightings;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcNavigator;
@@ -115,6 +117,12 @@ public class ScoutJob extends Job {
      * {@link #pending} until the station ({@code docs/design/recon.md} 4). Saved.
      */
     private ReconTrip recon;
+    /**
+     * The enemy soldiers and heroes it saw away from their bases on its trips, and the falls it saw away
+     * ({@code docs/design/recon.md} 5.5, task R11): carried home as its news is, told at the station, lost if it dies.
+     * Saved.
+     */
+    private final Sightings carriedSightings = new Sightings();
     /** Breaks the pillar's blocks on the way down, and digs dirt at home. */
     private final BlockWork.Breaker breaker = new BlockWork.Breaker();
     /**
@@ -906,11 +914,16 @@ public class ScoutJob extends Job {
             return;
         }
         BlockPos here = npc.blockPosition();
+        CampaignData data = data();
+        if (!RollCall.inHomeArea(data, npc.getFaction(), level(), here)) {
+            // enemy fighters it meets away from their bases, carried home for the council's reserve (recon.md 5.5); at
+            // home the alarm's sweep sees them
+            EnemySightings.field(level(), data, npc, carriedSightings, pending, now());
+        }
         if (here.closerThan(home.center, 40)) {
             return;
         }
         long now = now();
-        CampaignData data = data();
         pendingSectors.add(FactionState.sector(here.getX(), here.getZ()));
         for (BaseState other : data.bases.values()) {
             if (other.faction == npc.getFaction()) {
@@ -1071,6 +1084,11 @@ public class ScoutJob extends Job {
         FactionState f = data().faction(npc.getFaction());
         if (recon != null) {
             deliverRecon(f); // the focused report first (recon.md 4), told to its order, then the other reports
+        }
+        if (carriedSightings.size() > 0) {
+            // what it saw of the enemy away from their bases joins its faction's sightings now, at the station (recon.md 5.5)
+            f.sightings.fileAll(carriedSightings);
+            carriedSightings.clear();
         }
         int fresh = 0, xp = 0;
         Map<String, Integer> places = new LinkedHashMap<>();
@@ -1770,6 +1788,9 @@ public class ScoutJob extends Job {
         long now = now(), end = r.watchStartedAt + ReconRules.WATCH_TICKS, last = r.watch.last();
         if (last < end && (last < 0 || now - last >= SAMPLE_TICKS || now >= end)) {
             r.watch.add(BaseWatch.reconSample(level(), npc, t, now));
+            // the heroes it sees, and the target's soldiers outside its box (a party leaving, a patrol below): sightings
+            // told with its report (recon.md 5.5)
+            EnemySightings.watch(level(), npc, t, carriedSightings, now);
         }
         switch (ReconRules.perch(now, r.watchStartedAt, ReconRules.WATCH_TICKS, enemyNear(), false, false)) {
             case WATCH -> status("Watching " + r.what() + " from " + r.vantage + ": " + r.watch.soldiers().size()
@@ -1944,6 +1965,19 @@ public class ScoutJob extends Job {
         if (recon != null) {
             tag.put("recon", recon.save());
         }
+        if (carriedSightings.size() > 0) {
+            tag.put("sightingsCarried", EnemySightings.save(carriedSightings));
+        }
+    }
+
+    /** It saw an enemy fighter, or its fall, away from home ({@link EnemySightings}): it carries it home to the station. */
+    public void carry(Sightings.Sighting s) {
+        carriedSightings.file(s);
+    }
+
+    /** The sightings it carries home (for the GameTests). */
+    public Sightings carriedSightings() {
+        return carriedSightings;
     }
 
     public String targetInfo() {
@@ -1994,6 +2028,8 @@ public class ScoutJob extends Job {
         retreatReason = tag.getString("reason");
         evasions = tag.getInt("evasions");
         recon = tag.contains("recon") ? ReconTrip.load(tag.getCompound("recon")) : null;
+        carriedSightings.clear();
+        EnemySightings.load(tag, "sightingsCarried", carriedSightings); // (absent before task R11: none carried)
         endEncounter(); // an escape in progress is not resumed: the scout looks around afresh
         sightings.clear();
         if (state == State.DIG) {

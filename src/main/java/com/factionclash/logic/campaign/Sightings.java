@@ -15,8 +15,8 @@ import java.util.UUID;
  * Minecraft classes: the ledger (the newest sighting per entity, a soldier's fall that sticks, ageing, the cap) and the
  * base a sighting counts for.
  *
- * <p>Task R10, additive: nothing files or reads sightings yet. R11 writes them (at home, by scouts carrying them home, by
- * the recon watch) and lets the council's plan read them, if the owner keeps them (recon.md 12, question 1).
+ * <p>Task R10 made the ledger; task R11 writes it (at home, by scouts carrying it home, by the recon watch, and the falls
+ * seen; {@code campaign/EnemySightings}) and lets the council's plan read it ({@code FactionState.sightings}).
  */
 public final class Sightings {
     /** PROPOSED: the most sightings a faction keeps (several raid parties' worth), the oldest dropped first. */
@@ -110,6 +110,27 @@ public final class Sightings {
             }
             byId.remove(oldest.id());
         }
+    }
+
+    /** Files every sighting of {@code other} ({@link #file}): what a scout carried home joins its faction's ledger. */
+    public void fileAll(Sightings other) {
+        if (other != null) {
+            for (Sighting s : List.copyOf(other.byId.values())) {
+                file(s);
+            }
+        }
+    }
+
+    /** Forgets every sighting. */
+    public void clear() {
+        byId.clear();
+    }
+
+    /** A copy of this ledger (the same sightings, in the same order). */
+    public Sightings copy() {
+        Sightings c = new Sightings();
+        c.byId.putAll(byId);
+        return c;
     }
 
     /** Drops every sighting past {@link #countsUntil}. */

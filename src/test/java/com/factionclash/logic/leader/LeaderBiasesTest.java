@@ -93,7 +93,9 @@ class LeaderBiasesTest {
         }
         contains(director, "f.raiders.size() * 2 < f.raidParty", "FactionDirector");
         assertEquals(0.5, n.fallBackShare(), EPS);
-        contains(director, "double score = plan.heads() * 1000.0 + distance;", "FactionDirector");
+        // (since the sightings, task R11, the score is Reserve.score: the plan in soldiers, then the distance)
+        contains(director, "double score = Reserve.score(plan, distance);", "FactionDirector");
+        contains(source("logic/campaign/Reserve.java"), "return p.heads() * 1000.0 + distance;", "Reserve");
         for (double d : new double[]{0, 3, 7.5}) {
             for (double dist : new double[]{0, 40, 250}) {
                 assertEquals(d * 1000 + dist, n.targetCost(d, dist, 0.6, false, true), 1e-9, "today's target cost");

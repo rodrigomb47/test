@@ -468,6 +468,11 @@ public final class HeroManager {
         boolean known = com.factionclash.campaign.RollCall.known(data.record(h.getUUID()));
         fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ()
                 + (overworld ? "" : " in " + h.level().dimension().location().getPath().replace('_', ' ')), known);
+        if (h.level() instanceof ServerLevel seenAt) {
+            // its fall is a sighting of every hostile faction whose people saw it (docs/design/recon.md 5.5, task R11): at
+            // once at home, carried home by a scout away; it counts in their plans until half a day after its return
+            com.factionclash.campaign.EnemySightings.fell(seenAt, data, h, seenAt.getGameTime());
+        }
         com.factionclash.faction.FactionType theirs = com.factionclash.combat.CombatRules.factionOf(killer);
         if (theirs != null && theirs != s.owner) {
             String line = h.npcName() + " of the " + s.owner.displayName + " has fallen to " + HeroEntity.nameOf(killer) + ".";

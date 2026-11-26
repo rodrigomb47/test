@@ -137,6 +137,18 @@ public final class FactionState {
      */
     public final Map<FactionType, Long> reconUrgentAt = new java.util.EnumMap<>(FactionType.class);
 
+    /**
+     * What the faction's people saw of enemy soldiers and heroes away from their bases (recon.md 5.5, task R11): at our
+     * walls, met by a scout, seen from a recon scout's pillar, and the falls seen ({@link EnemySightings}). The war
+     * council's plan reads it for the reserve and the heroes it knows of, only on top of a fresh good recon. Saved.
+     */
+    public final com.factionclash.logic.campaign.Sightings sightings = new com.factionclash.logic.campaign.Sightings();
+    /**
+     * The heroes the recon its last raid was launched on saw at that base's home (task R9; none for a raid launched with no
+     * usable recon): its raiding heroes know a defending hero is home ({@code HeroRaid}). Saved.
+     */
+    public final java.util.Set<String> raidReconHeroes = new java.util.LinkedHashSet<>();
+
     /** When the council last ordered an urgent recon of {@code enemy}'s base (0: never). */
     public long urgentOrderedAt(FactionType enemy) {
         Long at = enemy == null ? null : reconUrgentAt.get(enemy);
@@ -294,6 +306,10 @@ public final class FactionState {
         CompoundTag ua = new CompoundTag();
         reconUrgentAt.forEach((faction, at) -> ua.putLong(faction.id, at));
         t.put("reconUrgentAt", ua);
+        t.put("sightings", EnemySightings.save(sightings));
+        ListTag rh = new ListTag();
+        raidReconHeroes.forEach(h -> rh.add(net.minecraft.nbt.StringTag.valueOf(h)));
+        t.put("raidReconHeroes", rh);
         return t;
     }
 
@@ -393,6 +409,12 @@ public final class FactionState {
             if (enemy != null) {
                 f.reconUrgentAt.put(enemy, ua.getLong(id));
             }
+        }
+        // the sightings and the launching recon's heroes (tasks R11 and R9, still campaign format 5: absent, none)
+        EnemySightings.load(t, "sightings", f.sightings);
+        ListTag rh = t.getList("raidReconHeroes", Tag.TAG_STRING);
+        for (int i = 0; i < rh.size(); i++) {
+            f.raidReconHeroes.add(rh.getString(i));
         }
         return f;
     }
