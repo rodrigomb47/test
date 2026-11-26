@@ -3,6 +3,8 @@ package com.factionclash.work;
 import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
+import com.factionclash.campaign.BaseWatch;
+import com.factionclash.logic.campaign.ReconOptic;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.ReconRules.Side;
 import net.minecraft.core.BlockPos;
@@ -62,11 +64,21 @@ public final class ReconVantage {
     public record Vantage(Side side, ReconRules.Column column, BlockPos foot, int rise) {
     }
 
-    /** The band a scout watches {@code target} from: the real one, or a GameTest base's scaled one. */
+    /** The band a scout watches {@code target} from with the eyes: the real one, or a GameTest base's scaled one. */
     public static ReconRules.Band band(BaseState target) {
-        ReconRules.Band real = ReconRules.Band.of(!target.isSettlement());
-        return new ReconRules.Band(target.testStandoff > 0 ? target.testStandoff : real.standoff(),
-                target.testSight > 0 ? target.testSight : real.sight(), real.lateral());
+        return band(target, ReconOptic.NONE);
+    }
+
+    /**
+     * The band a scout watching through {@code optic} uses on {@code target} (task R12): a settlement's from the standoff
+     * out to the look's reach ({@link BaseWatch#reconSight}: 61 to 96 with a spyglass, a GameTest base's scaled by the
+     * same ratio); a lair's, the real one or a GameTest lair's, whatever the scout carries.
+     */
+    public static ReconRules.Band band(BaseState target, ReconOptic optic) {
+        boolean lair = !target.isSettlement();
+        ReconRules.Band real = ReconRules.Band.of(lair, optic);
+        int sight = lair ? (target.testSight > 0 ? target.testSight : real.sight()) : (int) BaseWatch.reconSight(target, optic);
+        return new ReconRules.Band(target.testStandoff > 0 ? target.testStandoff : real.standoff(), sight, real.lateral());
     }
 
     /** The sides with a gate: a settlement's west and east ({@code BaseLayout}), every side of a lair (its walls have gaps). */
@@ -104,7 +116,17 @@ public final class ReconVantage {
      * none (the scout tries its next side). Reads only loaded chunks, once.
      */
     public static List<Vantage> columns(ServerLevel level, CampaignData data, BaseState target, Side side) {
-        ReconRules.Band band = band(target);
+        return columns(level, data, target, side, ReconOptic.NONE);
+    }
+
+    /**
+     * The columns of {@code side} a scout watching through {@code optic} can stand on (task R12): those of its band
+     * ({@link #band(BaseState, ReconOptic)}: out to 96 with a spyglass), the ones within the eyes' reach first in their own
+     * order and the deeper ones after them ({@link ReconRules#rank(java.util.Collection, int)}), so an instrument never
+     * takes the scout off a column the eyes would have used.
+     */
+    public static List<Vantage> columns(ServerLevel level, CampaignData data, BaseState target, Side side, ReconOptic optic) {
+        ReconRules.Band band = band(target, optic);
         List<ReconRules.Column> cols = ReconRules.columns(side, band);
         if (cols.isEmpty()) {
             return List.of();
@@ -156,7 +178,7 @@ public final class ReconVantage {
             ground.add(new ReconRules.Ground(c, v.rise()));
         }
         List<Vantage> out = new ArrayList<>();
-        for (ReconRules.Ground g : ReconRules.rank(ground)) {
+        for (ReconRules.Ground g : ReconRules.rank(ground, band(target).sight())) {
             out.add(found.get(g.column()));
         }
         return out;

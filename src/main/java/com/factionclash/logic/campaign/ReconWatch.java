@@ -154,10 +154,16 @@ public final class ReconWatch {
     /**
      * The focused report of this watch (recon.md 4): the soldiers counted once each, by face, their mean power, the
      * heroes seen, the share of the yard's points seen at least once, the middle, how long it watched, its last sample's
-     * time, the vantage and the scout's name. Whether it is good or blind is {@link Intel.Recon#good}'s to say.
+     * time, the vantage and the scout's name. Whether it is good or blind is {@link Intel.Recon#good}'s to say. Watched
+     * with the eyes.
      */
     public Intel.Recon recon(String vantage, String by) {
+        return recon(vantage, by, ReconOptic.NONE.id());
+    }
+
+    /** {@link #recon(String, String)} watched through the instrument {@code optic} names (task R12: "spyglass"). */
+    public Intel.Recon recon(String vantage, String by, String optic) {
         return new Intel.Recon(soldiers.size(), power(), heroes, Intel.coverage(points()), middle(), watchTicks(),
-                Math.max(0, last), vantage, by, soldiers.keySet());
+                Math.max(0, last), vantage, by, soldiers.keySet(), optic);
     }
 }

@@ -1446,6 +1446,74 @@ public final class FCGameTests {
     }
 
     /**
+     * {@code aMinerTakesTheAmethystClusterItsTunnelUncovers} (recon.md 5.6, task R12: the shard in a spyglass): branch
+     * mining, the test puts a grown amethyst cluster beside a cell of the tunnel plan, standing on the rock beyond it and
+     * pointing into the tunnel, as a cluster in a geode points into its hollow. Once the cell is dug the cluster is in the
+     * open beside the miner: it breaks it at player speed with its pickaxe, as a player mines what it just uncovered, and
+     * keeps the four shards vanilla's loot table gives (straight into its backpack, none left lying on the floor); the
+     * rock the cluster stood on is left (it is no ore).
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "mine_amethyst", skyAccess = true)
+    public static void aMinerTakesTheAmethystClusterItsTunnelUncovers(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 600, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine;
+        FactionNpc miner;
+        BlockPos cluster = null, support = null;
+        try {
+            mine = stoneBlockMine(h, t, 0, 3, -1);
+            miner = stoneBlockMiner(h, t, mine, new BlockPos(6, 2, 6));
+            com.factionclash.campaign.WorkplaceState.MineLevel lv0 = mine.levels.get(0);
+            List<com.factionclash.logic.SpiralMine.Cell> plan = com.factionclash.structure.MineLayout.tunnelPlan(lv0);
+            java.util.Set<BlockPos> planned = new java.util.HashSet<>();
+            for (com.factionclash.logic.SpiralMine.Cell c : plan) {
+                planned.add(com.factionclash.structure.MineLayout.tunnelPos(mine, lv0, c));
+            }
+            BlockPos lo = h.absolutePos(new BlockPos(3, 2, 3)), hi = h.absolutePos(new BlockPos(9, 4, 8));
+            // a lower cell of the main tunnel past its first one, a neighbour beside it in the rock, the rock beyond
+            for (int i = 1; i < Math.min(plan.size(), 12) && cluster == null; i++) {
+                com.factionclash.logic.SpiralMine.Cell c = plan.get(i);
+                if (c.dy() != 0 || c.torch()) {
+                    continue;
+                }
+                BlockPos cell = com.factionclash.structure.MineLayout.tunnelPos(mine, lv0, c);
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                    BlockPos n = cell.relative(d), beyond = n.relative(d);
+                    boolean inRock = n.getX() >= lo.getX() && n.getX() <= hi.getX() && n.getZ() >= lo.getZ() && n.getZ() <= hi.getZ()
+                            && beyond.getX() >= lo.getX() && beyond.getX() <= hi.getX() && beyond.getZ() >= lo.getZ() && beyond.getZ() <= hi.getZ();
+                    if (inRock && !planned.contains(n) && !planned.contains(beyond) && !com.factionclash.structure.MineLayout.nearStairs(mine, n)
+                            && !com.factionclash.structure.MineLayout.nearStairs(mine, beyond)
+                            && h.getLevel().getBlockState(n).is(Blocks.STONE) && h.getLevel().getBlockState(beyond).is(Blocks.STONE)) {
+                        cluster = n;
+                        support = beyond;
+                        h.getLevel().setBlockAndUpdate(n, Blocks.AMETHYST_CLUSTER.defaultBlockState()
+                                .setValue(net.minecraft.world.level.block.AmethystClusterBlock.FACING, d.getOpposite()));
+                        break;
+                    }
+                }
+            }
+            h.assertTrue(cluster != null, "no rock beside the tunnel plan for a cluster");
+            h.assertTrue(h.getLevel().getBlockState(cluster).is(Blocks.AMETHYST_CLUSTER), "the cluster should stand on the rock beyond it");
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        BlockPos at = cluster, rock = support;
+        FactionNpc m = miner;
+        t.onEachTick(() -> {
+            if (h.getLevel().getBlockState(at).is(Blocks.AMETHYST_CLUSTER)) {
+                return;
+            }
+            int shards = com.factionclash.work.Inv.count(m.inventory(), x -> x.is(Items.AMETHYST_SHARD));
+            t.assertTrue(shards == 4, "the miner should keep the cluster's four shards: " + shards);
+            t.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    new net.minecraft.world.phys.AABB(at).inflate(4), e -> e.getItem().is(Items.AMETHYST_SHARD)).isEmpty(),
+                    "shards left lying on the floor");
+            t.assertTrue(h.getLevel().getBlockState(rock).is(Blocks.STONE), "the rock it stood on is no ore: " + h.getLevel().getBlockState(rock));
+            t.succeed();
+        });
+    }
+
+    /**
      * A mine rests until an iron pickaxe, and the only one in the storehouse has Silk Touch, which a miner never
      * takes over its own stone one. The miner does not go to fetch it (it would stand at the storehouse every tick,
      * never getting anywhere): it looks for a new mine site at once, from where it stands. On the flat test world it

@@ -45,6 +45,12 @@ public final class Crafting {
     public static final Recipe DOOR = new Recipe("doors", List.of(of(ItemTags.PLANKS, 6, "Planks")), Items.OAK_DOOR, 3);
     public static final Recipe ARROWS = new Recipe("arrows", List.of(of(Items.FLINT, 1), of(Items.STICK, 1), of(Items.FEATHER, 1)), Items.ARROW, 4);
     public static final Recipe BOW = new Recipe("bow", List.of(of(Items.STICK, 3), of(Items.STRING, 3)), Items.BOW, 1);
+    /**
+     * Vanilla's spyglass: two copper ingots and an amethyst shard (task R12, recon.md 5.6). A recon scout watches through
+     * it from up to 96 blocks; vanilla, so never behind a tech level.
+     */
+    public static final Recipe SPYGLASS = new Recipe("spyglass", List.of(of(Items.COPPER_INGOT, 2), of(Items.AMETHYST_SHARD, 1)),
+            Items.SPYGLASS, 1);
 
     public static Recipe bedroll(Item bedroll) {
         return new Recipe("bedroll", List.of(of(Items.WHEAT, 3)), bedroll, 1);

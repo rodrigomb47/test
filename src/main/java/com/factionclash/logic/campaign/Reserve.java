@@ -37,9 +37,18 @@ public final class Reserve {
     /** PROPOSED: the counter-attack's plan has no share: the army that struck us was in sight, and what walked away is known. */
     public static final double COUNTER_SHARE = 0;
 
-    /** The share for a target: a lair's, a counter-attack's, else a raid's at the interval. */
+    /** The share for a target: a lair's, a counter-attack's, else a raid's at the interval (a recon watched with the eyes). */
     public static double share(boolean lair, boolean counter) {
-        return lair ? SHARE_LAIR : counter ? COUNTER_SHARE : SHARE;
+        return share(lair, counter, ReconOptic.NONE);
+    }
+
+    /**
+     * The share for a target whose recon was watched through {@code optic} (task R12): a lair's and a counter-attack's
+     * whatever it was, else the instrument's row's ({@link ReconOptic#share}: the eyes' and the spyglass's are both
+     * {@link #SHARE}; an instrument that sees more of the yard, a drone of Phase 6, may carry a smaller one).
+     */
+    public static double share(boolean lair, boolean counter, ReconOptic optic) {
+        return lair ? SHARE_LAIR : counter ? COUNTER_SHARE : optic.share();
     }
 
     /**

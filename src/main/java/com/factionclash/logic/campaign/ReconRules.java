@@ -386,7 +386,17 @@ public final class ReconRules {
     public record Band(int standoff, int sight, int lateral) {
         /** A settlement's ({@link #STANDOFF} to {@link #SIGHT}, {@link #LATERAL} to either side) or a lair's (on the axis). */
         public static Band of(boolean lair) {
-            return lair ? new Band(LAIR_STANDOFF, LAIR_SIGHT, 0) : new Band(STANDOFF, SIGHT, LATERAL);
+            return of(lair, ReconOptic.NONE);
+        }
+
+        /**
+         * The band a scout watching through {@code optic} uses (task R12, recon.md 5.6): a settlement's runs from the
+         * standoff to the instrument's reach (61 to 96 with a spyglass). A lair's is the same whatever the scout carries:
+         * it is watched from the ground through the gaps in its walls (3.7), where the design measured the look only out
+         * to 64, so no instrument is taken out there.
+         */
+        public static Band of(boolean lair, ReconOptic optic) {
+            return lair ? new Band(LAIR_STANDOFF, LAIR_SIGHT, 0) : new Band(STANDOFF, optic.sight(), LATERAL);
         }
     }
 
@@ -453,6 +463,23 @@ public final class ReconRules {
     public static List<Ground> rank(Collection<Ground> found) {
         List<Ground> out = new ArrayList<>(found);
         out.sort(GROUND_ORDER);
+        return out;
+    }
+
+    /**
+     * {@code found} best first when the scout watches through an instrument that reaches past the eyes (task R12): the
+     * columns within the eyes' reach ({@code eyes}, horizontal from the centre) first, in {@link #GROUND_ORDER}, then the
+     * deeper ones the instrument opens, in the same order. A farther column needs a taller pillar for the same look (recon.md
+     * 5.6: a gate side's 12 blocks at 61 are 19 at 96), so higher ground deep in the band never pulls the scout off a
+     * column the eyes would have used: the instrument never makes a side worse. It helps where trees, water, cliffs or a
+     * base's plan leave the eyes' band without a column to stand on. With {@code eyes} at the band's own reach this is
+     * {@link #rank(Collection)}.
+     */
+    public static List<Ground> rank(Collection<Ground> found, int eyes) {
+        long reach = (long) eyes * eyes;
+        List<Ground> out = new ArrayList<>(found);
+        out.sort(Comparator.comparing((Ground g) -> (long) g.column().dx() * g.column().dx()
+                + (long) g.column().dz() * g.column().dz() > reach).thenComparing(GROUND_ORDER));
         return out;
     }
 

@@ -243,7 +243,8 @@ public final class Report {
     /**
      * A focused recon as saved (recon.md 7, campaign format 5): the soldiers counted, their mean power, the heroes seen
      * (hero id to war power, each a double, so a power reads back exactly), the coverage, the middle, the watch, when, the
-     * vantage, by whom, and the faces counted (their UUIDs).
+     * vantage, by whom, the faces counted (their UUIDs) and the instrument it was watched through (task R12: "spyglass";
+     * no tag for the eyes, as every recon before R12 was).
      */
     public static CompoundTag saveRecon(Intel.Recon r) {
         CompoundTag t = new CompoundTag();
@@ -263,10 +264,13 @@ public final class Report {
             faces.add(NbtUtils.createUUID(u));
         }
         t.put("faces", faces);
+        if (!r.optic().isEmpty()) {
+            t.putString("optic", r.optic());
+        }
         return t;
     }
 
-    /** A focused recon as {@link #saveRecon} wrote it. */
+    /** A focused recon as {@link #saveRecon} wrote it (one saved before task R12 has no tag: the eyes). */
     public static Intel.Recon loadRecon(CompoundTag t) {
         Map<String, Double> heroes = new LinkedHashMap<>();
         CompoundTag h = t.getCompound("heroes");
@@ -278,7 +282,7 @@ public final class Report {
             faces.add(NbtUtils.loadUUID(u));
         }
         return new Intel.Recon(t.getInt("soldiers"), t.getDouble("power"), heroes, t.getDouble("coverage"), t.getBoolean("middle"),
-                t.getLong("watch"), t.getLong("at"), t.getString("vantage"), t.getString("by"), faces);
+                t.getLong("watch"), t.getLong("at"), t.getString("vantage"), t.getString("by"), faces, t.getString("optic"));
     }
 
     public static Report load(CompoundTag t) {

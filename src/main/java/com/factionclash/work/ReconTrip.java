@@ -4,6 +4,7 @@ import com.factionclash.campaign.BaseWatch;
 import com.factionclash.campaign.Report;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconOptic;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.ReconRules.Side;
 import com.factionclash.logic.campaign.ReconWatch;
@@ -98,6 +99,11 @@ final class ReconTrip {
     ReconWatch watch;
     long watchStartedAt;
     String vantage = "";
+    /**
+     * The instrument its looks were taken through ({@link ReconOptic#id}: "spyglass", empty for the eyes; task R12), for
+     * the report's tag: set at each look and at the watch's start.
+     */
+    String optic = "";
     End end = End.NONE;
     String why = "";
 
@@ -156,11 +162,11 @@ final class ReconTrip {
      */
     Intel.Recon result(String by) {
         if (watch != null && !watch.empty()) {
-            return watch.recon(vantage, by);
+            return watch.recon(vantage, by, optic);
         }
         if (bestAt > 0) {
             String v = ReconRules.vantage(bestHeight, rise);
-            return new Intel.Recon(0, 0, Map.of(), Intel.coverage(bestPoints), bestMiddle, 0, bestAt, v, by, Set.of());
+            return new Intel.Recon(0, 0, Map.of(), Intel.coverage(bestPoints), bestMiddle, 0, bestAt, v, by, Set.of(), optic);
         }
         return null;
     }
@@ -176,12 +182,18 @@ final class ReconTrip {
             return null;
         }
         String note = what().substring(4) + (r == null ? ", no vantage found" : r.good() ? ", " + r.soldiers()
-                + (lair() ? " monsters" : " soldiers") + " counted from " + r.vantage() : ", could not see inside");
+                + (lair() ? " monsters" : " soldiers") + " counted from " + r.vantage() + through(r) : ", could not see inside");
         Report rep = new Report(kind, target, r == null ? now : Math.max(1, r.at()), subject, r == null || !r.good() ? 0 : r.soldiers(),
                 Character.toUpperCase(note.charAt(0)) + note.substring(1));
         rep.recon = r;
         rep.reconSidesTried = tried;
         return rep;
+    }
+
+    /** " with a spyglass" for a recon watched through an instrument, nothing for the eyes. */
+    static String through(Intel.Recon r) {
+        ReconOptic o = ReconOptic.of(r);
+        return o.none() ? "" : " with " + o.name();
     }
 
     CompoundTag save() {
@@ -219,6 +231,9 @@ final class ReconTrip {
             t.putLong("watchStartedAt", watchStartedAt);
         }
         t.putString("vantage", vantage);
+        if (!optic.isEmpty()) {
+            t.putString("optic", optic);
+        }
         t.putString("end", end.name());
         t.putString("why", why);
         return t;
@@ -259,6 +274,7 @@ final class ReconTrip {
             r.watchStartedAt = t.getLong("watchStartedAt");
         }
         r.vantage = t.getString("vantage");
+        r.optic = ReconOptic.byId(t.getString("optic")).id();
         r.end = valueOf(End.class, t.getString("end"), End.NONE);
         r.why = t.getString("why");
         if (r.phase == Phase.PILLAR && r.pillar == null) {

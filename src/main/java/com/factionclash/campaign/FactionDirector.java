@@ -4,6 +4,7 @@ import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
 import com.factionclash.logic.campaign.ReconRules;
+import com.factionclash.logic.campaign.ReconOptic;
 import com.factionclash.logic.campaign.Reserve;
 import com.factionclash.logic.campaign.Sightings;
 import com.factionclash.logic.campaign.Whereabouts;
@@ -909,7 +910,7 @@ public final class FactionDirector {
             // base, and the heroes the watch saw or our people know of (a lair has no sightings: its monsters cannot be
             // told from wild ones)
             Reserve.Plan plan = intervalOver || r.recon != null && ReconRules.answersStrike(r.recon.at(), struckAt)
-                    ? Reserve.plan(r.recon, t, Reserve.share(lair, !intervalOver), lair ? List.of() : f.sightings.forBase(b.id, settlements),
+                    ? Reserve.plan(r.recon, t, Reserve.share(lair, !intervalOver, ReconOptic.of(r.recon)), lair ? List.of() : f.sightings.forBase(b.id, settlements),
                     revive) : null;
             if (plan == null) {
                 // no usable report: a scout is to watch it first (the base with an open order first, then the nearest)
@@ -1142,7 +1143,7 @@ public final class FactionDirector {
         boolean lair = !target.isSettlement();
         long revive = FCConfig.HERO_REVIVE_SECONDS.get() * 20L;
         f.sightings.prune(now, revive);
-        Reserve.Plan plan = known == null ? null : Reserve.plan(known.recon, now, Reserve.share(lair, false),
+        Reserve.Plan plan = known == null ? null : Reserve.plan(known.recon, now, Reserve.share(lair, false, ReconOptic.of(known.recon)),
                 lair ? List.of() : f.sightings.forBase(target.id, reportedSettlements(data, f)), revive);
         String against = plan == null ? null : Reserve.defenceText(plan, lair, target.faction.displayName, heroNames(plan));
         launch(level, data, f, home, target, picks.subList(0, party), against, plan == null ? List.of() : plan.recon().heroes().keySet(),

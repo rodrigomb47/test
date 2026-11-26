@@ -64,8 +64,8 @@ The design in brief:
    The launch line says what the plan rests on: "against about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day
    5.2) and a reserve of 2 (half again the 4 counted)".
 9. **Optics** (section 5.6). The vanilla spyglass is never behind a tech level. A scout carrying one watches from up to
-   96 blocks instead of 72: a deeper band with more clear columns and hills, not a shorter pillar. It is built after the
-   live check if trees and hills often blind the band (R12). Phase 6's drones (over the middle of the yard: 80 to 88% of
+   96 blocks instead of 72: a deeper band with more clear columns and hills, not a shorter pillar. The owner had it
+   built at once (2026-11-26, section 12 question 3): R12, before the live check (as built: 5.9). Phase 6's drones (over the middle of the yard: 80 to 88% of
    it) and scouting vehicles slot in as rows of data; what binoculars give beyond a spyglass is Phase 6's to set, since
    under these rules an optic at the eye changes only the reach.
 10. The owner agreed to a **second scout** for watching (section 2.4). How the Hollow finds settlements now belongs to
@@ -843,7 +843,7 @@ here; the Phase 6 rows are placeholders for that phase's design pass and go into
 | instrument | when | reach | vantage | coverage (25 points) | `RESERVE_SHARE` |
 |---|---|---|---|---|---|
 | the eyes | now | 72 | a pillar or high ground, 61 to 72 (3.5) | 32 to 60% (3.3) | 0.5 |
-| a spyglass (vanilla) | in the rules now; built in R12 | 96 | a pillar or high ground, 61 to 96 | the same (the walls set it) | 0.5 |
+| a spyglass (vanilla) | built (R12, 5.9) | 96 | a pillar or high ground, 61 to 96 | the same (the walls set it) | 0.5 |
 | binoculars (Phase 6) | not built | 96 (vanilla's line of sight caps it) | as the spyglass | the same | 0.5 |
 | a drone (Phase 6) | not built | its flight | over the middle of the yard (or 12 blocks off it on an axis), at least 36 above the floor | 80 to 88%, both layouts (68% over a grown base's corner quarter, 17 blocks off the middle, until 48 up) | 0.25 (a placeholder) |
 | a balloon or scout helicopter (Phase 6 scouting vehicles) | not built | the eye's or spyglass's aboard | outside the walls, at any height | at most 56 to 60%, a pillar's | 0.5 |
@@ -871,7 +871,8 @@ spyglass is two copper ingots and an amethyst shard; copper is mined and smelted
 adds it: a miner or cave miner that opens a geode takes the shards, as a player does, and the blacksmith crafts the
 spyglass for a scout that has none). Its one gain matters only where trees or hills blind the 61 to 72 band, which R8
 measures (10.4). If more than one recon order in five ends blind on every side tried, R12 comes next; otherwise it
-waits.
+waits. *Changed by the owner (2026-11-26, section 12 question 3): the spyglass is built now, as R12, before R6 and
+R7 and the live check; R8 still measures the blind bands, now with and without one. 5.9 has it as built.*
 
 **Binoculars** (the owner's own example) gain nothing over the spyglass from these rules alone: an optic at the eye
 changes only the reach, and the 128-block line of sight above caps the reach near 100. What more they give is for the
@@ -1007,6 +1008,85 @@ truth:
   the station, nothing from a scout killed before it reports) and `HeroRaidGameTests` (the hunt only for a hero the recon
   saw or the raider sees inside; a hunt for nobody ends after a minute). The reserve's sabotages of 10.3 that need the game
   side were each caught.
+
+### 5.9 As built (task R12): the spyglass
+
+The owner's answers of 2026-11-26 to section 12: questions 1 and 2 as recommended, and question 3: "we can use the
+spyglass leaving potential for more advanced recon items made for this mod in the future that will require tech level,
+vanilla spyglass requires no tech level". So R12 is built now, before the live check (R8) and ahead of R6 and R7. Where
+this list and the sections above differ, the code is the truth:
+
+* **The rows.** `logic/campaign/ReconOptic` (pure): one record per instrument with its report tag (`id`), its item (a
+  registry id, so the pure side needs no Minecraft classes), its name, its reach (`sight`), its reserve share (`share`)
+  and the tech level a faction needs to use it (`techLevel`). The first rows are `NONE` (the eyes: 72, 0.5, no tag) and
+  `SPYGLASS` ("spyglass", `minecraft:spyglass`, 96, 0.5, tech level 0); `ROWS` lists them, and `best(items, level)`
+  takes the farthest-reaching instrument a scout carries that its faction can use. A Phase 6 instrument (binoculars, a
+  drone) is one more row with its own tech level. No faction has a tech level yet (`NO_TECH`, 0), so only rows that need
+  none count, and the vanilla spyglass never needs one. The design's `Recon.SIGHT_SPYGLASS` is
+  `ReconOptic.SPYGLASS.sight()`. 5.6's "vantage" and "coverage" columns are not fields: an instrument at the eye changes
+  only the reach (the walls set the coverage); a drone's vantage over the yard is a field for Phase 6 to add with its
+  row. The game side, `work/ReconOptics`, maps an item stack to its row and finds the best instrument an NPC carries
+  (hands and backpack).
+* **One reach.** `BaseWatch.reconSight(base, optic)`: a settlement's focused look reaches the instrument's sight (72 or
+  96); a GameTest settlement's, its transient `testSight` scaled by the same ratio (`ReconOptic.scaled`: rounded down,
+  13 is 17 and 16 is 21 through a spyglass). Both the vantage band (`ReconVantage.band(target, optic)`, from the
+  standoff to that reach: 61 to 96 with a spyglass; pure `ReconRules.Band.of(lair, optic)`) and the samples' gate
+  (`BaseWatch.reconSample(..., optic)`) read it, so a column the search offers is one a sample can be taken from. (On a
+  GameTest settlement the gate was 72 before; it is now the band's own scaled reach.) A lair's band (46 to 64) and gate
+  (72) stay as they were, whatever the scout carries.
+* **The column order.** A spyglass deepens the band, but a farther column needs a taller pillar for the same look (5.6's
+  table), so the columns within the eyes' reach keep their own order first and the deeper ones follow in the same order
+  (`ReconRules.rank(found, eyes)`): the spyglass never takes a scout off a column the eyes would have used. It helps
+  where trees, water, cliffs or a base's plan leave the eyes' band without a column, or a hill stands just beyond it.
+* **The carry rule.** A scout keeps 1 spyglass through every unloading (`ScoutJob.keep`, beside its 22 dirt) and,
+  setting out to watch a settlement with none, takes one from the storehouse with its dirt. At the watch's start it
+  takes the spyglass into its main hand, as a player holds one up to look; what it held (its sword, or a hero's bound
+  kit weapon) goes into the spyglass's slot of its backpack, so nothing is dropped or deposited, and the job's tool rule
+  leaves the spyglass in hand while it watches (`usesOtherTool`). It puts it away as it starts down, as it leaves its
+  column and on any tick it is not watching: the weapon comes back from the slot it went into (after a load, the role's
+  weapon or a hero's kit weapon from its backpack, else an empty slot; with no room at all it keeps the spyglass in hand
+  rather than drop anything). At a **lair** it takes no instrument out: a lair is watched from the ground on a gap's
+  axis (3.7), where it may have to step aside or fight, so it watches with the eyes, weapon in hand (a decision of this
+  task; the design measured a lair's look only out to 64).
+* **The report.** `Intel.Recon.optic`, an eleventh field ("spyglass", or empty for the eyes; the ten-field constructor
+  is the eyes'); `ReconWatch.recon(vantage, by, optic)`. `Report.saveRecon` writes an `optic` tag only when there is one
+  (campaign format 5 unchanged: a recon saved before R12 loads as the eyes'; an unknown tag, a row since removed, loads
+  as the eyes, never null). The trip saves the instrument it looked through (`ReconTrip.optic`), so a watch loaded
+  midway keeps it. The report's note, the scout's line and the station's line add "with a spyglass" ("3 soldiers counted
+  from pillar 14 with a spyglass").
+* **The share.** `Reserve.share(lair, counter, optic)`: a lair's and a counter-attack's stay 0; a raid's at the interval
+  is the instrument's row's (0.5 for both rows, so nothing changes now; a Phase 6 drone may bring its own). The council
+  and the operators' raid read it from the recon's tag (`ReconOptic.of(recon)`).
+* **Amethyst.** A branch miner takes a grown amethyst cluster its tunnel uncovers, by the vein rule that takes the ore
+  it just opened up (`MinerJob.takes`: ore, or `minecraft:amethyst_cluster`): broken at player speed with its pickaxe,
+  vanilla's loot table gives 4 shards, straight into its backpack and home with the rest. The buds still growing give
+  nothing without Silk Touch and budding amethyst gives nothing at all, so it leaves them, as a player would; a cluster
+  gives no experience. **Who:** the branch miner only. The cave miner (`CaveMinerJob`) does not take clusters yet: its
+  marks, survey and lines go by ore kind and no cave-miner GameTest exists to carry the change, so a geode a branch
+  tunnel meets is the one source for now (left open).
+* **Copper.** Copper ore is taken wherever a tunnel meets it (`MinerJob.isOre`) and raw copper is smelted by the smelter
+  (or the blacksmith, with no smelter), so copper ingots came before R12 and no smelting is added.
+* **The blacksmith.** `Crafting.SPYGLASS`, vanilla's recipe: 2 copper ingots and 1 amethyst shard make 1 spyglass. The
+  blacksmith plans one for each scout it sees at home carrying none, less those waiting in the storehouse, as the copper
+  and shards stored allow (step 5b of its plan, "a spyglass for scouts").
+* **Tests.** Unit `ReconOpticTest` (8): the two rows, never behind a tech level while a later row waits for its own, the
+  items, the tag and an unknown one, the band 61 to 96 with a lair's unchanged, the scaled reach, the ranking, the share
+  by row. GameTests `ReconOpticGameTests` (4): the column search on a GameTest settlement whose eyes' band is scaled to
+  10 to 13 (17 through a spyglass) in `mobility_field`: on flat ground the eyes' columns first, in their own order; a
+  hill 15 to 16 out is found only with a spyglass, after the eyes' columns, and taken first once leaves cover the whole
+  of the eyes' band; the samples' gate at the same reach (R12's "hill at 90", scaled to the field as section 15 item 8
+  says). A real trip north (its gate sides already tried, leaves over the eyes' north band, a hill 18 to 19 out): the
+  spyglass taken from the storehouse, held in hand all through the watch with its sword in its backpack, the scout saved
+  and loaded midway, the spyglass put away as it starts down, the report "spyglass" from the hill. The keep rule and the
+  tag's save (an old recon loads as the eyes'); the recipe against the server's own (vanilla's recipe manager) and the
+  blacksmith's plan (one for a scout with none; none when it carries one, one waits in the storehouse, or no shard is
+  stored). `FCGameTests` `aMinerTakesTheAmethystClusterItsTunnelUncovers`: a cluster set beside a tunnel cell is broken
+  once the cell is open, its 4 shards in the miner's backpack and none on the floor. `ReconTripGameTests`: a scout
+  carrying none reports no tag, and at a lair one carrying a spyglass never holds it and reports none. Twenty sabotages
+  (the reach, the samples' gate, the order, the miner, holding, putting away, taking, keeping, both tags' saves, the
+  recipe, the blacksmith's two rules, the lair, a tag the trip did not earn, and four pure rules) were each caught.
+* **Not checked live.** The live check (R8, after R6 and R7) measures how often the eyes' band is blinded and how often
+  a faction has a spyglass at all (it needs a geode met by a branch tunnel, and copper).
 
 ## 6. What replaces the 3-to-2 counter-attack's input
 
@@ -1189,7 +1269,7 @@ faction's own `FactionState.sightings`).
 | `Sightings.MAX` | **64** a faction (R11) | several raid parties' worth, kept by UUID; the oldest dropped first |
 | `Sightings.FIELD_SIGHT` | **64** (`BaseWatch.SIGHT`; R11) | a scout's sightings in the field: in sight within 64 |
 | `Sightings.HOME_WITNESS` | **32** (the roll call's witness reach; R11) | an enemy in our home area is a sighting when a member within 32 sees it |
-| `Recon.SIGHT_SPYGLASS` | **96** (R12) | 5.6: vanilla's line of sight ends at 128; from 96 the yard's far side lies within about 120 |
+| `Recon.SIGHT_SPYGLASS` | **96** (R12; as built `ReconOptic.SPYGLASS.sight()`, 5.9) | 5.6: vanilla's line of sight ends at 128; from 96 the yard's far side lies within about 120 |
 | removed | `Intel.FORGET_TICKS` 48000, `SAME_VIEW` 0.1, the lair prior | no prior, no drift |
 
 **Docs the implementation rewrites:** `knowledge.md` section 1 (the whole estimate model becomes a pointer here),
@@ -1398,12 +1478,13 @@ phase (the owner deferred it until heroes are playable): no task rebuilds it or 
 | **R9** | S | `HeroRaid.homeHeroKnown` from the launching recon's heroes (instead of a hero within 64 blocks) | a hero raid GameTest with and without a hero in the recon |
 | **R10** | S | Pure rules, additive: `logic/campaign/Reserve` (the plan of 5.5: the larger of the share and the seen-away, faces counted once, the heroes known, the backbone, the lair's and the counter-attack's share of 0, the line's reason text; with an empty ledger the count, its share and the watch's heroes) and the pure sightings ledger (newest per UUID, fallen, age, the cap, the attribution). Nothing reads it yet | unit 10.1 items 10 to 13 |
 | **R11** | M | Sightings, after the switch (only if the owner keeps them, question 1): `FactionState.sightings`, saved; written at home (the alarm's noticed intruders; enemies in the home area a member NPC or hero within 32 sees), by scouts on any trip (carried with their news, told at the station, lost at a death) and by the recon watch (the target's soldiers outside its box, and every hero it saw); falls marked through the hooks of 5.5 (`enemyFell` at home, a scout's carried fall, and an enemy hero's fall filed from `HeroManager`'s death path for every hostile faction whose members saw it); the council's plan reads the ledger (seen-away, known heroes, the sightings' line form); `/fc admin dump` lists them; `KnowledgeIsolationTest` also allows `FactionState.sightings` | GameTests 10.2 items 14, 15, 16 (its second half), 17, 18; unit 10.1 item 14 and 15's sightings form; a save and reload of sightings; a home sighting and a fall seen at home; an enemy hero's fall seen by a third faction's member is filed for that faction; the reserve's sabotages of 10.3 |
-| **R12** | M | The spyglass (5.6), built only if R8 finds more than one recon order in five blind on every side tried: amethyst shards taken from a geode by a miner or cave miner (vanilla's loot table), the blacksmith's spyglass (two copper ingots, an amethyst shard) for a scout with none, the scout's carry rule (held in hand while it watches), `Recon.SIGHT_SPYGLASS` (96) and the band 61 to 96 when it carries one, the report's `optic` tag and `ReconOptic`'s first rows. Never behind a tech level | a column-search GameTest on a test base with a transient sight (the 96 / 72 ratio scaled to fit `mobility_field`: a hill just beyond the eyes' scaled reach is found only with a spyglass); a miner breaking amethyst clusters the test placed keeps their shards; the recipe and the carry rule |
+| **R12** | M | The spyglass (5.6; built 2026-11-26 before R6, the owner's answer to section 12 question 3; as built: 5.9), first planned only if R8 found more than one recon order in five blind on every side tried: amethyst shards taken from a geode by a miner or cave miner (vanilla's loot table), the blacksmith's spyglass (two copper ingots, an amethyst shard) for a scout with none, the scout's carry rule (held in hand while it watches), `Recon.SIGHT_SPYGLASS` (96) and the band 61 to 96 when it carries one, the report's `optic` tag and `ReconOptic`'s first rows. Never behind a tech level | a column-search GameTest on a test base with a transient sight (the 96 / 72 ratio scaled to fit `mobility_field`: a hill just beyond the eyes' scaled reach is found only with a spyglass); a miner breaking amethyst clusters the test placed keeps their shards; the recipe and the carry rule |
 
 Order: R1, R2, R3, then R4a (it can start beside R2 and R3), R4b, R10 (pure; any time before R5), R5 (after R4b and
 R10), R11 (after R5; dropped if the owner says no to sightings). R6 can start after R2 for the logging and must finish
 after R5 (and after R11 for its sightings columns, if R11 is built); R7 after R5 (and R11 if built); R8 after R6 and R7;
-R9 any time after R5; R12 after R8, and only if R8 calls for it.
+R9 any time after R5; R12 after R8, and only if R8 calls for it (the owner moved it: built after R11, before R6 and
+R7, 2026-11-26).
 
 ## 12. Questions for the owner
 
@@ -1417,13 +1498,18 @@ answered on 2026-11-25; section 14 has the answers and what they changed. New qu
    design adds one thing you did not ask for: enemy soldiers and heroes our own people saw away from that base in the
    last half day (at our walls, met by a scout, seen leaving from the pillar) raise the reserve when they are more, and
    only on top of a scout's fresh count. Recommended: **keep it**, built last (R11); it changed none of the 16 logged
-   launches. If you say no, R11 is dropped and the reserve is the half alone.
+   launches. If you say no, R11 is dropped and the reserve is the half alone. **Answered 2026-11-26: "ok"** (as built
+   in R5 and R11, 5.7 and 5.8).
 2. **Lairs without a reserve, for now.** Recommended: **yes**. A lair is judged on the monsters counted. With the
    reserve a party of 3 could not raid a lair of 5, where lairs start, and all three logged lair raids were won without
    a loss. The lair-energy design changes lairs; a lair reserve can come with it if lairs turn out under-counted.
+   **Answered 2026-11-26: "ok"** (as built in R5).
 3. **The spyglass.** Recommended: **a vanilla item, never behind a tech level, built after the live check if trees and
    hills often leave a target unseen**. A scout carrying one watches from up to 96 blocks instead of 72: more room to
    find a clear column or a hill, not a shorter pillar. It needs amethyst, which no NPC gathers yet.
+   **Answered 2026-11-26** (with 1 and 2 as recommended): "we can use the spyglass leaving potential for more
+   advanced recon items made for this mod in the future that will require tech level, vanilla spyglass requires no
+   tech level". Built at once as R12 (5.9), its instruments as rows of data for the tech phase's own.
 
 ## 13. Critique (2026-11-25)
 

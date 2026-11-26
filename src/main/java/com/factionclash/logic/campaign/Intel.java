@@ -76,10 +76,11 @@ public final class Intel {
      * counted again in the plan, {@link Reserve}); their mean visible power (0 when none was seen); the heroes seen, by hero
      * id, at their war power at full strength; the share of the yard's {@link ReconRules#POINTS} points that were in view at
      * least once over the watch (0 to 1); whether the yard's middle was; how long it watched, when its last sample was
-     * taken ({@code at}), from where ({@code vantage}: "pillar 12", "high ground", "ground") and by whom ({@code by}).
+     * taken ({@code at}), from where ({@code vantage}: "pillar 12", "high ground", "ground"), by whom ({@code by}) and
+     * through what ({@code optic}: a {@link ReconOptic} row's tag, "spyglass"; empty for the eyes, task R12).
      */
     public record Recon(int soldiers, double power, java.util.Map<String, Double> heroes, double coverage, boolean middle,
-                        long watchTicks, long at, String vantage, String by, java.util.Set<java.util.UUID> faces) {
+                        long watchTicks, long at, String vantage, String by, java.util.Set<java.util.UUID> faces, String optic) {
         public Recon {
             soldiers = Math.max(0, soldiers);
             power = Math.max(0, power);
@@ -89,6 +90,13 @@ public final class Intel {
             faces = faces == null ? java.util.Set.of() : java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(faces));
             vantage = vantage == null ? "" : vantage;
             by = by == null ? "" : by;
+            optic = optic == null ? "" : optic;
+        }
+
+        /** A recon watched with the eyes (no instrument: an empty {@code optic} tag). */
+        public Recon(int soldiers, double power, java.util.Map<String, Double> heroes, double coverage, boolean middle,
+                     long watchTicks, long at, String vantage, String by, java.util.Set<java.util.UUID> faces) {
+            this(soldiers, power, heroes, coverage, middle, watchTicks, at, vantage, by, faces, "");
         }
 
         /** The yard points that were in view, of {@link ReconRules#POINTS}. */

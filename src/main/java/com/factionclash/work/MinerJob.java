@@ -1513,6 +1513,16 @@ public class MinerJob extends Job {
                 || s.is(BlockTags.EMERALD_ORES);
     }
 
+    /**
+     * What a branch miner takes when its tunnel uncovers it, as a player mines what it just opened up (the vein rule,
+     * {@link #noticeOres}): ore, and a grown amethyst cluster in a geode (task R12, recon.md 5.6: the shard in a
+     * spyglass). A cluster broken with a pickaxe gives its four shards by vanilla's loot table, at player speed; the buds
+     * that are still growing give nothing without Silk Touch, so a player leaves them, and so does the miner.
+     */
+    static boolean takes(BlockState s) {
+        return isOre(s) || s.is(Blocks.AMETHYST_CLUSTER);
+    }
+
     /** Experience for the miner per ore block it broke and could harvest (cobblestone and stone give none). */
     public static int oreXp(BlockState s) {
         if (s.is(BlockTags.EMERALD_ORES)) {
@@ -1546,7 +1556,7 @@ public class MinerJob extends Job {
             if (othersLayer(wp, n)) {
                 continue; // the other miner's level: its cells are its own
             }
-            if (vein.size() < MAX_VEIN && !vein.contains(n) && isOre(level().getBlockState(n))) {
+            if (vein.size() < MAX_VEIN && !vein.contains(n) && takes(level().getBlockState(n))) {
                 vein.add(n);
             }
         }
@@ -1579,7 +1589,7 @@ public class MinerJob extends Job {
         if (!vein.isEmpty()) {
             BlockPos ore = vein.peek();
             BlockState os = level().getBlockState(ore);
-            if (!isOre(os) || !BlockWork.inReach(npc, ore, 5.0) || !mayDig(wp, ore)) {
+            if (!takes(os) || !BlockWork.inReach(npc, ore, 5.0) || !mayDig(wp, ore)) {
                 vein.poll();
                 return;
             }
@@ -1587,9 +1597,10 @@ public class MinerJob extends Job {
                 vein.poll();
                 return;
             }
-            status("Mining a " + os.getBlock().getName().getString() + " vein (mine #" + wp.id + ")", "Mining");
+            status(isOre(os) ? "Mining a " + os.getBlock().getName().getString() + " vein (mine #" + wp.id + ")"
+                    : "Taking an amethyst cluster from a geode (mine #" + wp.id + ")", "Mining");
             if (dig(wp, ore)) {
-                if (BlockWork.canHarvest(os, npc.getMainHandItem())) {
+                if (isOre(os) && BlockWork.canHarvest(os, npc.getMainHandItem())) {
                     npc.awardXp(oreXp(os));
                     prospect(wp, os, ore);
                 }

@@ -171,6 +171,10 @@ Layers (PROPOSED, `MinePlanner`): a layer is put where vanilla 1.21.1 ore is ric
   of that item in its backpack and tosses the rest it digs (the miner keeps 64 sealing blocks and 32 torches).
 * Ore XP: coal/copper 2, redstone 3, iron/lapis 4, gold 6, diamond 10, emerald 12; ordinary stone 0. Plus 20
   (LEVEL_XP) per layer reached or opened and per lengthening round.
+* Amethyst (task R12, `docs/design/recon.md` 5.9; `MinerJob.takes`): a branch miner takes a grown amethyst cluster its
+  tunnel uncovers by the vein rule that takes the ore it opened up, broken at player speed with its pickaxe: vanilla's
+  loot table gives 4 shards, straight into its backpack. Growing buds (nothing without Silk Touch) and budding
+  amethyst are left, as a player leaves them; a cluster gives no ore XP. The cave miner takes none yet.
 
 Digging safety (`WorkSafety.mayDig`; miners and cave miners): never unbreakable blocks, block entities (chests,
 spawners, vaults, beds, shriekers), built blocks (every brick family, polished and tiled deepslate and tuff, quartz,
@@ -436,6 +440,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   once it is home.
   A worker lacks its tool when there is none of its kind in its hand or its backpack (a woodcutter digging dirt with
   a shovel has its axe put away meanwhile), or the one it holds is worn.
+* Spyglasses (task R12, `docs/design/recon.md` 5.9; `Crafting.SPYGLASS`): vanilla's recipe, 2 copper ingots + 1
+  amethyst shard. The blacksmith plans one for each scout it sees at home carrying none, less those waiting in the
+  storehouse, as the copper and shards stored allow. Copper ingots come from the copper ore miners meet, smelted like
+  iron.
 * Anvil (vanilla): each material unit repairs a quarter; cost = units + prior work; prior work becomes
   2 × prior + 1; "Too Expensive" from 40 levels. Repaired only when worth it (PROPOSED): enchanted, or iron,
   diamond, netherite or chainmail gear needing fewer units than its recipe (pickaxe/axe 3, sword/hoe 2, shovel 1,
@@ -768,6 +776,15 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   (`HOLD_MAX_TICKS`); a hit or a broken pillar block brings it down at once. A lair: the gap axes, from the ground.
   The trip's plan is `Whereabouts.reconPlan`; it turns home in time to be back by it. A second scout is wanted for an
   order untaken for 6000 ticks while the base has one (`WAIT_TICKS`, `MAX_SCOUTS` 2).
+* A scout's instrument (task R12, `docs/design/recon.md` 5.6 and 5.9; rows of `logic/campaign/ReconOptic`): the eyes
+  reach **72** (`ReconRules.SIGHT`, the band 61 to 72), a vanilla spyglass (PROPOSED `ReconOptic.SPYGLASS`) **96**,
+  so its band runs 61 to 96 and its samples are taken out to 96; the columns within 72 keep their order first, the
+  deeper ones follow (`ReconRules.rank(found, eyes)`). A GameTest base's reach is its transient eyes' reach times
+  96 / 72, rounded down. A scout keeps 1 spyglass through every unloading, takes one from the storehouse for a trip to
+  a settlement when it carries none, holds it in its main hand only while it watches (its weapon in its backpack
+  meanwhile) and puts it away as it starts down. A lair is watched with the eyes (band 46 to 64), spyglass or not.
+  Each row has a share (both **0.5**, `Reserve.SHARE`) and a tech level (both **0**: the vanilla spyglass is never
+  behind one; no faction has a tech level yet). The report's `optic` tag is "spyglass", or none for the eyes.
 * Scouts and structures (PROPOSED): a village (village tag), pillager outpost or woodland mansion is reported once
   per trip when its built bounds (its pieces) come within 48 blocks (loaded chunks within 3 of the scout only);
   villages at their town centre, others at the middle of their bounds. Reports of one structure merge within 64

@@ -21,6 +21,7 @@ import com.factionclash.logic.DirtPatch;
 import com.factionclash.logic.ScoutRules;
 import com.factionclash.logic.Zones;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconOptic;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.ReconRules.Side;
 import com.factionclash.logic.campaign.ReconWatch;
@@ -39,6 +40,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Drowned;
@@ -204,6 +206,20 @@ public class ScoutJob extends Job {
     }
 
     /**
+     * While it watches through a spyglass held in its hand (task R12), as a player holds one up: its weapon waits in its
+     * backpack meanwhile, and comes back into its hand as the watch ends ({@link #putAwayOptic}).
+     */
+    @Override
+    protected boolean usesOtherTool() {
+        return watching() && ReconOptics.of(npc.getMainHandItem()) != null;
+    }
+
+    /** On its pillar (or at a lair's ground vantage) watching the yard now. */
+    private boolean watching() {
+        return reconAtColumn() && recon.step == ReconTrip.Step.WATCH;
+    }
+
+    /**
      * Before an errand home (food, a tool): down its lookout pillar first, block by block, until its feet are on the
      * ground (the watch ends there, its report by the watch's rule); then home with what it saw.
      */
@@ -233,9 +249,15 @@ public class ScoutJob extends Job {
         return recon != null && state == State.OUTBOUND && recon.phase == ReconTrip.Phase.PILLAR && recon.pillar != null;
     }
 
-    /** Its lookout pillar's dirt (recon.md 3.5) stays with it when it unloads: {@link ReconRules#BLOCKS}, dirt first. */
+    /**
+     * Its lookout pillar's dirt (recon.md 3.5) stays with it when it unloads: {@link ReconRules#BLOCKS}, dirt first; and
+     * one spyglass (task R12), which it watches through.
+     */
     @Override
     protected int keep(ItemStack s) {
+        if (ReconOptics.isOptic(s)) {
+            return 1;
+        }
         if (s.is(Items.DIRT)) {
             return ReconRules.BLOCKS;
         }
@@ -320,6 +342,9 @@ public class ScoutJob extends Job {
             status("No home base", "Idle");
             waitFor(400);
             return;
+        }
+        if (!watching()) {
+            putAwayOptic(); // (a spyglass in its hand only while it watches)
         }
         switch (state) {
             case HOME -> home(b);
@@ -1173,6 +1198,9 @@ public class ScoutJob extends Job {
      */
     private void prepareRecon(BaseState b) {
         if (!recon.lair()) {
+            if (ReconOptics.carried(npc).none()) {
+                takeFromStorage(ReconOptics::isOptic, 1); // a spyglass the blacksmith made, when there is one (task R12)
+            }
             int more = ReconRules.BLOCKS - Scaffold.carried(npc);
             if (more > 0) {
                 more -= takeFromStorage(x -> x.is(Items.DIRT), more);
@@ -1442,6 +1470,7 @@ public class ScoutJob extends Job {
      */
     private void leaveTarget(ReconTrip r) {
         r.phase = ReconTrip.Phase.DONE;
+        putAwayOptic();
         r.waypoints = new ArrayList<>();
         r.walkTicks = 0;
         r.routeFailBase = routeFailures();
@@ -1550,7 +1579,7 @@ public class ScoutJob extends Job {
                 return;
             }
             r.tried |= s.bit();
-            r.columns = ReconVantage.columns(level(), data(), t, s);
+            r.columns = ReconVantage.columns(level(), data(), t, s, tripOptic(r));
             r.columnIndex = 0;
             if (r.columns.isEmpty()) {
                 status("No vantage on the " + side(s) + " side of " + r.what(), "Scouting");
@@ -1615,7 +1644,7 @@ public class ScoutJob extends Job {
     private void reconFoot(ReconTrip r, BaseState t) {
         if (r.columns == null) {
             // after a load: the side's columns again, from the one it was walking to
-            r.columns = ReconVantage.columns(level(), data(), t, r.current());
+            r.columns = ReconVantage.columns(level(), data(), t, r.current(), tripOptic(r));
             r.columnIndex = 0;
             for (int i = 0; i < r.columns.size(); i++) {
                 if (r.columns.get(i).foot().equals(r.foot)) {
@@ -1733,7 +1762,9 @@ public class ScoutJob extends Job {
      * {@link ReconRules#PILLAR_MAX}; with no good look at the cap it stops there (the next side).
      */
     private void reconLook(ReconTrip r, BaseState t, Scaffold.Pillar q) {
-        ReconWatch.Sample s = BaseWatch.reconSample(level(), npc, t, now());
+        ReconOptic o = tripOptic(r);
+        r.optic = o.id();
+        ReconWatch.Sample s = BaseWatch.reconSample(level(), npc, t, now(), o);
         r.looked(s, q.height);
         if (s != null && r.firstGood < 0 && ReconRules.goodLook(s.points(), s.middle())) {
             r.firstGood = q.height;
@@ -1774,7 +1805,10 @@ public class ScoutJob extends Job {
         r.watch = new ReconWatch();
         r.watchStartedAt = now();
         r.vantage = ReconRules.vantage(p.height, r.rise);
-        r.watch.add(BaseWatch.reconSample(level(), npc, t, now()));
+        ReconOptic o = tripOptic(r);
+        r.optic = o.id();
+        holdOptic(o);
+        r.watch.add(BaseWatch.reconSample(level(), npc, t, now(), o));
         com.factionclash.FactionClash.LOGGER.info("[{}] Scout {} watches {} from {} ({} of the yard's points in view at first)",
                 npc.getFaction().displayName, npc.npcName(), r.what(), r.vantage, r.watch.points());
     }
@@ -1787,7 +1821,7 @@ public class ScoutJob extends Job {
     private void reconWatch(ReconTrip r, BaseState t, Scaffold.Pillar p) {
         long now = now(), end = r.watchStartedAt + ReconRules.WATCH_TICKS, last = r.watch.last();
         if (last < end && (last < 0 || now - last >= SAMPLE_TICKS || now >= end)) {
-            r.watch.add(BaseWatch.reconSample(level(), npc, t, now));
+            r.watch.add(BaseWatch.reconSample(level(), npc, t, now, tripOptic(r)));
             // the heroes it sees, and the target's soldiers outside its box (a party leaving, a patrol below): sightings
             // told with its report (recon.md 5.5)
             EnemySightings.watch(level(), npc, t, carriedSightings, now);
@@ -1821,9 +1855,97 @@ public class ScoutJob extends Job {
         return false;
     }
 
+    // ---- the spyglass (task R12, recon.md 5.6)
+
+    /**
+     * The instrument this trip looks through: the best it carries ({@link ReconOptics#carried}: a spyglass reaches 96
+     * blocks, the eyes 72) at a settlement; the eyes at a lair, which is watched from the ground on a gap's axis inside its
+     * own band of 46 to 64 (recon.md 3.7), where it may have to step aside or fight and keeps its weapon in hand.
+     */
+    private ReconOptic tripOptic(ReconTrip r) {
+        return r.lair() ? ReconOptic.NONE : ReconOptics.carried(npc);
+    }
+
+    /** The best instrument it carries now (the eyes when none), for the GameTests and the station's lines. */
+    public ReconOptic optic() {
+        return ReconOptics.carried(npc);
+    }
+
+    /**
+     * The backpack slot its weapon went into when it took its spyglass in hand (-1: none; not saved: after a load the
+     * weapon is looked for in its backpack, {@link #putAwayOptic}).
+     */
+    private int opticSlot = -1;
+
+    /**
+     * At the watch's start it takes the instrument it watches through into its hand, as a player holds a spyglass up to
+     * look (task R12): what it held (its sword, a hero's bound kit weapon) goes into the instrument's slot of its
+     * backpack, in place, so nothing is dropped or deposited. The eyes need nothing in hand.
+     */
+    private void holdOptic(ReconOptic o) {
+        if (o.none() || o.equals(ReconOptics.of(npc.getMainHandItem()))) {
+            return;
+        }
+        net.minecraft.world.SimpleContainer inv = npc.inventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack x = inv.getItem(i);
+            if (o.equals(ReconOptics.of(x)) && x.getCount() == 1) {
+                inv.setItem(i, npc.getMainHandItem());
+                npc.setItemSlot(EquipmentSlot.MAINHAND, x);
+                inv.setChanged();
+                opticSlot = i;
+                return;
+            }
+        }
+    }
+
+    /**
+     * The instrument in its hand goes back into its backpack and what it held before comes back into its hand, in place
+     * (the slot it went into; after a load, its role's weapon or a hero's bound kit weapon from its backpack, else an
+     * empty slot); with no room at all it keeps the instrument in hand rather than drop anything. Called as the watch ends
+     * (the way down, leaving its column) and each tick it is not watching.
+     */
+    private void putAwayOptic() {
+        ItemStack hand = npc.getMainHandItem();
+        if (ReconOptics.of(hand) == null) {
+            opticSlot = -1;
+            return;
+        }
+        net.minecraft.world.SimpleContainer inv = npc.inventory();
+        int slot = opticSlot >= 0 && opticSlot < inv.getContainerSize() && ReconOptics.of(inv.getItem(opticSlot)) == null ? opticSlot : -1;
+        for (int i = 0; slot < 0 && i < inv.getContainerSize(); i++) {
+            if (weapon(inv.getItem(i))) {
+                slot = i;
+            }
+        }
+        for (int i = 0; slot < 0 && i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).isEmpty()) {
+                slot = i;
+            }
+        }
+        opticSlot = -1;
+        if (slot < 0) {
+            return;
+        }
+        ItemStack back = inv.getItem(slot);
+        inv.setItem(slot, hand);
+        npc.setItemSlot(EquipmentSlot.MAINHAND, back);
+        inv.setChanged();
+    }
+
+    /** What it would hold in its hand when it is not watching: its role's weapon, or a hero's bound kit weapon. */
+    private boolean weapon(ItemStack s) {
+        if (s.isEmpty()) {
+            return false;
+        }
+        return npc.getRole().tool.matches(s) || com.factionclash.hero.HeroKit.isKit(s)
+                && !(s.getItem() instanceof net.minecraft.world.item.ArmorItem) && !(s.getItem() instanceof net.minecraft.world.item.ShieldItem);
+    }
+
     /** It starts down its pillar now (block by block, as it came up); not climbed yet, it is simply on the ground. */
     private void startDown(ReconTrip r) {
         r.step = ReconTrip.Step.DOWN;
+        putAwayOptic(); // the watch is over: its weapon back in its hand before it climbs down
         breaker.reset(npc);
         Scaffold.Pillar p = r.pillar;
         if (p == null || PillarClimb.comeDown(npc, p, r.why.isEmpty() ? "done" : r.why)) {
@@ -1890,7 +2012,7 @@ public class ScoutJob extends Job {
                 : "about " + c.soldiers() + (r.lair() ? (c.soldiers() == 1 ? " monster" : " monsters") : (c.soldiers() == 1 ? " soldier" : " soldiers"))
                 + (names.isEmpty() ? "" : " and " + String.join(", ", names));
         return head + who + " seen (" + Math.round(c.coverage() * 100) + "% of " + (r.lair() ? "its ground" : "the yard")
-                + " in view, watched " + c.watchTicks() / 20 + " s from " + c.vantage() + ").";
+                + " in view, watched " + c.watchTicks() / 20 + " s from " + c.vantage() + ReconTrip.through(c) + ").";
     }
 
     /** The trip as the station's info shows it. */
@@ -1903,7 +2025,8 @@ public class ScoutJob extends Job {
             case FOOT -> "Walking to a vantage by " + r.what() + at + (r.foot == null ? "" : " at " + r.foot.toShortString());
             case PILLAR -> switch (r.step) {
                 case CLIMB -> "Climbing a lookout pillar by " + r.what() + at;
-                case WATCH -> "Watching " + r.what() + " from " + r.vantage + at;
+                case WATCH -> "Watching " + r.what() + " from " + r.vantage + (ReconOptic.byId(r.optic).none() ? ""
+                        : " with " + ReconOptic.byId(r.optic).name()) + at;
                 case DOWN -> "Taking its lookout pillar down" + at;
             };
             case DONE -> "Going home from " + r.what();

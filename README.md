@@ -259,14 +259,16 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   over when its miner dies or is retrained. The station's mine line names it ("helped by ... on y=..."). Helping
   is no reason to hire miners, and a helper with no mine of its own for half a day counts as a spare hand: the
   base may retrain it for a role it needs, as it did idle miners.
-  Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through falling
-  sand like a player), clear flooded tunnel cells, bridge cave holes in the tunnel floor, stop a branch where it
-  breaks out of a hillside, and stop collecting cobblestone-type junk once storage holds 512 of it. They never dig
-  block entities, built blocks (bricks, polished and tiled stone: dungeons, strongholds, trial chambers, ancient
-  cities), another mine's stairs, the deep dark, the ground under a base or other factions' land: a tunnel that
-  meets one ends there, and a shaft that meets one (or stays stuck) stops above it. A mine whose mouth cannot be
-  reached, whose stairs stay blocked or whose shaft cannot get 6 steps down is given up, and its miner never picks
-  that site again. Stair steps whose floor was dug away are repaired with stone from the miner's backpack.
+  Miners follow exposed ore veins and take the grown amethyst clusters a tunnel uncovers in a geode (four shards each,
+  by vanilla's loot table; the growing buds are left, as a player leaves them), plug water, lava and loose sand before
+  opening a cell (or dig through falling sand like a player), clear flooded tunnel cells, bridge cave holes in the
+  tunnel floor, stop a branch where it breaks out of a hillside, and stop collecting cobblestone-type junk once
+  storage holds 512 of it. They never dig block entities, built blocks (bricks, polished and tiled stone: dungeons,
+  strongholds, trial chambers, ancient cities), another mine's stairs, the deep dark, the ground under a base or other
+  factions' land: a tunnel that meets one ends there, and a shaft that meets one (or stays stuck) stops above it. A
+  mine whose mouth cannot be reached, whose stairs stay blocked or whose shaft cannot get 6 steps down is given up,
+  and its miner never picks that site again. Stair steps whose floor was dug away are repaired with stone from the
+  miner's backpack.
 * **Woodland**: there is no tree plot and no fence. Woodcutters fell the natural trees within `forestRadius` (64)
   of the base centre (oak, birch, spruce, jungle, acacia, dark oak and cherry, 2×2 trunks too) log by log with
   their axe from the top down, cutting high branch ends from the ground under them, break the canopy (the leaves'
@@ -340,7 +342,8 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   crafts batches from real needs of every worker of its base: replacements for worn-out tools, better pickaxes for
   the miners (stone at once, then iron, which opens the gold and diamond layers, and diamond, which only digs
   faster), iron swords, armour and shields
-  for soldiers, bows, sticks, bone meal, torches, golden apples, diamond swords when diamonds exist. Furnace and
+  for soldiers, bows, a vanilla spyglass for each scout at home without one (two copper ingots and an amethyst shard),
+  sticks, bone meal, torches, golden apples, diamond swords when diamonds exist. Furnace and
   smoker workers fetch fuel as soon as any station runs dry (coal, charcoal, a coal block, then logs and planks
   beyond a building reserve); with nothing to burn they wait at the storehouse and say so.
 * **Experience and the enchanter**: NPCs pick up experience orbs like players: from ores they mine, from furnaces
@@ -398,7 +401,11 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   woodland mansions are dangerous ground: no exploration target, mine, tree, fishing spot or travel waypoint lies
   within 48 blocks of one. Once
   everything within `scoutRange` is explored and no living rival settlement is known, they push the frontier out
-  64 blocks at a time, up to the edge of the map, so distant factions find each other.
+  64 blocks at a time, up to the edge of the map, so distant factions find each other. A scout sent to watch an enemy
+  settlement takes a spyglass along when the storehouse has one and holds it up while it watches, as a player does: it
+  can then watch from up to 96 blocks away instead of 72, so trees or a hill near the walls blind it less often (a lair
+  is watched from the ground with the eyes). The spyglass is vanilla and needs no tech level; later instruments of
+  the mod's own (binoculars, drones) will need one.
 * **Soldiers**: swordsmen, axe fighters, archers and crossbowmen. The held weapon sets the real attack speed and
   damage (an axe hits harder and knocks shields down; so far every weapon swings every 20 ticks, see BALANCE);
   crossbows charge for their real charge time and fire faster, straighter bolts a little farther than bows.
@@ -509,14 +516,16 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1160 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1168 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
   a faction knows of an enemy base: only a scout's focused recon, good (8 of the 25 yard points and its middle, half a
   minute's watch) and fresh (half a day), the faces counted with no extrapolation, the plan of half again the count
   (none at a lair or in a counter-attack), raised by the soldiers seen away, the target chosen by its plan and not its
-  count, and the council's lines with what the sightings add, a counter-attack only on a recon made since the
-  strike, two thirds in whole soldiers (a party goes against as many counted as it sends, whatever the gear), a
-  counter-attack's 3 to 2, the party rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
+  count, and the council's lines with what the sightings add; the recon scout's instruments as rows of data (the eyes
+  72, the vanilla spyglass 96 and never behind a tech level, a later row waiting for its own), the band 61 to 96 a
+  spyglass opens with the eyes' columns first and a lair's unchanged, the report's tag; a counter-attack only on a
+  recon made since the strike, two thirds in whole soldiers (a party goes against as many counted as it sends,
+  whatever the gear), a counter-attack's 3 to 2, the party rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
   list or true fall, and hero code reads kill credit only for its presentation lines; the roll call: when an away member is missing and presumed
   dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
   under the old rule, the council's wait for its raid's news, a day's remote work expected back at nightfall, a hero's own fall, a hero's faction lines heard only
@@ -579,7 +588,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 452 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 457 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -601,8 +610,13 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   seen at our walls holds a party back, one seen falling stays in the plan; a scout carries what it met and saw fall
   away, and from its pillar what it saw leaving, and tells it only at the station; a scout killed first tells nothing;
   a raiding hero hunts only the hero its raid's recon saw, or one it sees inside, and gives up a hunt for one it never
-  sees after a minute), **what a faction knows** (ruins seen stay ruins when
-  only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
+  sees after a minute; the spyglass: a hill just beyond the eyes' reach is a vantage only through a spyglass, after
+  the eyes' own columns, and the one left when leaves cover the eyes' band; a scout takes the spyglass from the
+  storehouse, holds it in hand all through the watch (also across a save and reload) with its sword in its backpack,
+  puts it away as it climbs down and reports "with a spyglass" from the hill; at a lair it keeps it in its pack; it
+  keeps one through unloading and the tag survives a save; the blacksmith forges vanilla's recipe for a scout with
+  none; a branch miner keeps the four shards of an amethyst cluster its tunnel uncovers), **what a faction knows**
+  (ruins seen stay ruins when only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
   wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge

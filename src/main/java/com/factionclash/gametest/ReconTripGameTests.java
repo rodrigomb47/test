@@ -292,6 +292,7 @@ public final class ReconTripGameTests {
             t.assertTrue(trip.firstGood >= ReconRules.LOOK_FROM && trip.top == Math.min(ReconRules.PILLAR_MAX, trip.firstGood + ReconRules.CLIMB_PAST),
                     "two blocks above its first good look: first " + trip.firstGood + ", top " + trip.top);
             t.assertTrue(r.vantage().equals("pillar " + trip.top), "the vantage: " + r.vantage());
+            t.assertTrue(r.optic().isEmpty(), "watched with the eyes (it carries no spyglass): no optic tag: " + r.optic());
             t.assertTrue(dirtIn(h, trip.column) == 0, "the pillar left standing: " + dirtIn(h, trip.column));
             t.assertTrue(dirtCarried(fl.scout()) == ReconRules.BLOCKS, "its 22 dirt back in its backpack: " + dirtCarried(fl.scout()));
             t.assertTrue(FactionStorage.count(h.getLevel(), t.base, s -> s.is(Items.DIRT)) == 30 - ReconRules.BLOCKS,
@@ -749,7 +750,8 @@ public final class ReconTripGameTests {
      * {@code lairRecon} (recon.md 10.2 item 12, 3.7): a lair test base at (16, 2, 18) with 4-high walls of half 3 and a
      * 3-wide gap in the middle of each, its band scaled to 15 to 17 blocks on the gap axes; three zombies inside. The
      * scout takes no dirt (a lair is watched from the ground), walks to the north gap's axis (the side facing home), builds
-     * no pillar, watches through the gap and counts the 3 monsters.
+     * no pillar, watches through the gap and counts the 3 monsters. It carries a spyglass, which stays in its backpack (a
+     * lair is watched with the eyes, its weapon in hand: task R12), so the report has no optic tag.
      */
     @GameTest(template = FIELD, timeoutTicks = 4000, batch = "recon_trip_lair", skyAccess = true)
     public static void lairRecon(GameTestHelper h) {
@@ -798,6 +800,7 @@ public final class ReconTripGameTests {
             fl.f().reconOrders.add(order);
             n = t.npc(5, 7, NpcRole.SCOUT);
             n.equip(new ItemStack(Items.IRON_SWORD));
+            n.inventory().addItem(new ItemStack(Items.SPYGLASS)); // carried, but never taken out at a lair (task R12)
         } catch (RuntimeException | Error e) {
             t.cleanup();
             throw e;
@@ -807,6 +810,7 @@ public final class ReconTripGameTests {
             ScoutJob job = (ScoutJob) n.job();
             Scaffold.Pillar p = job.reconPillar();
             t.assertTrue(p == null || p.height == 0, "a pillar at a lair: " + (p == null ? 0 : p.height));
+            t.assertTrue(!n.getMainHandItem().is(Items.SPYGLASS), "a spyglass in hand at a lair (watched from the ground, its weapon in hand)");
             if (job.reconWatch() != null && !watched[0]) {
                 watched[0] = true;
                 BlockPos at = rel(h, n.blockPosition());
@@ -821,6 +825,7 @@ public final class ReconTripGameTests {
             t.assertTrue(watched[0], "never watched");
             t.assertTrue(r.good() && r.soldiers() == 3 && r.faces().equals(monsters) && r.vantage().equals("ground"),
                     "the lair's 3 monsters counted from the ground: " + r);
+            t.assertTrue(r.optic().isEmpty(), "a lair is watched with the eyes, spyglass or not: " + r.optic());
             t.succeed();
         });
     }

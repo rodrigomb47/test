@@ -29,7 +29,8 @@ import java.util.function.Predicate;
 
 /**
  * Blacksmith (spec 10): plans useful batches from real needs (better pickaxes for the miners, worker tools, soldier
- * swords and armour, bows, torches), gathers real inputs, crafts at the workshop and delivers to storage.
+ * swords and armour, bows, spyglasses for scouts, torches), gathers real inputs, crafts at the workshop and delivers to
+ * storage.
  * Without a smelter it also smelts raw ore.
  */
 public class BlacksmithJob extends Job {
@@ -288,6 +289,16 @@ public class BlacksmithJob extends Job {
         int string = FactionStorage.count(level, base, s -> s.is(Items.STRING));
         if (bowless > 0 && string >= 3 && sticksAvail >= 3) {
             out.add(new Order(Crafting.BOW, (int) Math.min(bowless, string / 3), "archer bows"));
+        }
+        // 5b. A spyglass for each scout it sees at home with none (task R12, recon.md 5.6): a scout watching an enemy base
+        //     through one sees it from up to 96 blocks. Copper is mined and smelted; the shard is a branch miner's, from
+        //     the amethyst clusters its tunnels uncover in geodes.
+        long glassless = members.stream().filter(n -> n.getRole() == NpcRole.SCOUT && ReconOptics.carried(n).none()).count()
+                - FactionStorage.count(level, base, ReconOptics::isOptic);
+        int copper = FactionStorage.count(level, base, s -> s.is(Items.COPPER_INGOT));
+        int shards = FactionStorage.count(level, base, s -> s.is(Items.AMETHYST_SHARD));
+        if (glassless > 0 && copper >= 2 && shards >= 1) {
+            out.add(new Order(Crafting.SPYGLASS, (int) Math.min(glassless, Math.min(copper / 2, shards)), "a spyglass for scouts"));
         }
         // 6a. Keep a working stock of sticks for tools, torches and recruitment payments.
         if (FactionStorage.count(level, base, s -> s.is(Items.STICK)) < 16

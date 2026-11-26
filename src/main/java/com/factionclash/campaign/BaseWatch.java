@@ -4,6 +4,7 @@ import com.factionclash.combat.CombatRules;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconOptic;
 import com.factionclash.logic.campaign.ReconRules;
 import com.factionclash.logic.campaign.ReconWatch;
 import com.factionclash.npc.FactionNpc;
@@ -103,7 +104,15 @@ public final class BaseWatch {
      * nothing in view (behind a hill: an empty mask).
      */
     public static ReconWatch.Sample reconSample(ServerLevel level, LivingEntity observer, BaseState b, long now) {
-        if (b == null || b.center == null || observer.level() != level || horizontal(observer.position(), b.center) > RECON_SIGHT) {
+        return reconSample(level, observer, b, now, ReconOptic.NONE);
+    }
+
+    /**
+     * {@link #reconSample(ServerLevel, LivingEntity, BaseState, long)} through the instrument {@code optic} (task R12): the
+     * sample is taken out to {@link #reconSight} for it, 96 blocks with a spyglass rather than the eyes' 72. Null beyond.
+     */
+    public static ReconWatch.Sample reconSample(ServerLevel level, LivingEntity observer, BaseState b, long now, ReconOptic optic) {
+        if (b == null || b.center == null || observer.level() != level || horizontal(observer.position(), b.center) > reconSight(b, optic)) {
             return null;
         }
         int reach = reconReach(b);
@@ -113,6 +122,21 @@ public final class BaseWatch {
         Map<String, Double> heroes = new LinkedHashMap<>();
         defenders(level, observer, b, new AABB(b.center).inflate(box, 12, box), soldiers, heroes);
         return new ReconWatch.Sample(mask, soldiers, heroes, now);
+    }
+
+    /**
+     * How far (horizontally, from the centre) a focused look of {@code b} through {@code optic} reaches (recon.md 5.6, task
+     * R12), the one reach both the vantage band ({@code work.ReconVantage.band}) and the samples' gate read: a settlement's
+     * is the instrument's ({@link ReconOptic#sight}: 72 with the eyes, 96 with a spyglass), and a GameTest settlement's
+     * scaled one ({@link BaseState#testSight} times the same ratio, {@link ReconOptic#scaled}). A lair's stays
+     * {@link #RECON_SIGHT} whatever the scout carries: it is watched from the ground through the gaps in its walls, inside
+     * its own band of 46 to 64 ({@code ReconRules.Band.of}).
+     */
+    public static double reconSight(BaseState b, ReconOptic optic) {
+        if (!b.isSettlement()) {
+            return RECON_SIGHT;
+        }
+        return b.testSight > 0 ? ReconOptic.scaled(b.testSight, optic) : optic.sight();
     }
 
     /**
