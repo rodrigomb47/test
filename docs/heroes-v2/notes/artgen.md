@@ -5154,3 +5154,241 @@ Python suite, 576 tests, OK.
   take one of the two clips his own file has left. A look in game decides.
 - Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.
+
+## C4: Ilsabet Frostmere (2026-11-26)
+
+HEROES_V2.md 15.2 row C4, Ilsabet's half (Tobimaru Usugumo's is still open). This adds her source file, her art, her
+signature animations and the pieces she needed. Her kit is the slice fixture's
+(`src/test/resources/heroes/slice/ilsabet_frostmere.json`, copied field for field; her server definition belongs to the
+engine side). She has one body for good (the owner's rule, HEROES_V2 3.6): **adult, female, standard build, drawn at
+104%** (SLICE_PLAN 3.7), 52 px tall (1.89 blocks). Every preview shows her only in that body. She has no tail. No hit
+tick, marker or timing file of an existing clip changed: the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen,
+Kagenori, Ambrose, the test rig, the Wither and the Ender Dragon build and preview byte for byte as before, and her
+animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/ilsabet_frostmere.hero.json` | the source: the kit, `art` (body, palette, parts, face with two overrides, the longsword and the kite shield, phase looks) and `animations` (style `sword_shield`, blink `normal`, 61 poses of her own, 18 signatures and `sec.loop`) |
+| `herosrc/parts/headwear/visored_helm.json` | the visor now hangs from a cubeless `visor_hinge` bone at its own pivot (below) |
+| generated | `geo/hero` (66 bones of the 100 budget, 237 cubes of the 300, 125 of the 130 beyond the fine distance), `textures/entity/hero` (256x128 texture and glow mask; no `_p2` texture: nothing of hers changes colour), `heroes/*.visual.json`, `animations/hero/ilsabet_frostmere.animation.json`, `data/factionclash/hero_timings/ilsabet_frostmere.json` |
+| `render/scene.py` | `HeroAssets.held()`: the channels a hero's `sec.loop` holds at one value, laid over `stance()` (below) |
+| `render/hero_previews.py` | her captions (`OWN_CAPTIONS`) |
+| `tests/test_ilsabet.py` | 18 tests (below) |
+
+### Her look
+
+The rime vow knight of the sample outfit (G6a-c): ash-blonde hair in a braided crown, a steel breastplate with its
+tassets under a long blue tabard with a white stripe and the frost lily on the chest (`markings/crest`, `chest`), a
+short blue capelet, steel gauntlets and greaves, the faction sash, the longsword at her left hip and the kite shield
+with the lily on her back. The palette is SLICE_PLAN 3.7's (`primary` steel #B8C7D6, `secondary` #EEF3F7, `accent`
+blue #3D6FA8, `trim` gold, `metal` #C9D1D9, `glow` ice blue #A8E6FF; `leather` #5E4031 for the grip, the scabbard and the
+shoes). Face: `almond` eyes, lashes 2 with an upward flick, `straight` brows, the `soft` mouth; blink `normal`. Two
+overrides fit a righteous knight: her `angry` is stern (focused eyes over a frown, never bared teeth) and her `smug` a
+plain smile (she is never smug).
+
+- **Phase 2** (60%): the visored helm (`headwear/visored_helm`, `"phase": 2`) with its visor down over her face, and
+  her hair hidden under it (the phase look hides the braided crown's bones: the braid poked through the helm's sides
+  and back, measured on the turnaround and the zoomed phase sheet).
+- **Phase 3** (25%): the standard on her back (`back/standard`, `"phase": 3`, the lily on its banner) and the blade's
+  edge lit with frost (`weapon.phase_glow` on the longsword's `blade` and `point`: glowing shells on a `p3_` bone, as
+  Hinae's streamers). Her eyes do not glow: the visor covers them, and the kit names only the standard and the blade.
+
+Steel and her ash-blonde hair keep her apart from the others: her two largest colour regions differ from Natsuho's by
+delta-E 68.5 and 53.1, Hinae's by 73.8 and 71.4, Benika's by 75.5 and 71.7, Yugen's by 69.1 and 19.9, Kagenori's by
+71.5 and 11.0 (her hair against his off-white hakama) and Ambrose's by 69.2 and 75.7. Front and side silhouettes at 4x
+overlap 0.61-0.72 with the six (the NOTE is at 0.90). She is the only knight with a source, so `check` gives no NOTE.
+
+### The visor: held down by `sec.loop`
+
+The kit's visor "snaps down over her face" in phase 2 and stays down. The face rule of 14.2 (Python `validate` and the
+Java `HeroAssetCheck` alike) refuses any cube in front of the face on the rest geometry, so G6a built the visor raised
+at rest (`visor_up` 75 degrees about its hinge at the brow) for a clip to lower; but a clip's keys end with the clip.
+What plays all the time is `sec.loop` on the secondary controller, and that controller runs after the base and action
+controllers, so the channels it keys win over every clip's. So:
+
+- `visored_helm` hangs its visor from a new cubeless bone, `visor_hinge`, at the visor's own pivot (the part's only
+  other wearer, the `ilsabet` sample outfit, renders as before: `parts-previews --check` and `lint` pass, and every
+  committed hero builds byte for byte).
+- Her `sec.loop` (2.0 s) keys only `p2_visor_hinge`, at +`visor_up` (75 degrees) on every key: the visor is down on the
+  hinge from the moment the helm shows. Before phase 2 the helm's bones are hidden and the hold turns nothing visible.
+- `phase.2` turns the `visor` bone itself on the held hinge: -75 (raised) from its start to 0.38 s, slammed down past
+  shut at 0.45 s (+6, the `visor` sound) with a bounce (-2), and shut (0) from 0.6 s, its rest, so it stays down when
+  the clip ends.
+- Lowered, the visor's plates lie in front of her face below the lash line (more than 20 sample points there; none at
+  rest, so the face rule still passes). Her face frames stay behind it, and every clip still keys `face_ctrl` (phase 1
+  shows her face; the engine's face code runs as for any hero).
+
+**Stills draw what `sec.loop` holds.** The previews lay `sec.loop` over every film frame, but the turnaround's night
+cell, `phases.png` and the coplanar check pose the hero with `HeroAssets.stance()`, which had no secondary controller:
+they showed her visor raised. `stance()` now lays over its pose the channels the chain's `sec.loop` holds at one value
+on every tick of the loop (`held()`). No other hero's loop holds anything (Hinae's ring, Yugen's orbit, Ambrose's crow,
+the Wither's and the Ender Dragon's loops all move), so every other still is byte for byte as before.
+
+### Signature animations
+
+Her own file has the 18 signatures and `sec.loop`; the sword_shield library and the core cover the rest: her basic
+string `attack.1-3` (cut, cut, bash), the guard, the locomotion, the hurt and the death. Each move's clip has the kit's
+frames to the tick: the `hit` on the release and a `cast` on the active part's last tick; Oath Strike has a `hit` on
+each of its two cuts (ticks 9 and 15: MovePlan takes the markers as the form's hit ticks when the counts match).
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.shield_bash` | 1.7 s | heavy | 16 / 4 / 16 | the shield goes up high before her, its top over her head, the left shoulder to the target and the sword drawn back low, lower and coiled behind it with a tremble (the tell); driven straight forward at chest height with the shoulder and the hips behind it (`hit` 16, the server carries her 3 blocks), on through (`cast` 19); up behind the shield into her guard |
+| `move.oath_strike` | 1.1 s | light | 9 / 7 / 8, hits 9, 15 | the sword raised high at her right with the blade back over the shoulder, a diagonal cut down to her front left (`hit` 9), the blade turned low at her left, a rising cut to her high right (`hit` 15, the freeze); a swing sound before each cut |
+| `move.rime_wall` | 1.1 s | light | 12 / 2 / 10 | the shield lifted high and the sword raised back, the chest open; the shield slammed down before her like a wall, deep on the knees, the sword raised upright behind it (`hit` 12, the `rime_wall` sound), `cast` 13 |
+| `move.turning_sweep` | 2.7 s | area | 20 / 20 / 16 | the hips and chest wound far to her right with the sword drawn back low behind her and the shield tucked up at her left shoulder, sinking and trembling (the tell); the blade out level at her right (`hit` 20, `frost_sweep`), turned steadily through the front to her left over one second with the body unwinding behind it (five keys, linear), `cast` 39 at her left, carried on round and slowing |
+| `move.frost_lance_charge` | 2.7 s | heavy | 20 / 16 / 20 | she sets herself low behind the shield with the sword levelled past its right edge like a lance, the head down (the tell); the charge (`hit` 20) and a driving run in place behind the shield while the server carries her (`cast` 35); she stops by slamming the shield point first into the ground and braking on deep knees (the move's `end`, `shield_plant`), and rises behind it |
+| `move.frozen_standard` | 2.0 s | area | 24 / 2 / 16 | the sword raised high before her point down, the chin up, the shield out at her left (the tell); driven point first into the ground before her (`hit` 24: the frozen field), `cast` 25; held with the head up, pulled out, her guard |
+| `move.call_the_guard` | 1.0 s | light | 12 / 2 / 8 | the sword thrust straight up over her head and the shield swept wide, the chest open (`hit` 12: the server's horn), `cast` 13; swept down to point at the foe |
+| `ultimate` | 3.2 s | ultimate | 32 / 4 / 30 | Vow of Winter: the sword upright before her face with the eyes closed (the vow), raised straight up over her head with the chin up and the shield out low and wide ("By my vow, winter holds this line!"), trembling while the ice ring grows, tipped back; swept down in a great arc to point at the ground before her as she drops deep on her knees (`hit` 32: the frost bursts), `cast` 35; held low, rising |
+| `state.bulwark` | 1.5 s | - | - | played as phase 2's transition ends: she drops into a braced shield wall, the shield forward and low and the sword laid over its top, and rises into her guard |
+| `phase.2`, `phase.3` | 1.1, 1.3 s | - | - | inside the 1.2 s and 1.4 s transitions: the sword upright before her face, one sharp nod that snaps the visor shut (`visor`), the head up; the sword thrust up over her head and the shield out wide ("To me, Rime Vow! Hold the line!", `rally`) while the standard rises out of its socket on her back with a small overshoot (`p3_back` and `p3_banner` 14 px down to 0) and its banner unfurls (`p3_banner` scaled 0.15 to 1 along its length) |
+| `intro` | 1.5 s | - | - | the salute: the sword upright before her face, the eyes closed, the shield at her side (`intro`); the sword lowered, its point to the ground at her right front, an offer ("Lower your weapon and I will lower mine. I keep my word."); her guard |
+| `victory`, `taunt` | 2.0, 1.5 s | - | - | the sword's point set on the ground before her and the head bowed toward the fallen ("It is done."), then up with a gentle smile; the sword levelled at the foe over the shield, its point flicked up twice: come |
+| `last_stand` | 1.6 s | - | - | bent over and breathing hard, leaning on the sword planted point down by her right foot, the shield hanging low; up into the braced shield wall ("My word is given. Not one step back.") |
+| `personal.1-3` | 2.4, 2.6, 2.8 s | - | - | the shield tap (a glance back over her right shoulder, the right hand reaching behind her to rap the carried shield's lower edge twice, `shield_tap`); the salute without a blade (the right fist over her heart, the head bowed, `salute`); the glance back at her allies (over her right shoulder, a small nod and a smile) |
+| `sec.loop` | 2.0 s | - | - | the visor held down on its hinge (above) |
+
+- **No `escape`**: she never escapes (SLICE_PLAN 3.7: her vow is to stand between the enemy and her people), so the
+  clip would never play, as for Benika, Kagenori and the bosses. **No `ultimate.loop`**, as for the others.
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slots name: the releases of Oath
+  Strike (`sword_swing`, one per cut), Rime Wall (`rime_wall`) and Turning Sweep (`frost_sweep`), Frost Lance Charge's
+  `end` (`shield_plant`), both phases (`visor`, `rally`), the intro (`intro`) and two quirks (`shield_tap`, `salute`).
+  The wind-ups, the impacts, Call the Guard's horn and the ultimate's release (`plays` server by kind), Bulwark's armour
+  and the `resolve` emote are the server's. The client's keyframe handler plays a marker whatever its kind
+  (`HeroLocalSounds.keyframe`), so `rally` and `shield_plant`, server-kind sounds in client slots, play.
+- **Faces**: every signature keys `face_ctrl`; the moves key the mouth and leave the eyes to the mood (the wind-up's
+  focused eyes); the ultimate closes them for the vow, the intro for the salute.
+- **Rules**: every own clip passes the quality rules on all six bases (no foot slides, planted feet within 0.5 px, the
+  soles on the ground, the joint limits); the sword and the shield stay clear of her body and above the ground on every
+  tick (`grips.animation_problems`). The arm poses were solved on her own skeleton for the sword's grip and direction
+  and for the shield's centre, top and face (its point for the plant), some in the chest's frame (the sweep's tucked
+  shield rides with the turning torso); the legs of every planted pose on her stance's sole spots; the charge's run in
+  place lifts the root and takes the `floor` fix (`steps`).
+- **Against her phase looks, only the thick cubes are measured.** The clearance check (`grips`' depth: a point's
+  distance to a cube's nearest face) keeps her arms, the sword and the shield within 0.5 px of the helm (its visor held
+  down) and the standard on every tick of her own clips and her style's string and guard. That depth can never pass
+  half a cube's thinnest side, so it sees only the helm's two lower skull slabs (2.75 and 1.5 px thick) and the
+  standard's finial; the helm's cheek, back and visor plates (0.6-0.7 px), the 0.7 px pole, the 0.3 px banner and the
+  shield's 0.15-0.45 px plates stay under any limit above their half-thickness, whatever crosses them. So the 0.33-0.35
+  px first read as "a forearm grazing the helm's cheek plate" (Rime Wall, Frozen Standard, Call the Guard, the
+  ultimate, the library's `guard.hit`) is the cheek plate's full half-thickness, and the arm may pass through it; the
+  same holds for the blade against the shield. Sampled plate-aware probes point at crossings (the raised upper arm
+  through the cheek plates in Call the Guard, `phase.3` and the ultimate; the gauntlets through the lowered visor in
+  the library's `guard`; the frost-lit blade through the shield's face for a tick or two as Frozen Standard and the
+  victory leave her guard; the library's `attack.3` and `sheathe`), but they disagree with each other, so these are
+  open (below), not measured. What the thick cubes did catch: the first draft's phase-2 nod brought the helm's skull
+  1.36 px into the upright blade (the salute's blade now stands 3 px further out), and the sweep's first tuck put the
+  shield's point into the blade's path at her left (the tuck rides higher in the chest's frame).
+
+### Generator additions (every other hero builds and previews byte for byte as before)
+
+- **`headwear/visored_helm`**: the `visor_hinge` bone (above).
+- **`render/scene.py`**: `HeroAssets.held()` and `stance()` laying the held channels over the stance (above); the
+  turnaround, `phases.png`, the lineup and the coplanar check of `herogen check` see her visor down.
+- **`render/hero_previews.py`**: her captions (`OWN_CAPTIONS`).
+
+### Previews (`docs/heroes-v2/previews/heroes/ilsabet_frostmere/` and `heroes/lineup.png`)
+
+Her set, as the others', with a hand-written README: `turnaround.png` (phase 3 at night with the visor down and the
+standard), `faces.png`, `phases.png` (phase 2 with the helm, visor down; phase 3 with the standard), `sheet.png`, a GIF
+per move (Frost Lance Charge in phase 2, Frozen Standard and Call the Guard in phase 3, their first kit phases),
+`ultimate.gif`, `string.gif` (the sword_shield string), `moments.gif` (`state.bulwark` after phase 2's transition),
+`idles.gif` and `locomotion.gif` (walk > run, the charging run and its skid, jump > leap > land, climb). The lineup now has
+her between Hinae and Kagenori (alphabetical), at 1.89 blocks.
+
+### Tests (576 -> 594: `tests/test_ilsabet.py`, 18)
+
+- Her one body: adult, female, standard, 104, no phase changes it, no tail; the kit is the fixture's; the budgets.
+- Every move's and the ultimate's frames equal the kit's (Oath Strike's cuts at ticks 9 and 15), and
+  `assets.check_frames` passes on the written chain.
+- Her own clips pass every rule on every base; the clip set is the 18 and `sec.loop` (no `escape`, no
+  `ultimate.loop`); the sword and the shield clear of her body on every tick; her arms and props within 0.5 px of the
+  helm (visor down) and the standard on every tick of her own clips, her string and her guard (a check of the thick
+  cubes only: see "Against her phase looks" above).
+- The visor: the hinge is a cubeless bone at the visor's pivot and the visor its child; `sec.loop` keys only the hinge,
+  at +75 on every tick, and no other clip keys it; lowered, the visor lies in front of her face, and at rest it does not
+  (the face rule passes); `phase.2` starts with it raised, slams it past shut at 0.45 s and ends shut; the phase clips
+  fit their transitions.
+- The stills: `held()` is her hinge's hold, `stance()` (drawn and not) carries it, and Hinae's, Yugen's and Ambrose's
+  loops hold nothing.
+- The phase looks: the helm's bones from phase 2, the standard's from phase 3, the blade's glowing shells on
+  `p3_weapon_r`, her hair hidden from phase 2; `phase.3` raises the standard from 14 px down with an overshoot and
+  unfurls its banner, both at rest at its end.
+- Every client slot has its marker (two swings in Oath Strike, the charge's `end`), no server slot is a marker (Call the
+  Guard has none); `face_ctrl` in every clip but the loop; her stern angry face and plain smug smile; the moves never key
+  the eyes.
+- The previews: her locomotion (a charger's run and skid, a plain jump), her clips' phases (Bulwark and Frost Lance
+  Charge in 2, Frozen Standard, Call the Guard and the last stand in 3), her captions, the lineup.
+
+Sabotage (each restored afterwards, every file byte for byte; each read as `failures=1`, not an error): `held()`
+returning nothing fails `test_stills_draw_what_sec_loop_holds`; the visor hung back on the hat (no hinge) fails
+`test_the_helms_visor_hangs_from_a_hinge`; `sec.loop` holding the hinge at 60 fails `test_sec_loop_holds_the_visor_down`;
+Oath Strike's second cut a tick late fails `test_move_frames_equal_the_kit`; phase 2 keeping the hair fails
+`test_phase_looks`; the standard not sunk at `phase.3`'s start fails `test_phase_3_raises_the_standard`; the Turning
+Sweep's shield arm swung up 60 degrees (`ils.ts_d`) fails `test_sword_and_shield_clear_of_her_body` ("the prop passes
+2.4 px into head"). A first draft of that last case, Frozen Standard's pull bringing the shield across before her with
+Shield Bash's recovery arm, passed the test, and rightly: measured, it puts the shield 0.17 px into her right forearm
+(the limit is 1.0) and nowhere into the blade, so it was no defect and was replaced. A blade-against-shield test was
+drafted and dropped: on the shield's thin plates the depth it used can never reach its limit (above).
+
+### Checks run
+
+`herogen build ilsabet_frostmere` (66 bones, 237 cubes, 256x128 texture, 6 files); `herogen check ilsabet_frostmere`
+(all of 14.2, the tail rule included) OK and `check --all --style` OK (its one NOTE, the test rig's `lunge`, is old);
+`build --check --all` OK (the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen, Kagenori, Ambrose, the test rig,
+the Wither and the Ender Dragon build byte for byte as committed); `lint` of her twelve parts (braid_crown,
+breastplate, tabard, cape_short, gauntlets, greaves, sash_obi, visored_helm, standard, crest, longsword, kite_shield)
+on every base: 272 builds and checks, 0 problems, and of `visored_helm` with its hinge alone: 22, 0 problems;
+`parts-previews --check` OK after the hinge (the parts sheets unchanged); `sfxgen check` OK; her clips' rules on every
+base (0 problems) and the props' body clearance on every tick; `hero-previews ilsabet_frostmere --check`,
+`hero-previews natsuho_komezaki hinae_shirasuzu benika_akagane yugen_kagaribi kagenori_tsurumine ambrose_nettlewick
+the_wither the_ender_dragon --check` and `hero-previews --lineup --check` OK; `anim-previews --core --check`,
+`--styles --check` and `--locomotion --check`, `render-previews --check` and `icons --check` OK; the Python suite, 594
+tests, OK (run before the test file's last change, which removed a drafted test and narrowed a docstring;
+`tests.test_ilsabet` alone, 18 tests, OK after it).
+
+### Decisions
+
+1. **Her kit is the fixture's verbatim** (as the other slice heroes').
+2. **The visor held by `sec.loop` on a new hinge bone**, not a visor down at rest (the face rule, in Python and in the
+   Java checker, refuses it, and rightly for every other hero) and not a lowered-visor phase part (the same rule). The
+   cost: the secondary controller stops beyond 32 blocks and in death (`HeroAnimator.secondary`), so there the visor
+   eases back up; and the helm's bones show as the phase becomes 2, a tick or two before `phase.2` raises the visor.
+3. **Her face behind the visor from phase 2**, as the kit draws her; the tells read through the shield, the sword and
+   the posture, and every clip still keys `face_ctrl`.
+4. **The hair hidden under the helm** by the phase look rather than a thinner braid: the braided crown is G6a's and
+   approved, and nothing of it should show under a closed helm.
+5. **No eye glow in phase 3**: the kit names the standard and the blade's frost, and the visor would hide the eyes.
+6. **The standard rises in `phase.3`** by keys on its own bones (the pole's position, the banner's position and length),
+   which end at rest: from then on the phase look shows it where it belongs.
+7. **The idle quirks use what she carries**: the shield on her back for the tap, no blade for the salute (the fist over
+   her heart).
+8. **No escape clip** (she never escapes), as for Benika and Kagenori.
+
+### Open items
+
+- **Engine side**: her definition in `data/factionclash/heroes/` (the fixture's fields); the `last_stand` action code
+  (6.13); her `vfx:` markers (`shield_bash`, `slash_arc`, `frost_arc`, `rime_wall`, `frost_sweep`, `frost_charge`,
+  `frozen_standard`, `rally`, `vow_of_winter`).
+- **The visor beyond 32 blocks and in death**: the secondary controller stops there (`PlayState.STOP`), so the visor
+  eases back up over the reset time. If it shows, the engine can keep `sec.loop` playing for a hero whose loop holds
+  bones (or hold the last frame instead of stopping).
+- **The phase changes' first ticks**: the helm's bones show as the phase becomes 2 with the visor held down, and
+  `phase.2` raises it over the action's 2-tick blend before it snaps shut; the standard shows as phase 3 begins, a tick
+  before `phase.3` sinks it into its socket. As for Kagenori's helmet, the engine can set the phase bit a tick after it
+  sends the phase clip.
+- **The library's draw and sheathe** (shared, unchanged) slide the left forearm behind the back under the shield's
+  strap; in phase 3 that forearm reaches 0.34 px into the standard's 0.7 px pole, its full half-thickness, so it may
+  pass through it.
+- **Crossings of thin plates, unmeasured**: the clearance depth cannot see the helm's cheek, back and visor plates,
+  the pole, the banner or the shield's plates (above). An exact measure (box against box, the separating axes) would
+  settle what the sampled probes point at: the raised upper arm through the cheek plates (Call the Guard, `phase.3`,
+  the ultimate), the gauntlets through the lowered visor in the library's `guard`, the frost-lit blade through the
+  shield's face for a tick or two as Frozen Standard and the victory leave her guard, and the library's `attack.3`
+  and `sheathe`. Her own clips can then be re-solved; the library's are shared.
+- **The banner's procedural sway** (`back/standard`'s chain) adds to `phase.3`'s keys in game; a look in the client.
+- Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.

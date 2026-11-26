@@ -93,6 +93,11 @@ OWN_CAPTIONS = {
         "phase.2": "phase.2 (the helmet goes on)",
         "phase.3": "phase.3 (the short sword drawn, the eyes and edges glow)",
     },
+    "ilsabet_frostmere": {
+        "phases": "the phase looks (2: the visored helm, visor down; 3: the standard, the frost-lit blade)",
+        "phase.2": "phase.2 (the visor snaps down)",
+        "phase.3": "phase.3 (the standard rises, the blade glows)",
+    },
     "ambrose_nettlewick": {
         "phases": "the phase looks (2: broom bristles at the staff's foot; 3: glowing eyes, the hat's brim lifted)",
         "phase.2": "phase.2 (the bristles sprout, a test hop on the staff)",

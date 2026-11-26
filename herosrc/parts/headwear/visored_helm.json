@@ -1,5 +1,5 @@
 {
-  "_comment": "A knight's helm with a visor (G6a): a rounded skull of stacked slabs over the hair, cheek plates and a back plate down to the jaw, a crest ridge in the trim colour, and a visor with an eye slit on its own bone (`visor`) pivoting at the temples. At rest the visor is raised `visor_up` degrees about its hinge at the brow, so the face stays clear; the hero's own animation lowers it (rotate the `visor` bone about x by +`visor_up`: the `phase.2` visor snap); lowered, an eye slit separates its upper and lower plates at the lash line. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "_comment": "A knight's helm with a visor (G6a): a rounded skull of stacked slabs over the hair, cheek plates and a back plate down to the jaw, a crest ridge in the trim colour, and a visor with an eye slit on its own bone (`visor`) pivoting at the temples. At rest the visor is raised `visor_up` degrees about its hinge at the brow, so the face stays clear; the hero's own animation lowers it (rotate the `visor` bone about x by +`visor_up`: the `phase.2` visor snap); lowered, an eye slit separates its upper and lower plates at the lash line. C4: the visor hangs from `visor_hinge` (same pivot, no cubes), so a hero's `sec.loop` can hold the visor down on the hinge while a clip turns the `visor` bone itself (Ilsabet: the hinge held at +`visor_up` from phase 2, `phase.2` swings the visor from raised to down on it). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
   "id": "headwear/visored_helm",
   "category": "headwear",
   "slots": {
@@ -10,7 +10,8 @@
   "conflicts": ["headwear/witch_hat", "headwear/kabuto", "headwear/halo_ring"],
   "offset": [0, "head_y", 0],
   "bones": [
-    {"name": "visor", "parent": "hat", "pivot": [0, 10.75, -6.9]}
+    {"name": "visor_hinge", "parent": "hat", "pivot": [0, 10.75, -6.9]},
+    {"name": "visor", "parent": "visor_hinge", "pivot": [0, 10.75, -6.9]}
   ],
   "cubes": [
     {

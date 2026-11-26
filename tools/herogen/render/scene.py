@@ -231,7 +231,34 @@ class HeroAssets:
         bind pose if the chain has neither)."""
         name = "combat.idle" if drawn and self.chain.get("combat.idle") else "move.idle"
         clip = self.chain.get(name)
-        return clip.sample(0.0, self.form_var()) if clip is not None else {}
+        pose = clip.sample(0.0, self.form_var()) if clip is not None else {}
+        held = self.held()
+        if held:
+            # C4: the secondary controller plays sec.loop all the time, so what it holds still shows in every still
+            pose = {b: dict(cs) for b, cs in pose.items()}
+            for b, cs in held.items():
+                pose.setdefault(b, {}).update(cs)
+        return pose
+
+    def held(self):
+        """C4: the channels the chain's `sec.loop` holds at one value for the whole loop ({bone: {channel: value}}),
+        such as Ilsabet's visor held down on its hinge. HeroAnimator plays sec.loop on the secondary controller all
+        the time, after the base and action controllers, so these channels show in every still; a loop that moves
+        (an orbit, the crow's glances) holds nothing."""
+        if not hasattr(self, "_held"):
+            out = {}
+            clip = self.chain.get("sec.loop")
+            if clip is not None:
+                fv = self.form_var()
+                n = max(1, int(round(clip.length / 0.05)))
+                samples = [clip.sample(min(i * 0.05, clip.length), fv) for i in range(n + 1)]
+                for b, cs in samples[0].items():
+                    for ch, v in cs.items():
+                        if all(abs(float(a) - float(c)) <= 1e-6 for s in samples[1:]
+                               for a, c in zip(s.get(b, {}).get(ch, (float("nan"),) * 3), v)):
+                            out.setdefault(b, {})[ch] = v
+            self._held = out
+        return self._held
 
 
 def to_image(arr):
