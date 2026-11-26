@@ -36,7 +36,10 @@ final class ReconTrip {
         FOOT,
         /** At the column: the climb and its looks, the watch, the way down. */
         PILLAR,
-        /** Done at the target: going home with what it saw. */
+        /**
+         * Done at the target: going home with what it saw, first round the base by the corners of the standoff's square to
+         * the side facing home when it is on another ({@link #waypoints}), never through the enemy's alarm box.
+         */
         DONE
     }
 
@@ -102,6 +105,8 @@ final class ReconTrip {
     int columnIndex;
     List<ReconRules.Point> waypoints;
     int walkTicks, routeFailBase;
+    /** How long the leg it walks now may take (worked out at the leg's start from its length). */
+    long legBudget;
 
     ReconTrip(BlockPos target, FactionType subject, Report.Kind kind, boolean urgent, double distance, List<Side> sides) {
         this.target = target.immutable();
@@ -118,7 +123,7 @@ final class ReconTrip {
 
     /** "the Stoneguard settlement", "the Hollow lair". */
     String what() {
-        return "the " + (subject == null ? "enemy" : subject.displayName) + (lair() ? " lair" : " settlement");
+        return com.factionclash.campaign.ReconOrder.what(subject, kind);
     }
 
     /** The side it is at now (null once every side was tried). */

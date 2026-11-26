@@ -757,7 +757,9 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   (the station or the storehouse; the urgent one first); 22 dirt kept through every unloading (`ReconRules.BLOCKS`,
   coarse dirt tops it up), fetched from the storehouse, else dug once a trip within the base's home area (2 searches
   at most, 2400 ticks at most: `ScoutJob.DIG_GIVE_UP_TICKS`, `MAX_DIG_SEARCHES`), a lair needing none; at most 2 sides
-  a trip (`ReconRules.SIDES`), round by the standoff's corners; at most 6 columns of a side tried
+  a trip (`ReconRules.SIDES`), round by the standoff's corners there and, when it is done, back to the side facing home
+  before it walks home; each leg may take three times the plan's pace for its length and 400 ticks (`ScoutJob.legDone`);
+  at most 6 columns of a side tried
   (`ScoutJob.MAX_COLUMNS`); a look from the ground and after each block from 4 up, good with 8 of the 25 points and the
   middle; it stops 2 blocks above the first good look (`CLIMB_PAST`), at 20 at most (`PILLAR_MAX`); a watch of 1200
   ticks, a sample every 40 (`ScoutJob.SAMPLE_TICKS`), good past 600 when cut short; it holds still on top while an enemy

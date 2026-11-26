@@ -1324,6 +1324,14 @@ public class ScoutJob extends Job {
         if (r.foot != null && (r.phase == ReconTrip.Phase.FOOT || r.phase == ReconTrip.Phase.PILLAR)) {
             return r.foot;
         }
+        if (r.phase == ReconTrip.Phase.DONE) {
+            BaseState home = base();
+            if (r.waypoints != null && !r.waypoints.isEmpty()) {
+                ReconRules.Point p = r.waypoints.get(0);
+                return surface(t.center.getX() + p.dx(), t.center.getZ() + p.dz());
+            }
+            return home != null ? home.point(BaseState.STATION_STAND) : t.center;
+        }
         Side s = r.current();
         if (s == null) {
             return t.center;
@@ -1382,8 +1390,7 @@ public class ScoutJob extends Job {
             if (r.phase == ReconTrip.Phase.PILLAR && r.pillar != null) {
                 startDown(r);
             } else {
-                r.phase = ReconTrip.Phase.DONE;
-                beginReturn(false, "");
+                leaveTarget(r);
                 return;
             }
         }
@@ -1391,8 +1398,70 @@ public class ScoutJob extends Job {
             case PREPARE, APPROACH -> reconApproach(r, t);
             case FOOT -> reconFoot(r, t);
             case PILLAR -> reconPillar(r, t);
-            case DONE -> beginReturn(false, "");
+            case DONE -> reconLeave(r, t);
         }
+    }
+
+    /**
+     * Done at the target (recon.md 3.5, step 7): home with what it saw, first round the base by the corners of the
+     * standoff's square to the side facing home when it stands on another, never across the enemy's alarm box; in a
+     * retreat when it was hurt, its pillar was broken or it was moved off it.
+     */
+    private void leaveTarget(ReconTrip r) {
+        r.phase = ReconTrip.Phase.DONE;
+        r.waypoints = new ArrayList<>();
+        r.walkTicks = 0;
+        r.routeFailBase = routeFailures();
+        BaseState t = reconBase(r), home = base();
+        if (t != null && home != null) {
+            int hx = home.center.getX() - t.center.getX(), hz = home.center.getZ() - t.center.getZ();
+            int fx = npc.getBlockX() - t.center.getX(), fz = npc.getBlockZ() - t.center.getZ();
+            r.waypoints.addAll(ReconRules.round(fx, fz, ReconRules.region(hx, hz), ReconVantage.band(t).standoff(), hx, hz));
+        }
+        if (r.waypoints.isEmpty()) {
+            goHome(r);
+        }
+    }
+
+    private void goHome(ReconTrip r) {
+        boolean retreat = r.end == ReconTrip.End.RETREAT;
+        beginReturn(retreat, retreat ? r.why : "");
+    }
+
+    /** One tick of the way out round the base (its corners, then home as on any trip). */
+    private void reconLeave(ReconTrip r, BaseState t) {
+        if (r.waypoints == null) {
+            leaveTarget(r); // (after a load: the way out worked out again from where it stands)
+            return;
+        }
+        if (r.waypoints.isEmpty()) {
+            goHome(r);
+            return;
+        }
+        BlockPos goal = reconGoal(r, t);
+        if (legDone(r, goal, 3.0)) {
+            r.waypoints.remove(0);
+            return;
+        }
+        goTo(goal, 2.5, "the way round " + r.what(), r.end == ReconTrip.End.RETREAT ? RUN_SPEED : 1.0);
+    }
+
+    /**
+     * Whether the leg it walks now (to {@code goal}) is over: it got within {@code reach}, or it has walked longer than
+     * the leg's length allows ({@link ReconTrip#legBudget}, three times the plan's pace and 400 ticks, worked out at the
+     * leg's start), or near the goal the way failed three times. Starts the next leg's count when it is.
+     */
+    private boolean legDone(ReconTrip r, BlockPos goal, double reach) {
+        double dx = npc.getX() - (goal.getX() + 0.5), dz = npc.getZ() - (goal.getZ() + 0.5), d = Math.sqrt(dx * dx + dz * dz);
+        if (r.walkTicks == 0) {
+            r.legBudget = Whereabouts.walkTicks(d) * 3 + 400;
+            r.routeFailBase = routeFailures();
+        }
+        boolean over = d <= reach || ++r.walkTicks > r.legBudget || d < 32 && routeFailures() - r.routeFailBase >= 3;
+        if (over) {
+            r.walkTicks = 0;
+        }
+        return over;
     }
 
     /**
@@ -1423,8 +1492,7 @@ public class ScoutJob extends Job {
         r.phase = ReconTrip.Phase.APPROACH;
         Side s = r.current();
         if (s == null) {
-            r.phase = ReconTrip.Phase.DONE;
-            beginReturn(false, "");
+            leaveTarget(r);
             return;
         }
         ReconRules.Band band = ReconVantage.band(t);
@@ -1438,10 +1506,8 @@ public class ScoutJob extends Job {
         }
         BlockPos goal = reconGoal(r, t);
         boolean leg = !r.waypoints.isEmpty();
-        boolean stuck = ++r.walkTicks > 2400 || routeFailures() - r.routeFailBase >= 3;
-        if (nearColumn(goal, leg ? 3.0 : 4.0) || stuck) {
-            r.walkTicks = 0;
-            r.routeFailBase = routeFailures();
+        if (legDone(r, goal, leg ? 3.0 : 4.0)) {
+            boolean stuck = !nearColumn(goal, leg ? 3.0 : 4.0);
             if (leg) {
                 r.waypoints.remove(0); // by this corner (or past it, when it could not get there)
                 return;
@@ -1503,8 +1569,7 @@ public class ScoutJob extends Job {
         r.lookedAt = -1;
         r.step = ReconTrip.Step.CLIMB;
         if (r.current() == null) {
-            r.phase = ReconTrip.Phase.DONE;
-            beginReturn(false, "");
+            leaveTarget(r);
         } else {
             r.phase = ReconTrip.Phase.APPROACH;
         }
@@ -1563,8 +1628,7 @@ public class ScoutJob extends Job {
             r.end = ReconTrip.End.RETREAT;
             r.why = "off its pillar";
             r.pillar = null;
-            r.phase = ReconTrip.Phase.DONE;
-            beginReturn(true, r.why);
+            leaveTarget(r);
             return;
         }
         if (r.step != ReconTrip.Step.DOWN && r.end == ReconTrip.End.NONE) {
@@ -1739,12 +1803,7 @@ public class ScoutJob extends Job {
         r.pillar = null;
         breaker.reset(npc);
         if (r.end != ReconTrip.End.NONE) {
-            r.phase = ReconTrip.Phase.DONE;
-            if (r.end == ReconTrip.End.RETREAT) {
-                beginReturn(true, r.why);
-            } else {
-                beginReturn(false, "");
-            }
+            leaveTarget(r);
             return;
         }
         nextSide(r);

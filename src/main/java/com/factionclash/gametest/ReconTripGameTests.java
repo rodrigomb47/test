@@ -358,11 +358,11 @@ public final class ReconTripGameTests {
     // ------------------------------------------------------------------ R4b: a watch saved and loaded midway
 
     /**
-     * A watch saved and loaded midway counts a soldier seen before and after the load once (recon.md 15 item 4, 10.3: the
-     * accumulator is kept by UUID, never by the runtime entity id). Midway through the watch the scout's chunk is saved
-     * and loaded (the scout comes back as a new entity from its saved form, its watch with it), and so is a soldier it has
-     * already counted (a new runtime id, the same UUID). The watch goes on from the same pillar and the report counts
-     * that soldier once: 2 in all.
+     * A trip saved and loaded on the way there and a watch saved and loaded midway (recon.md 15 item 4, 10.3: the
+     * accumulator is kept by UUID, never by the runtime entity id). On its way to the target the scout's chunk is saved
+     * and loaded (the scout comes back as a new entity from its saved form, its trip with it) and it goes on; midway
+     * through the watch it is saved and loaded again, and so is a soldier it has already counted (a new runtime id, the
+     * same UUID). The watch goes on from the same pillar and the report counts that soldier once: 2 in all.
      */
     @GameTest(template = FIELD, timeoutTicks = 4000, batch = "recon_trip_reload", skyAccess = true)
     public static void aWatchSavedAndLoadedMidwayCountsEachSoldierOnce(GameTestHelper h) {
@@ -379,10 +379,21 @@ public final class ReconTripGameTests {
         UUID twice = seen[1].getUUID();
         FactionNpc[] scout = {fl.scout()};
         Trip trip = new Trip();
-        int[] reloaded = {0};
+        int[] reloaded = {0, 0};
         t.onEachTick(() -> {
             Field now = new Field(t, fl.f(), fl.target(), fl.order(), scout[0], fl.built());
             follow(now, trip);
+            BlockPos at = rel(h, scout[0].blockPosition());
+            if (reloaded[1] == 0 && now.job().stateName().equals("OUTBOUND") && now.job().reconPhase().equals("APPROACH") && at.getZ() >= 12) {
+                // saved and loaded on its way there (mid-trip): it goes on with the same trip
+                FactionNpc s = (FactionNpc) reload(t, unload(scout[0]));
+                scout[0] = s;
+                ScoutJob job = (ScoutJob) s.job();
+                t.assertTrue(job.stateName().equals("OUTBOUND") && job.reconPhase().equals("APPROACH") && dirtCarried(s) == ReconRules.BLOCKS,
+                        "the loaded scout should go on to watch: " + job.stateName() + " " + job.reconPhase() + ", " + dirtCarried(s));
+                reloaded[1] = 1;
+                return;
+            }
             var w = now.job().reconWatch();
             if (reloaded[0] == 0 && w != null && w.watchTicks() >= 400) {
                 t.assertTrue(w.soldiers().size() == 2, "both soldiers should be counted before the load: " + w.soldiers().size());
@@ -401,7 +412,7 @@ public final class ReconTripGameTests {
                 return;
             }
             Intel.Recon r = trip.filed.recon;
-            t.assertTrue(reloaded[0] == 1, "the watch was never loaded midway");
+            t.assertTrue(reloaded[0] == 1 && reloaded[1] == 1, "the trip was never loaded on the way and midway through the watch");
             t.assertTrue(r != null && r.good() && r.soldiers() == 2 && r.faces().contains(twice),
                     "a soldier seen before and after the load counted once: " + r);
             t.assertTrue(dirtIn(h, trip.column) == 0 && dirtCarried(scout[0]) == ReconRules.BLOCKS, "the pillar taken down after the load");
@@ -481,8 +492,8 @@ public final class ReconTripGameTests {
             follow(fl, trip);
             ScoutJob job = fl.job();
             FactionNpc n = fl.scout();
-            if (!n.isAlive() || !job.stateName().equals("RETURN") || !job.reconPhase().startsWith("DONE")) {
-                return;
+            if (!n.isAlive() || !job.reconPhase().startsWith("DONE")) {
+                return; // (on its way home: round the base's corner first, then to the station)
             }
             BlockPos at = rel(h, n.blockPosition());
             if (Math.max(Math.abs(at.getX() - HX), Math.abs(at.getZ() - HZ)) < 9) {

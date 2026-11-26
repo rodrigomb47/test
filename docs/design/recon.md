@@ -510,10 +510,11 @@ above differ, the code is the truth:
   base's home area (`RollCall.homeRadius`, outside every walls box plus 4), round a point 12 blocks outside its walls
   toward the target; it stops after 2 searches without ground or 2400 ticks (`ScoutJob.DIG_GIVE_UP_TICKS`) and sets
   out with what it has. A lair needs no dirt.
-* **The way there and round.** To each side's axis just beyond the standoff, by the corners of the standoff's square
-  when it comes from another side (`ReconRules.round`: one corner for a side next to it, two for the opposite side,
-  round by the side facing home). Monsters and enemy soldiers on the ground are stepped round or retreated from as on
-  any trip; on the pillar it holds still.
+* **The way there, round and home.** To each side's axis just beyond the standoff, by the corners of the standoff's
+  square when it comes from another side (`ReconRules.round`: one corner for a side next to it, two for the opposite
+  side, round by the side facing home); and when it is done, round by those corners to the side facing home before it
+  walks home, in a retreat too. Each leg may take three times the plan's pace for its length and 400 ticks. Monsters
+  and enemy soldiers on the ground are stepped round or retreated from as on any trip; on the pillar it holds still.
 * **The column.** The side's columns are searched once at the side (`ReconVantage.columns`); it tries to walk to at most
   6 of them (`ScoutJob.MAX_COLUMNS`), then gives the side up. A barrier block is no ground (a GameTest's walls).
 * **Climb and look.** A look is one recon sample: good when it has 8 points and the middle (`ReconRules.goodLook`). The

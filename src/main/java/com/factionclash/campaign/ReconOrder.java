@@ -50,6 +50,18 @@ public final class ReconOrder {
         this.urgent = urgent;
     }
 
+    /**
+     * "the Grove Covenant settlement", "the Hollow lair": a base as the faction names it in its lines (a faction whose
+     * name starts with "The" keeps one article).
+     */
+    public static String what(FactionType subject, Report.Kind kind) {
+        String name = subject == null ? "enemy" : subject.displayName;
+        if (name.startsWith("The ")) {
+            name = name.substring(4);
+        }
+        return "the " + name + (kind == Report.Kind.LAIR ? " lair" : " settlement");
+    }
+
     /** Whether a scout has taken it. */
     public boolean taken() {
         return scout != null;

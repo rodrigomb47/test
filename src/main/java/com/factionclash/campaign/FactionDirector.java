@@ -148,8 +148,7 @@ public final class FactionDirector {
         if (scouts > 0) {
             for (ReconOrder o : f.reconOrders) {
                 if (o.homeBase == b.id && com.factionclash.logic.campaign.ReconRules.secondScoutNeeded(o.taken(), o.orderedAt, t, scouts)) {
-                    out.add(new Need(NpcRole.SCOUT, "a scout to watch the " + (o.subject == null ? "enemy" : o.subject.displayName)
-                            + (o.kind == Report.Kind.LAIR ? " lair" : " settlement")));
+                    out.add(new Need(NpcRole.SCOUT, "a scout to watch " + ReconOrder.what(o.subject, o.kind)));
                     break;
                 }
             }

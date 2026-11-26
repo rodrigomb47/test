@@ -228,8 +228,7 @@ public final class ReconOrders {
                 sb.append("; ");
             }
             sb.append(o.urgent ? "urgent recon" : "recon").append(String.format(Locale.ROOT, " ordered day %.2f", o.orderedAt / 24000.0))
-                    .append(" of the ").append(o.subject == null ? "?" : o.subject.displayName)
-                    .append(o.kind == Report.Kind.LAIR ? " lair" : " settlement").append(" at ").append(o.target.toShortString());
+                    .append(" of ").append(ReconOrder.what(o.subject, o.kind)).append(" at ").append(o.target.toShortString());
             if (!o.taken()) {
                 sb.append(", not taken yet");
             } else {
