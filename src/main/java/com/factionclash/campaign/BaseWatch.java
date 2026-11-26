@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * What a faction's people see of an enemy settlement or a Hollow lair (knowledge review of 2026-11-19,
- * {@code docs/design/knowledge.md}): the scouts' and raiders' looks at its defence (the soldiers and heroes in sight, how
- * much of the yard was in view), its ruins once its heart is gone, and the enemy soldiers the faction saw fall at home.
- * The war council judges an enemy base only by these ({@link Intel}); it never reads another faction's roster, raid party,
- * gear or heroes. Server thread only.
+ * What a faction's people see of an enemy settlement or a Hollow lair ({@code docs/design/recon.md}): a passing look
+ * (where it is and that it stands, no count), a focused recon's samples (the yard points in view and the defenders in
+ * sight, counted by face over a watch), its ruins once its heart is gone, and the enemy fighters its people saw fall at
+ * home (a strike by their faction). The war council judges an enemy base only by a focused recon ({@link Intel}); it never
+ * reads another faction's roster, raid party, gear or heroes. Server thread only.
  */
 public final class BaseWatch {
     private BaseWatch() {
@@ -57,16 +57,17 @@ public final class BaseWatch {
     public static final int LAIR_REACH = BaseBuilder.LAIR_LEASH;
 
     /**
-     * What {@code observer} sees of {@code b} now, as a report of its faction (ENEMY_BASE or LAIR, by nobody yet), or null
-     * when nothing of it is in sight: it is beyond {@link #SIGHT}, or neither its walls, its yard, its heart's place nor
-     * one of its people is in view. A base whose heart is gone and whose heart's place is in view is reported fallen.
+     * A passing look (recon.md 3.6, task R5): what {@code observer} sees of {@code b} now, as a report of its faction
+     * (ENEMY_BASE or LAIR, by nobody yet), or null when nothing of it is in sight: it is beyond {@link #SIGHT}, or neither
+     * its walls, its yard, its heart's place nor one of its people is in view. It tells where the base is and that it
+     * stands: it carries no count and no heroes (only a focused recon estimates a defence, {@link #reconSample}). A base
+     * whose heart is gone and whose heart's place is in view is reported fallen.
      */
     public static Report look(ServerLevel level, LivingEntity observer, BaseState b, long now) {
         if (b == null || b.center == null || observer.level() != level || horizontal(observer.position(), b.center) > SIGHT) {
             return null;
         }
         Report.Kind kind = b.isSettlement() ? Report.Kind.ENEMY_BASE : Report.Kind.LAIR;
-        String what = b.faction.displayName + (kind == Report.Kind.LAIR ? " lair" : " settlement");
         BlockPos heart = b.point(BaseState.HEART) != null ? b.point(BaseState.HEART) : b.center;
         boolean heartInView = clear(level, observer, Vec3.atCenterOf(heart));
         if (b.destroyed && heartInView) {
@@ -74,32 +75,18 @@ public final class BaseWatch {
         }
         int half = BaseZones.half(b);
         int reach = Math.max(1, half - 2);
-        int inView = Integer.bitCount(inView(level, observer, points(b, reach)));
-        double visible = inView / (double) (GRID * GRID);
-        AABB area = new AABB(b.center).inflate(half + 8, 12, half + 8);
-        Map<UUID, Double> seenSoldiers = new LinkedHashMap<>();
-        Map<String, Double> seenHeroes = new LinkedHashMap<>();
-        defenders(level, observer, b, area, seenSoldiers, seenHeroes);
-        int soldiers = seenSoldiers.size();
-        double power = 0;
-        for (double p : seenSoldiers.values()) {
-            power += p;
-        }
-        Map<String, Intel.Hero> heroes = new LinkedHashMap<>();
-        seenHeroes.forEach((id, p) -> heroes.put(id, new Intel.Hero(p, now)));
+        boolean yardInView = inView(level, observer, points(b, reach)) != 0;
         boolean wallsInView = b.isSettlement() && wallsInView(level, observer, b, half);
-        if (inView == 0 && soldiers == 0 && heroes.isEmpty() && !heartInView && !wallsInView) {
-            return null; // nothing of it in sight (behind a hill)
+        if (!yardInView && !heartInView && !wallsInView) {
+            // nothing of the place itself in view: one of its people seen near it still shows where it is
+            Map<UUID, Double> soldiers = new LinkedHashMap<>();
+            Map<String, Double> heroes = new LinkedHashMap<>();
+            defenders(level, observer, b, new AABB(b.center).inflate(half + 8, 12, half + 8), soldiers, heroes);
+            if (soldiers.isEmpty() && heroes.isEmpty()) {
+                return null; // nothing of it in sight (behind a hill)
+            }
         }
-        double heroPower = heroes.values().stream().mapToDouble(Intel.Hero::power).sum();
-        Intel.Look look = new Intel.Look(soldiers, visible, soldiers > 0 ? power / soldiers : 0, heroPower, now);
-        String seen = soldiers + (kind == Report.Kind.LAIR ? (soldiers == 1 ? " monster" : " monsters") : (soldiers == 1 ? " soldier" : " soldiers"))
-                + (heroes.isEmpty() ? "" : " and " + heroes.size() + (heroes.size() == 1 ? " hero" : " heroes")) + " seen, "
-                + Math.round(visible * 100) + "% of " + (kind == Report.Kind.LAIR ? "its ground" : "the yard") + " in view";
-        Report r = new Report(kind, b.center, now, b.faction, soldiers, what + ", " + seen);
-        r.look = look;
-        r.heroes = Intel.heroes(heroes);
-        return r;
+        return new Report(kind, b.center, now, b.faction, 0, Report.positionNote(b.faction, kind));
     }
 
     // ------------------------------------------------------------------ the focused look (docs/design/recon.md 3.6)
@@ -296,24 +283,19 @@ public final class BaseWatch {
         return Math.sqrt(dx * dx + dz * dz);
     }
 
-    // ------------------------------------------------------------------ losses seen at home
+    // ------------------------------------------------------------------ a strike seen at home
 
     /**
-     * An enemy soldier fell ({@code FactionNpc.die}): every faction whose people saw it fall at home (inside its home
-     * area, or seen by a member standing in it; {@link RollCall#witnesses}) counts one loss against its report of the
-     * dead soldier's settlement: the nearest settlement of that faction its scouts reported (whose soldier it was, the
-     * sash alone does not tell). The council's estimate of that garrison is lowered by it until a newer look. A hero is
-     * no loss (it rises again at home).
-     *
-     * <p>Focused reconnaissance ({@code docs/design/recon.md} 6, task R2): each of those factions also notes that the dead
-     * fighter's faction struck it ({@link FactionState#struckBy}), a hero's fall included, whether or not it knows where
-     * that faction lives. The losses go with the council's switch (R5); the strike stays.
+     * An enemy fighter fell ({@code FactionNpc.die}; docs/design/recon.md 6, task R5): every faction whose people saw it
+     * fall at home (inside its home area, or seen by a member standing in it; {@link RollCall#witnesses}) notes that the
+     * dead fighter's faction struck it ({@link FactionState#struckBy}), a hero's fall included, whether or not it knows
+     * where that faction lives. It touches no report: a fall seen at our walls never lowers an estimate (only a focused
+     * recon makes one); it makes the council send a scout to that faction's nearest base once the fight is over.
      */
     public static void enemyFell(ServerLevel level, CampaignData data, FactionNpc victim) {
         if (victim.isDisplayOnly() || !victim.fightsLikeSoldier() || victim.getFaction() == null || !victim.getFaction().human) {
             return;
         }
-        boolean hero = victim instanceof com.factionclash.hero.HeroEntity;
         BlockPos at = victim.blockPosition();
         long now = level.getGameTime();
         for (FactionType seer : FactionType.humans()) {
@@ -326,25 +308,7 @@ public final class BaseWatch {
                 List<RollCall.Witness> w = RollCall.witnesses(level, data, victim, seer);
                 seen = w.stream().anyMatch(x -> x.home() && !x.player());
             }
-            if (!seen) {
-                continue;
-            }
-            if (f.struck(victim.getFaction(), now)) {
-                data.setDirty();
-            }
-            if (hero) {
-                continue; // no loss: it rises again at home
-            }
-            Report nearest = null;
-            for (Report r : f.knowledge) {
-                if (r.kind == Report.Kind.ENEMY_BASE && r.subject == victim.getFaction() && !r.fallen
-                        && (nearest == null || r.pos.distSqr(at) < nearest.pos.distSqr(at))) {
-                    nearest = r;
-                }
-            }
-            if (nearest != null) {
-                nearest.losses++;
-                nearest.lossAt = now;
+            if (seen && f.struck(victim.getFaction(), now)) {
                 data.setDirty();
             }
         }

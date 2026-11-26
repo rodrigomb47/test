@@ -27,8 +27,9 @@ public final class CampaignData extends SavedData {
      * (roster entries' whereabouts and truth, factions' carried news; {@code docs/design/missing_npcs.md} 10: an older
      * entry reads as here, away or known dead). 5: focused reconnaissance ({@code docs/design/recon.md} 7): a base report's
      * {@code recon} and its back-off ({@code reconFailedAt}, {@code reconFailures}, {@code reconSidesTried}), a faction's
-     * {@code reconOrders} and {@code struckBy} (an older save has none: no recon, no order, no strike seen; its reports'
-     * old looks still read until the council's switch). It is read back only to be logged, never used as a gate.
+     * {@code reconOrders} and {@code struckBy} (an older save has none: no recon, no order, no strike seen; since the
+     * council's switch, task R5, its reports' old looks, heroes and losses are ignored, so they load as positions). It is
+     * read back only to be logged, never used as a gate.
      */
     public static final int FORMAT = 5;
 

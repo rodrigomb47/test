@@ -58,22 +58,11 @@ public final class Report {
     public int count;
     public String by = "";
     public String note = "";
-    /**
-     * ENEMY_BASE and LAIR (knowledge review of 2026-11-19): what the observer saw of the defence there, with when (null:
-     * no look at it, a report saved before 2026-11-19 or one told by others). The war council judges the base by this
-     * only ({@link com.factionclash.logic.campaign.Intel}).
-     */
-    public com.factionclash.logic.campaign.Intel.Look look;
-    /** ENEMY_BASE: the heroes seen there, "id=war power" joined by commas (kept from one look to the next). */
-    public String heroes = "";
     /** ENEMY_BASE and LAIR: seen fallen, its heart gone (ruins replace the standing report). */
     public boolean fallen;
-    /** ENEMY_BASE: soldiers of this settlement the faction saw fall since the look (at its walls), and when the last fell. */
-    public int losses;
-    public long lossAt;
     /**
-     * ENEMY_BASE and LAIR, focused reconnaissance ({@code docs/design/recon.md} 4; task R2, nothing reads it until the
-     * council's switch, R5). Two roles, by where the report is:
+     * ENEMY_BASE and LAIR, focused reconnaissance ({@code docs/design/recon.md} 4; task R2): the only thing the war council
+     * reads of a base's defence (task R5). Two roles, by where the report is:
      * <ul>
      * <li>on a report a scout delivers (incoming): {@code recon} is what its watch of the base gave, good or blind, and
      * {@link #reconSidesTried} the sides its trip tried; the failure fields are not read;</li>
@@ -123,6 +112,14 @@ public final class Report {
         return kind == Kind.VILLAGE && count > 0;
     }
 
+    /**
+     * A passing look's note (recon.md 3.6, task R5): "Grove Covenant settlement seen", "The Hollow lair seen". It tells where
+     * the base is and that it stands, and no count.
+     */
+    public static String positionNote(FactionType subject, Kind kind) {
+        return (subject == null ? "Enemy" : subject.displayName) + (kind == Kind.LAIR ? " lair" : " settlement") + " seen";
+    }
+
     /** A settlement's or a lair's report: one the war council reads. */
     public boolean base() {
         return kind == Kind.ENEMY_BASE || kind == Kind.LAIR;
@@ -147,14 +144,13 @@ public final class Report {
     }
 
     /**
-     * Two reports of one settlement or lair (knowledge review of 2026-11-19): the newer is kept, with what the older saw
-     * that it did not. Ruins are ruins, and stay ruins: no base is ever rebuilt, so a later look that sees the yard or the
-     * walls but not the heart's place does not raise it again (review of the knowledge review, 2026-11-19: the council
-     * sent raid after raid to ruins its people had seen). A newer report with no look at the defence (told by others) keeps
-     * the older look; the heroes seen are kept from both, each with its newest sighting (the council counts a sighting for
-     * less as it ages, {@link com.factionclash.logic.campaign.Intel#heroPower}); the losses seen since the kept look are
-     * kept. {@code trip}: two looks on one trip (or a trip's and the raiders'): the one that saw more of the yard is the
-     * look kept ({@link com.factionclash.logic.campaign.Intel#better}).
+     * Two reports of one settlement or lair (knowledge review of 2026-11-19; recon.md 4): the newer is kept, with the
+     * focused recon the older one held. Ruins are ruins, and stay ruins: no base is ever rebuilt, so a later look that sees
+     * the yard or the walls but not the heart's place does not raise it again (review of the knowledge review, 2026-11-19:
+     * the council sent raid after raid to ruins its people had seen). {@code trip}: two of a scout's own reports on one trip,
+     * not yet delivered: the newer watch's recon, good or blind, else the older one, and every side tried. Otherwise the
+     * older report's file, with what the newer one brought (a passing look, no recon, keeps it untouched);
+     * {@link FactionState#addReport} sets the roles itself by delivery ({@link #fileRecon}), whatever the observedAt order.
      */
     public static Report mergeBase(Report older, Report newer, boolean trip) {
         Report r = newer.copy();
@@ -165,30 +161,12 @@ public final class Report {
         if (older.fallen) {
             return older.copy();
         }
-        // the focused recon (recon.md 4). On a trip both are a scout's own reports, not yet delivered: the newer watch's
-        // recon, good or blind, else the older one, and every side tried. Otherwise the older report's file, with what
-        // the newer one brought (a passing look, no recon, keeps it untouched); FactionState.addReport sets the roles
-        // itself by delivery (fileRecon), whatever the observedAt order.
         if (trip) {
             r.recon = newer.recon == null || older.recon != null && older.recon.at() > newer.recon.at() ? older.recon : newer.recon;
             r.reconSidesTried = older.reconSidesTried | newer.reconSidesTried;
         } else {
             r.reconFile(Intel.mergeRecon(older.reconFile(), newer.recon, newer.reconSidesTried));
         }
-        com.factionclash.logic.campaign.Intel.Look look = trip ? com.factionclash.logic.campaign.Intel.better(older.look, newer.look)
-                : newer.look != null ? newer.look : older.look;
-        r.heroes = com.factionclash.logic.campaign.Intel.heroes(com.factionclash.logic.campaign.Intel.mergeHeroes(
-                com.factionclash.logic.campaign.Intel.heroes(older.heroes, older.seenAt()),
-                com.factionclash.logic.campaign.Intel.heroes(newer.heroes, newer.seenAt())));
-        if (look != null && (look == older.look || older.look != null && look.at() == older.look.at() && look.soldiers() == older.look.soldiers())) {
-            r.count = older.count;
-            r.note = older.note;
-        }
-        r.look = look;
-        long since = look == null ? 0 : look.at();
-        int losses = (older.lossAt > since ? older.losses : 0) + (newer.lossAt > since ? newer.losses : 0);
-        r.losses = losses;
-        r.lossAt = Math.max(older.lossAt, newer.lossAt);
         return r;
     }
 
@@ -222,20 +200,11 @@ public final class Report {
         return Intel.mergeRecon(kept == null ? Intel.ReconFile.NONE : kept.reconFile(), incoming.recon, incoming.reconSidesTried);
     }
 
-    /** When what this report saw of a defence was seen: its look's time, else when it was observed. */
-    public long seenAt() {
-        return look != null ? look.at() : observedAt;
-    }
-
     public Report copy() {
         Report r = new Report(kind, pos, observedAt, subject, count, note);
         r.deliveredAt = deliveredAt;
         r.by = by;
-        r.look = look;
-        r.heroes = heroes;
         r.fallen = fallen;
-        r.losses = losses;
-        r.lossAt = lossAt;
         r.recon = recon;
         r.reconFailedAt = reconFailedAt;
         r.reconFailures = reconFailures;
@@ -255,24 +224,8 @@ public final class Report {
         t.putInt("count", count);
         t.putString("by", by);
         t.putString("note", note);
-        if (look != null) {
-            CompoundTag l = new CompoundTag();
-            l.putInt("soldiers", look.soldiers());
-            l.putDouble("visible", look.visible());
-            l.putDouble("power", look.power());
-            l.putDouble("heroPower", look.heroPower());
-            l.putLong("at", look.at());
-            t.put("look", l);
-        }
-        if (!heroes.isEmpty()) {
-            t.putString("heroes", heroes);
-        }
         if (fallen) {
             t.putBoolean("fallen", true);
-        }
-        if (losses > 0) {
-            t.putInt("losses", losses);
-            t.putLong("lossAt", lossAt);
         }
         if (recon != null) {
             t.put("recon", saveRecon(recon));
@@ -342,19 +295,16 @@ public final class Report {
         r.count = t.getInt("count");
         r.by = t.getString("by");
         r.note = t.getString("note");
-        // the look, the heroes, ruins and losses: absent before the knowledge review of 2026-11-19 (no look: the prior)
-        if (t.contains("look")) {
-            CompoundTag l = t.getCompound("look");
-            r.look = new com.factionclash.logic.campaign.Intel.Look(l.getInt("soldiers"), l.getDouble("visible"), l.getDouble("power"),
-                    l.getDouble("heroPower"), l.getLong("at"));
-        }
-        r.heroes = t.getString("heroes");
         r.fallen = t.getBoolean("fallen");
-        r.losses = t.getInt("losses");
-        r.lossAt = t.getLong("lossAt");
-        // the focused recon and its back-off: absent before campaign format 5 (2026-11-26; an old report is a position
-        // and its old look, which the old council reads until the switch, R5)
+        // the focused recon and its back-off: absent before campaign format 5 (2026-11-26). The old council's tags (the look
+        // at the yard, the heroes seen there, the losses seen at our walls) are ignored since the council's switch (task
+        // R5): such a report is a position only, its count and its note's numbers dropped, and its base is judged again by
+        // a recon (recon.md 7)
         r.recon = t.contains("recon") ? loadRecon(t.getCompound("recon")) : null;
+        if (r.base() && (t.contains("look") || t.contains("losses") || t.contains("heroes"))) {
+            r.count = 0;
+            r.note = positionNote(r.subject, r.kind);
+        }
         r.reconFailedAt = t.getLong("reconFailedAt");
         r.reconFailures = t.getInt("reconFailures");
         r.reconSidesTried = t.getInt("reconSidesTried");

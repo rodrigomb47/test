@@ -47,9 +47,9 @@ import java.util.List;
 
 /**
  * A faction's AI knows only what its own people know (knowledge review of 2026-11-19, {@code docs/design/knowledge.md}):
- * the war council judges an enemy garrison by its scouts' looks (a garrison that marched out unseen is still believed at
- * home; one seen gone is raided), lowers it by the soldiers it saw fall at its walls, keeps believing a base stands until
- * one of its people sees the ruins; a raid nobody lived to report on is taken as lost by its plan; a miner's trip is
+ * the war council judges an enemy garrison only by a focused recon its scouts brought home ({@code docs/design/recon.md},
+ * task R5: a passing look, a raid party's look and the soldiers seen falling at our walls make no estimate), plans against
+ * what the scout counted and a reserve, keeps believing a base stands until one of its people sees the ruins; a raid nobody lived to report on is taken as lost by its plan; a miner's trip is
  * planned at the storehouse; a cave survey is the faction's only when the explorer hands it in; retraining and the
  * blacksmith see only members at home; experience picked up away is carried home; the alarm needs someone to see the
  * intruder; the lookout's line is heard only at home; a lair misses a monster that fell far off only later. Each test
@@ -232,15 +232,42 @@ public final class KnowledgeGameTests {
 
     // ------------------------------------------------------------------ the war council (known leak 1)
 
+    /** A good recon of an enemy base counting {@code soldiers} faces of {@code power} each, watched at {@code at}. */
+    static Intel.Recon counted(int soldiers, double power, long at, java.util.Map<String, Double> heroes) {
+        java.util.Map<java.util.UUID, Double> faces = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < soldiers; i++) {
+            faces.put(java.util.UUID.randomUUID(), power);
+        }
+        return recon(12, true, at, faces, heroes);
+    }
+
+    /** A recon of {@code b}'s yard delivered home at {@code at} (as a scout's report reaches the station). */
+    static void deliverRecon(GameTestBases.Handle t, FactionState f, BaseState b, Intel.Recon r, long at) {
+        Report rep = delivered(b.isSettlement() ? Report.Kind.ENEMY_BASE : Report.Kind.LAIR, b.center, b.faction, at, r, ReconRules.Side.WEST.bit());
+        f.addReport(rep);
+    }
+
+    /** The faction's kept report of {@code b}. */
+    static Report kept(FactionState f, BaseState b) {
+        return f.knowledge.stream().filter(r -> r.subject == b.faction && r.pos.equals(b.center)).findFirst().orElseThrow();
+    }
+
+    /** One of our soldiers' power as our council and an enemy's scout reckon it (the armour worn, the weapon held). */
+    static double power(FactionNpc n) {
+        return (double) call(FactionDirector.class, null, "power", new Class<?>[]{FactionNpc.class}, n);
+    }
+
     /**
-     * Known leak 1, the live case (Stoneguard's garrison left on a raid and two councils struck the emptied base within
-     * five seconds): our scout counts six soldiers in the enemy's yard; the council, with three soldiers to send, waits.
-     * The garrison marches out where none of ours sees it: the council still believes it at home and still waits. Our
-     * scout looks again and sees the yard empty: once that look is home, the council raids, "against about 0 defenders,
-     * as seen on day N".
+     * recon.md 10.2 item 4 (task R5): known leak 1's live case under the owner's rule (2026-11-25), "Only estimate enemy
+     * defence when the scout or other related role makes a report of what he saw while focused on this particilar task".
+     * Our scout passes the enemy's yard and sees six soldiers there: its passing look says where the base is and that it
+     * stands, and carries no count. The council has no focused report of it: it does not launch, says it waits for a
+     * scout's report, and orders a recon. The garrison marches out and a second passing look sees the yard empty: still no
+     * launch. A focused recon counting the six makes the council wait on strength (three to send, six needed against six
+     * and a reserve of three); one that finds the yard empty lets it go (item 16, its first half: half of none is none).
      */
     @GameTest(template = "platform", timeoutTicks = 60, batch = "knowledge_garrison")
-    public static void aCouncilRaidsAGarrisonOnlyWhenItsScoutSawItGone(GameTestHelper h) {
+    public static void noLaunchWithoutAFocusedReport(GameTestHelper h) {
         GameTestBases.Handle t = base(h, 60);
         ServerLevel level = h.getLevel();
         FactionState f = t.data.faction(SIDE);
@@ -252,8 +279,9 @@ public final class KnowledgeGameTests {
             int interval = FCConfig.RAID_INTERVAL_TICKS.get();
             t.data.startedAt = now - interval - 1;
             f.lastRaidAt = now - interval - 1;
+            List<FactionNpc> ours = new ArrayList<>();
             for (int[] p : GARRISON) {
-                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+                ours.add(member(t, p[0], p[1], NpcRole.SWORDSMAN));
             }
             BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
             List<FactionNpc> garrison = new ArrayList<>();
@@ -263,29 +291,41 @@ public final class KnowledgeGameTests {
             }
             FactionNpc scout = member(t, 12, 16, NpcRole.SCOUT);
             Report first = BaseWatch.look(level, scout, enemy, now);
-            t.assertTrue(first != null && first.look != null && first.look.soldiers() == 6 && first.look.visible() > 0.9
-                    && !first.fallen, "the scout's look at the garrison: " + (first == null ? null : first.note));
+            t.assertTrue(first != null && !first.fallen && first.count == 0 && first.recon == null
+                    && first.note.equals(Report.positionNote(ENEMY, Report.Kind.ENEMY_BASE)), "a passing look carries no count: "
+                    + (first == null ? null : first.count + " / " + first.note));
             deliver(t, f, first, now);
             raids(t, f, now);
             String council = FactionDirector.LAST_COUNCIL.get(SIDE);
-            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("base " + enemy.id) && council.contains("wait"),
-                    "three soldiers against the six seen should wait: " + council);
-            // the garrison marches out where none of ours sees it
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("waiting for a scout's report on " + ENEMY.id + " base "
+                    + enemy.id) && council.contains("; recon ordered day"), "no focused report: the council should wait for one: " + council);
+            t.assertTrue(f.reconOrders.size() == 1 && f.reconOrders.get(0).target.equals(enemy.center), "no recon ordered: " + f.reconOrders);
+            // the garrison marches out where none of ours sees it; a second passing look sees the yard empty
             for (FactionNpc g : garrison) {
                 g.discard();
             }
-            raids(t, f, now + 1);
-            t.assertTrue(f.raidTarget < 0, "the council struck a garrison that left unseen (it read the enemy's own records)");
-            t.assertTrue(lines.stream().noneMatch(l -> l.line().contains("Launching a raid")), "a raid was announced: " + lines);
-            // our scout looks again: the yard is empty, and its report reaches home
             Report second = BaseWatch.look(level, scout, enemy, now + 2);
-            t.assertTrue(second != null && second.look != null && second.look.soldiers() == 0, "the second look: "
-                    + (second == null ? null : second.note));
+            t.assertTrue(second != null && second.count == 0 && second.recon == null, "the second passing look: " + (second == null ? null : second.note));
             deliver(t, f, second, now + 2);
             raids(t, f, now + 2);
-            t.assertTrue(f.raidTarget == enemy.id, "the council did not strike the garrison its scout saw gone: "
+            t.assertTrue(f.raidTarget < 0 && lines.stream().noneMatch(l -> l.line().contains("Launching a raid")),
+                    "a passing look of an empty yard made an estimate: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            // a focused recon of the six, in our soldiers' gear: three to send, six needed against the six and a reserve of three
+            deliverRecon(t, f, enemy, counted(6, power(ours.get(0)), now + 3, java.util.Map.of()), now + 3);
+            raids(t, f, now + 4);
+            council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("base " + enemy.id + " (settlement)") && council.contains("wait")
+                    && council.contains("waiting on the Grove Covenant settlement: 3 soldiers to send, 6 needed against about 6 defenders"
+                    + " (scout Edrin Cole, day " + Whereabouts.day(now + 3) + ") and a reserve of 3 (half again the 6 counted)"),
+                    "three against six counted and a reserve of three should wait: " + council);
+            // the yard watched empty: the council goes with its smallest party
+            deliverRecon(t, f, enemy, counted(0, 0, now + 5, java.util.Map.of()), now + 5);
+            raids(t, f, now + 6);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "the council did not strike the yard its scout watched empty: "
                     + FactionDirector.LAST_COUNCIL.get(SIDE));
-            t.assertTrue(said(lines, SIDE, "against about 0 defenders, as seen on day"), "the launch line: " + lines);
+            t.assertTrue(said(lines, SIDE, "Launching a raid with 3 soldiers on the Grove Covenant settlement reported at "
+                    + enemy.center.toShortString() + ", against an empty yard (scout Edrin Cole, day " + Whereabouts.day(now + 5)
+                    + ") and no soldier of theirs seen away"), "the launch line: " + lines);
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();
@@ -294,13 +334,16 @@ public final class KnowledgeGameTests {
     }
 
     /**
-     * The counter-attack comes from what the faction saw: our scout counted six soldiers at the enemy settlement, four of
-     * them then fell at our own walls in sight of home. The council lowers its estimate by them (two left) and, inside
-     * the interval, counter-attacks the weakened enemy. Soldiers of that faction killed where none of ours saw do not
-     * count.
+     * recon.md 10.2 item 5 (task R5): enemy soldiers killed at our walls in sight of home no longer lower any estimate.
+     * Our scout's fresh recon counted six at the enemy settlement; four of them then fall inside our home area: the kept
+     * recon still counts six, and their faction struck us. Inside the interval the council judges only the striker's
+     * settlement, and only on a recon made since the strike: the one it has is older, so it waits for a scout's report and,
+     * once the alarm has been quiet half a minute, orders an urgent recon of that base. The urgent recon finds two: the
+     * counter-attack goes at 3 to 2 on its own plan (the count, no share). A soldier of theirs killed where none of ours
+     * saw is no strike.
      */
     @GameTest(template = "platform", timeoutTicks = 60, batch = "knowledge_losses")
-    public static void enemySoldiersSeenFallingAtHomeLowerTheEstimate(GameTestHelper h) {
+    public static void lossesAtOurWallsDoNotMoveTheEstimate(GameTestHelper h) {
         GameTestBases.Handle t = base(h, 60);
         ServerLevel level = h.getLevel();
         FactionState f = t.data.faction(SIDE);
@@ -309,35 +352,257 @@ public final class KnowledgeGameTests {
         t.onCleanup(() -> FCConfig.WITNESS_RANGE.set(oldWitness));
         try {
             List<Messages.Said> lines = recording(t);
+            atLeast(level, 100_000);
             long now = level.getGameTime();
             int interval = FCConfig.RAID_INTERVAL_TICKS.get();
-            t.data.startedAt = now - interval - 1;
+            t.data.startedAt = now - 2L * interval;
             f.lastRaidAt = now - interval / 2; // inside the interval: only a counter-attack may go
             for (int[] p : GARRISON) {
                 member(t, p[0], p[1], NpcRole.SWORDSMAN);
             }
             BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
-            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 6, "6 soldiers seen");
-            seen.look = new Intel.Look(6, 1.0, 1.0, 0, now);
-            deliver(t, f, seen, now);
-            f.struckBy.remove(ENEMY); // (the cleanup restores it)
-            // one dies far from home where none of ours sees it (the scouts see 4 blocks here): no loss known
+            Intel.Recon six = counted(6, 1.0, now - 100, java.util.Map.of());
+            deliverRecon(t, f, enemy, six, now - 100);
+            // one dies far from home where none of ours sees it (the scouts see 4 blocks here): no strike
             FCConfig.WITNESS_RANGE.set(4);
-            FactionNpc unseen = stranger(t, ENEMY, 12, 23, NpcRole.SWORDSMAN);
-            kill(unseen);
-            Report ours = f.knowledge.stream().filter(r -> r.subject == ENEMY && r.pos.equals(enemy.center)).findFirst().orElseThrow();
-            t.assertTrue(ours.losses == 0, "a death none of ours saw lowered the estimate: " + ours.losses);
+            kill(stranger(t, ENEMY, 12, 23, NpcRole.SWORDSMAN));
             t.assertTrue(f.struckAt(ENEMY) == 0, "a death none of ours saw was a strike: " + f.struckBy);
-            // four fall inside our home area: a strike by their faction (recon.md 6, task R2)
+            // four fall inside our home area: a strike by their faction, and the recon untouched
             for (int i = 0; i < 4; i++) {
-                FactionNpc g = stranger(t, ENEMY, 11 + i, 13, NpcRole.SWORDSMAN);
-                kill(g);
+                kill(stranger(t, ENEMY, 11 + i, 13, NpcRole.SWORDSMAN));
             }
-            t.assertTrue(ours.losses == 4, "the soldiers seen falling at our walls: " + ours.losses);
-            t.assertTrue(f.struckAt(ENEMY) >= now, "the soldiers seen falling at our walls were no strike: " + f.struckBy);
+            long struck = f.struckAt(ENEMY);
+            t.assertTrue(struck >= now, "the soldiers seen falling at our walls were no strike: " + f.struckBy);
+            t.assertTrue(kept(f, enemy).recon == six && kept(f, enemy).recon.soldiers() == 6,
+                    "the soldiers seen falling at our walls moved the estimate: " + kept(f, enemy).recon);
             raids(t, f, now + 1);
-            t.assertTrue(f.raidTarget == enemy.id && said(lines, SIDE, "Counter-attack!"),
-                    "no counter-attack into the weakened enemy: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("waiting for a scout's report on " + ENEMY.id
+                    + " base " + enemy.id + " (settlement: its last recon is older than their strike)"),
+                    "a counter-attack on a recon from before the strike: " + council);
+            t.assertTrue(f.reconOrders.isEmpty(), "an urgent order while the fight at home is on: " + f.reconOrders);
+            raids(t, f, struck + ReconRules.QUIET_TICKS);
+            t.assertTrue(f.reconOrders.size() == 1 && f.reconOrders.get(0).urgent && f.reconOrders.get(0).target.equals(enemy.center),
+                    "no urgent recon of the striker's base once the fight was over: " + f.reconOrders);
+            // the urgent recon counts the two left at home: 3 to 2 on the count alone goes
+            long at = struck + ReconRules.QUIET_TICKS + 500;
+            deliverRecon(t, f, enemy, counted(2, 1.0, at, java.util.Map.of()), at);
+            raids(t, f, at + 1);
+            t.assertTrue(f.raidTarget == enemy.id && said(lines, SIDE, "Counter-attack! Launching a raid with 3 soldiers on the Grove Covenant"
+                    + " settlement reported at " + enemy.center.toShortString() + ", against about 2 defenders (scout Edrin Cole, day "
+                    + Whereabouts.day(at) + ") and no soldier of theirs seen away"), "no counter-attack on the urgent recon: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE) + " / " + lines);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * recon.md 10.2 items 13 and 15's review (task R5): inside the raid interval the council chooses its target among the
+     * settlements of the factions that struck us since our last raid. The Ember Legion's base, a bystander's, has a fresh
+     * recon of an empty yard; the Grove Covenant struck us, and its base's recon counts two. Before the strike the council
+     * judges nothing inside the interval and writes no line; after it, it waits for a recon made since the strike, then
+     * counter-attacks the Grove at 3 to 2 (three against the two counted: no share in a counter-attack's plan), not the
+     * weaker bystander. At the interval both are candidates again, and the weaker goes first.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "knowledge_bystander")
+    public static void aCounterAttackIsNotBlockedByAWeakerBystander(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 60);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            List<Messages.Said> lines = recording(t);
+            atLeast(level, 100_000);
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - 2L * interval;
+            f.lastRaidAt = now - interval / 2; // inside the interval, the counter-attack window open, the order window not yet
+            t.assertTrue(interval / 2 > ReconRules.LEAD_TICKS + 1000 && interval / 2 > ReconRules.urgentGap(interval),
+                    "the raid interval is too short for this test: " + interval);
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState grove = enemyBase(t, ENEMY, t.base.center.offset(200, 0, 0));
+            BaseState ember = enemyBase(t, FactionType.EMBER_LEGION, t.base.center.offset(0, 0, 250));
+            deliverRecon(t, f, ember, counted(0, 0, now - 100, java.util.Map.of()), now - 100);
+            deliverRecon(t, f, grove, counted(2, 1.0, now - 100, java.util.Map.of()), now - 100);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget < 0 && FactionDirector.LAST_COUNCIL.get(SIDE) == null,
+                    "inside the interval with no strike the council judged something: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            f.struck(ENEMY, now + 10);
+            raids(t, f, now + 20);
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("waiting for a scout's report on " + ENEMY.id + " base " + grove.id),
+                    "the striker's base needs a recon made since its strike; the bystander is no candidate: " + council);
+            long at = now + 800;
+            deliverRecon(t, f, grove, counted(2, 1.0, at, java.util.Map.of()), at);
+            raids(t, f, at + 1);
+            t.assertTrue(f.raidTarget == grove.id && f.raiders.size() == 3 && said(lines, SIDE, "Counter-attack!"),
+                    "the weaker bystander blocked the counter-attack on the striker: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            // at the interval both are candidates again: the weaker base goes first
+            f.raidTarget = -1;
+            f.raiders.clear();
+            f.lastParty.clear();
+            f.raidEndNews = null;
+            lines.clear();
+            f.lastRaidAt = at + 2 - interval - 1;
+            raids(t, f, at + 2);
+            t.assertTrue(f.raidTarget == ember.id && !said(lines, SIDE, "Counter-attack!"), "at the interval the weaker base should go first: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * recon.md 10.2 item 3, the council's side (task R5; R4b's {@code aBlindReconIsDeliveredAndBacksTheTargetOff} runs the
+     * scout): a recon that could not see inside ("could not see inside the walls": 3 of the 25 points), and one that saw
+     * twelve points but not the yard's middle (only its corner), are blind. Neither is "about 0": the council does not
+     * launch, says it waits for a scout's report on a target backing off, and orders no recon of it until the back-off is
+     * over.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_blind")
+    public static void aBlindReconIsNotUsed(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            atLeast(level, 100_000);
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            deliverRecon(t, f, enemy, recon(3, true, now, java.util.Map.of(), java.util.Map.of()), now);
+            t.assertTrue(kept(f, enemy).recon == null && kept(f, enemy).reconFailures == 1, "a blind recon was kept: " + kept(f, enemy).recon);
+            raids(t, f, now + 1);
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("waiting for a scout's report on " + ENEMY.id + " base "
+                    + enemy.id + " (settlement: backing off after 1 failed recon)"), "a blind recon was used: " + council);
+            t.assertTrue(f.reconOrders.isEmpty(), "a recon ordered while the target backs off: " + f.reconOrders);
+            // the yard's corner only: twelve points but not its middle
+            deliverRecon(t, f, enemy, recon(12, false, now + 2, java.util.Map.of(), java.util.Map.of()), now + 2);
+            raids(t, f, now + 3);
+            t.assertTrue(f.raidTarget < 0 && kept(f, enemy).recon == null && kept(f, enemy).reconFailures == 2,
+                    "a look without the yard's middle was used: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            long over = now + 2 + ReconRules.backoffTicks(2);
+            raids(t, f, over - 1);
+            t.assertTrue(f.reconOrders.isEmpty() && f.raidTarget < 0, "a recon ordered before the back-off is over: " + f.reconOrders);
+            raids(t, f, over);
+            t.assertTrue(f.reconOrders.size() == 1 && f.raidTarget < 0, "no recon ordered after the back-off: " + f.reconOrders);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * recon.md 10.2 item 7 (task R5): a good recon is fresh for half a day (12000 ticks in, 12001 out). An empty yard
+     * watched 12001 ticks ago: the council does not launch, says its last recon is stale, and orders a new one. Watched
+     * 12000 ticks ago it still goes.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_stale")
+    public static void aStaleReportOrdersANewRecon(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            atLeast(level, 100_000);
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            deliverRecon(t, f, enemy, counted(0, 0, now, java.util.Map.of()), now);
+            long stale = now + ReconRules.FRESH_TICKS + 1;
+            t.data.startedAt = stale - interval - 1;
+            f.lastRaidAt = stale - interval - 1;
+            raids(t, f, stale);
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("waiting for a scout's report on " + ENEMY.id + " base "
+                    + enemy.id + " (settlement: its last recon is stale)"), "a stale recon was used: " + council);
+            t.assertTrue(f.reconOrders.size() == 1 && !f.reconOrders.get(0).urgent && f.reconOrders.get(0).target.equals(enemy.center),
+                    "no new recon ordered: " + f.reconOrders);
+            f.reconOrders.clear();
+            raids(t, f, stale - 1);
+            t.assertTrue(f.raidTarget == enemy.id, "a recon 12000 ticks old is still fresh: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * recon.md 10.2 item 6 (task R5): a raid party at its target sees the yard full of soldiers; its raiders are attacking,
+     * not watching, so no recon results: the party keeps nothing of the yard, the faction's report keeps no recon, and the
+     * council does not launch on what its raiders saw. The ruins a party sees still come home: the base razed by another
+     * faction while our raider looks on is kept as ruins and the raid ends "found in ruins" (a party that breaks the heart
+     * itself: {@link #aPartyThatBreaksTheHeartBringsTheRuinsHome}).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_partylook")
+    public static void theRaidPartysLookIsNotAnEstimate(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        List<Messages.Said> lines = recording(t);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
+            deliver(t, f, new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, Report.positionNote(ENEMY, Report.Kind.ENEMY_BASE)), now);
+            int[][] posts = {{11, 20}, {13, 20}, {11, 22}, {13, 22}};
+            for (int[] p : posts) {
+                stranger(t, ENEMY, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            // our raid on it under way: its raider in full view of the yard
+            FactionNpc raider = member(t, 12, 16, NpcRole.SWORDSMAN);
+            t.assertTrue(BaseWatch.reconSample(level, raider, enemy, now).soldiers().size() == 4, "the raider does not see the yard's soldiers");
+            f.raidTarget = enemy.id;
+            f.raiders.add(raider.getUUID());
+            f.lastParty.add(raider.getUUID());
+            f.raidParty = 1;
+            f.raidStartedAt = now;
+            f.raidMusteredAt = now;
+            f.raidPlanTicks = 100_000;
+            raids(t, f, now + 1);
+            t.assertTrue(f.raidIntel == null, "the raid party kept a look at the yard: " + (f.raidIntel == null ? null : f.raidIntel.note));
+            t.assertTrue(kept(f, enemy).recon == null && kept(f, enemy).count == 0, "the raid party's look became a recon: "
+                    + kept(f, enemy).recon + " / " + kept(f, enemy).note);
+            // the Ember Legion razes it while our raider looks on: the heart's place in view, the party keeps the ruins
+            enemy.destroyed = true;
+            enemy.destroyedBy = FactionType.EMBER_LEGION;
+            enemy.destroyedAt = now + 1;
+            raids(t, f, now + 2);
+            t.assertTrue(f.raidIntel != null && f.raidIntel.fallen, "the raider saw the heart's place and kept no ruins: " + f.raidIntel);
+            f.leaveRaid(raider.getUUID());
+            raids(t, f, now + 3);
+            t.assertTrue(f.raidTarget < 0 && said(lines, SIDE, "found in ruins"), "the raid did not end with its party home, ruins found");
+            Report ours = kept(f, enemy);
+            t.assertTrue(ours.fallen && ours.recon == null && ours.reconFailures == 0, "the ruins the party saw: fallen " + ours.fallen
+                    + ", recon " + ours.recon);
+            f.lastRaidAt = now + 4 - interval - 1;
+            raids(t, f, now + 4);
+            t.assertTrue(f.raidTarget < 0 && lines.stream().noneMatch(l -> l.line().contains("Launching a raid")),
+                    "the council launched on its raiders' look: " + FactionDirector.LAST_COUNCIL.get(SIDE));
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();
@@ -366,7 +631,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             // Ember razes it far from any of ours
             enemy.destroyed = true;
@@ -421,7 +686,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             raids(t, f, now);
             t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
@@ -480,7 +745,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(FAR_X, 2, FAR_Z)));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             // the Ember Legion razed it, unseen by us; our raid on it is under way, its raider on the march beside the ruins
             enemy.destroyed = true;
@@ -543,7 +808,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             raids(t, f, now);
             t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
@@ -924,7 +1189,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             raids(t, f, now);
             t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
@@ -986,7 +1251,7 @@ public final class KnowledgeGameTests {
             }
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
-            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            seen.recon = counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
             deliver(t, f, seen, now);
             raids(t, f, now);
             t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
@@ -1035,7 +1300,7 @@ public final class KnowledgeGameTests {
             // later the heart's place is out of view (a block before it), the yard behind still in view
             h.setBlock(screen, Blocks.STONE);
             Report yard = BaseWatch.look(level, scout, enemy, now + 1);
-            t.assertTrue(yard != null && !yard.fallen && yard.look != null && yard.look.visible() > 0,
+            t.assertTrue(yard != null && !yard.fallen && yard.count == 0 && yard.recon == null,
                     "the second look should see the yard but not the heart's place: " + (yard == null ? null : yard.note));
             t.assertTrue(ScoutJob.mergeOnTrip(ruins, yard).fallen, "a later look on the same trip forgot the ruins it saw");
             deliver(t, f, yard, now + 1);
@@ -1053,12 +1318,13 @@ public final class KnowledgeGameTests {
     }
 
     /**
-     * Review finding 3: enemy soldiers seen falling at our walls lower the estimate while the loss is fresh (a
-     * counter-attack), but a base hires replacements, so a loss counts for less as it ages, as a look does. Before, eight
-     * of nine seen falling three days ago still made the garrison one soldier, and the council struck it.
+     * recon.md 5.1 and 5.3 (task R5): the heroes in the estimate are those the watch saw, at their war power at full
+     * strength, under the soldier backbone; none is carried over from an older report. A recon counting two soldiers and a
+     * hero holds three soldiers back, and the council's line says the defending hero held it off; a newer recon counting
+     * the two and no hero lets them go (the hero went raiding, or fell, or stayed indoors for the whole watch).
      */
-    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_lossesfade")
-    public static void soldiersSeenFallingLongAgoAreReplacedInTheEstimate(GameTestHelper h) {
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_heroes_watch")
+    public static void aHeroCountsOnlyInTheWatchThatSawHer(GameTestHelper h) {
         GameTestBases.Handle t = base(h, 40);
         ServerLevel level = h.getLevel();
         FactionState f = t.data.faction(SIDE);
@@ -1068,63 +1334,21 @@ public final class KnowledgeGameTests {
             int interval = FCConfig.RAID_INTERVAL_TICKS.get();
             t.data.startedAt = now - interval - 1;
             f.lastRaidAt = now - interval - 1;
+            List<FactionNpc> ours = new ArrayList<>();
             for (int[] p : GARRISON) {
-                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+                ours.add(member(t, p[0], p[1], NpcRole.SWORDSMAN));
             }
+            double gear = power(ours.get(0)); // (their soldiers in our gear, the hero worth six of them)
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
-            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 9, "9 soldiers seen");
-            seen.look = new Intel.Look(9, 1.0, 2.0, 0, now);
-            deliver(t, f, seen, now);
-            // eight of them fall at our walls, in sight of home
-            for (int i = 0; i < 8; i++) {
-                kill(stranger(t, ENEMY, 10 + i % 5, 13 + i / 5, NpcRole.SWORDSMAN));
-            }
-            Report ours = f.knowledge.stream().filter(r -> r.subject == ENEMY && r.pos.equals(enemy.center)).findFirst().orElseThrow();
-            t.assertTrue(ours.losses == 8, "the soldiers seen falling at our walls: " + ours.losses);
-            raids(t, f, now + 3L * Whereabouts.TICKS_PER_DAY);
-            t.assertTrue(f.raidTarget < 0, "three days after its losses the garrison is still believed one soldier strong: "
-                    + FactionDirector.LAST_COUNCIL.get(SIDE));
-            raids(t, f, now + 1);
-            t.assertTrue(f.raidTarget == enemy.id, "fresh losses should still weaken the estimate: " + FactionDirector.LAST_COUNCIL.get(SIDE));
-            t.succeed();
-        } catch (RuntimeException | Error e) {
-            t.cleanup();
-            throw e;
-        }
-    }
-
-    /**
-     * Review finding 4: a hero seen at a base counts in the estimate while the sighting is fresh, and less as it ages (a
-     * hero goes raiding, falls, or was only passing through). Before, a hero seen once was counted there for ever at full
-     * strength, and a council never struck that base again.
-     */
-    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_heroesfade")
-    public static void aHeroSeenLongAgoCountsForLessAsTheSightingAges(GameTestHelper h) {
-        GameTestBases.Handle t = base(h, 40);
-        ServerLevel level = h.getLevel();
-        FactionState f = t.data.faction(SIDE);
-        keepRaidState(t, f);
-        try {
-            long now = level.getGameTime();
-            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
-            t.data.startedAt = now - interval - 1;
-            f.lastRaidAt = now - interval - 1;
-            for (int[] p : GARRISON) {
-                member(t, p[0], p[1], NpcRole.SWORDSMAN);
-            }
-            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
-            Report first = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 4, "4 soldiers and a hero seen");
-            first.look = new Intel.Look(4, 1.0, 1.0, 6.0, now);
-            first.heroes = "review_hero=6.0"; // as saved before the sightings kept their time
-            deliver(t, f, first, now);
+            deliverRecon(t, f, enemy, counted(2, gear, now, java.util.Map.of("review_hero", 6.0 * gear)), now);
             raids(t, f, now);
-            t.assertTrue(f.raidTarget < 0, "a hero seen there just now should hold three soldiers back: " + FactionDirector.LAST_COUNCIL.get(SIDE));
-            long later = now + 3L * Whereabouts.TICKS_PER_DAY;
-            Report second = new Report(Report.Kind.ENEMY_BASE, enemy.center, later, ENEMY, 4, "4 soldiers seen");
-            second.look = new Intel.Look(4, 1.0, 1.0, 0, later);
-            deliver(t, f, second, later);
-            raids(t, f, later);
-            t.assertTrue(f.raidTarget == enemy.id, "a hero seen there three days ago still holds the council back: "
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("(the defending heroes held it off)")
+                    && council.contains("against about 2 defenders and review_hero (scout Edrin Cole"),
+                    "a hero the watch saw should hold three soldiers back: " + council);
+            deliverRecon(t, f, enemy, counted(2, gear, now + 100, java.util.Map.of()), now + 100);
+            raids(t, f, now + 100);
+            t.assertTrue(f.raidTarget == enemy.id, "a hero seen in an older watch still holds the council back: "
                     + FactionDirector.LAST_COUNCIL.get(SIDE));
             t.succeed();
         } catch (RuntimeException | Error e) {
@@ -1134,13 +1358,13 @@ public final class KnowledgeGameTests {
     }
 
     /**
-     * Review finding 5: against a garrison none of its people has seen (assumed like its own), the council's rule "attack
-     * with two thirds of the defence" compared a party of every soldier beyond a third with two thirds of the whole
-     * garrison: only 9 and 12 soldiers ever matched it (at exact equality), so ten soldiers waited where nine attacked.
-     * Two thirds is counted in whole soldiers, as the council itself rounds its garrison.
+     * recon.md 10.2 item 13 and 15.5 (task R5): the knowledge review's ten-soldier test, rewritten for the reserve. Ten
+     * soldiers at home send six (a third stays). Against a recon counting seven in the same gear the plan is eleven (seven
+     * and half again, four), two thirds of it seven: they wait, "6 soldiers to send, 7 needed". Against a recon counting
+     * six the plan is nine, two thirds six: they go. Two thirds of a plan of half again is the count, head for head.
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_twothirds")
-    public static void tenSoldiersAttackAGarrisonLikeTheirOwnWhereNineDo(GameTestHelper h) {
+    public static void tenSoldiersAttackSixCountedAndWaitOnSeven(GameTestHelper h) {
         GameTestBases.Handle t = base(h, 40);
         ServerLevel level = h.getLevel();
         FactionState f = t.data.faction(SIDE);
@@ -1150,15 +1374,23 @@ public final class KnowledgeGameTests {
             int interval = FCConfig.RAID_INTERVAL_TICKS.get();
             t.data.startedAt = now - interval - 1;
             f.lastRaidAt = now - interval - 1;
+            List<FactionNpc> ours = new ArrayList<>();
             for (int[] p : TEN) {
-                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+                ours.add(member(t, p[0], p[1], NpcRole.SWORDSMAN));
+            }
+            double gear = power(ours.get(0));
+            for (FactionNpc n : ours) {
+                t.assertTrue(power(n) == gear, "our soldiers are not all in the same gear");
             }
             BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
-            Report walls = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "its walls seen, nothing of the yard");
-            walls.look = new Intel.Look(0, 0.0, 0, 0, now);
-            deliver(t, f, walls, now);
+            deliverRecon(t, f, enemy, counted(7, gear, now, java.util.Map.of()), now);
             raids(t, f, now);
-            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 6, "ten soldiers waited against a garrison like their own: "
+            String council = FactionDirector.LAST_COUNCIL.get(SIDE);
+            t.assertTrue(f.raidTarget < 0 && council != null && council.contains("6 soldiers to send, 7 needed against about 7 defenders")
+                    && council.contains("a reserve of 4 (half again the 7 counted)"), "six against seven counted should wait: " + council);
+            deliverRecon(t, f, enemy, counted(6, gear, now + 1, java.util.Map.of()), now + 1);
+            raids(t, f, now + 1);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 6, "ten soldiers waited against six counted: "
                     + FactionDirector.LAST_COUNCIL.get(SIDE));
             t.succeed();
         } catch (RuntimeException | Error e) {
@@ -1168,11 +1400,13 @@ public final class KnowledgeGameTests {
     }
 
     /**
-     * A scout counts only the soldiers it sees: two of the enemy's soldiers behind a wall two blocks high are not in its
-     * look, nor the yard behind it (the walls' top is, so the base is reported); with the wall gone it counts both.
+     * A passing look tells where a base is and that it stands, and counts nobody (recon.md 3.6, task R5): behind a wall two
+     * blocks high the enemy's soldiers and the yard are out of sight, but the walls' top is in view, so the base is
+     * reported; with the wall gone, both soldiers in sight, the report is the same: no count, no heroes, no recon.
+     * {@link #aReconSampleCountsOnlySoldiersInSight} counts them on a focused watch's sample.
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_wall")
-    public static void aScoutCountsOnlySoldiersInSight(GameTestHelper h) {
+    public static void aPassingLookCountsNobody(GameTestHelper h) {
         GameTestBases.Handle t = base(h, 40);
         ServerLevel level = h.getLevel();
         List<BlockPos> wall = new ArrayList<>();
@@ -1190,13 +1424,13 @@ public final class KnowledgeGameTests {
             FactionNpc scout = member(t, 12, 16, NpcRole.SCOUT);
             wall.forEach(p -> h.setBlock(p, Blocks.STONE));
             Report hidden = BaseWatch.look(level, scout, enemy, now);
-            t.assertTrue(hidden != null && hidden.look != null && hidden.look.soldiers() == 0,
-                    "the scout counted soldiers behind a wall: " + (hidden == null ? null : hidden.note));
+            String note = Report.positionNote(ENEMY, Report.Kind.ENEMY_BASE);
+            t.assertTrue(hidden != null && hidden.count == 0 && hidden.recon == null && hidden.note.equals(note),
+                    "behind the wall the base should be reported, counting nobody: " + (hidden == null ? null : hidden.note));
             wall.forEach(p -> h.setBlock(p, Blocks.AIR));
             Report open = BaseWatch.look(level, scout, enemy, now + 1);
-            t.assertTrue(open != null && open.look != null && open.look.soldiers() == 2 && open.look.visible() > hidden.look.visible(),
-                    "with the wall gone the scout should see both soldiers and more of the yard: " + (open == null ? null : open.note)
-                            + " / behind the wall: " + hidden.note);
+            t.assertTrue(open != null && open.count == 0 && open.recon == null && open.note.equals(note),
+                    "with the wall gone a passing look still counts nobody: " + (open == null ? null : open.count + " / " + open.note));
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();
@@ -1292,9 +1526,8 @@ public final class KnowledgeGameTests {
     /**
      * recon.md 10.2 (task R2): a faction's recon of a base, its back-off, its open orders and the strikes it saw survive a
      * save and a reload of the campaign (format 5), each face and power exact; so do what an order's scout told at the
-     * station and when the council last ordered an urgent recon of each enemy (task R3). A format-4 report with an old look and
-     * losses loads with no recon (the old look still read until the council's switch), and a format-4 faction with no
-     * orders and no strikes.
+     * station and when the council last ordered an urgent recon of each enemy (task R3). ({@link #oldReportsLoadAsPositions}
+     * loads a format-4 save.)
      */
     @GameTest(template = "platform", timeoutTicks = 20, batch = "workers_static")
     public static void aReconAndTheOrdersSurviveASaveAndReload(GameTestHelper h) {
@@ -1365,17 +1598,38 @@ public final class KnowledgeGameTests {
                 && resumed.heroes().equals(java.util.Map.of("hinae", 6.8125)), "a watch resumed after a save: first " + resumed.first()
                 + ", " + resumed.watchTicks() + " ticks, mask " + resumed.mask() + ", heroes " + resumed.heroes());
         h.assertTrue(BaseWatch.loadWatch(BaseWatch.saveWatch(new ReconWatch())).empty(), "an empty watch saved and loaded is not empty");
-        // a format-4 save: its report's old look and losses, no recon, no orders, no strikes
+        h.succeed();
+    }
+
+    /**
+     * recon.md 10.2 item 10 (task R5): a report saved before the council's switch, with an old look at the yard, the losses
+     * seen at our walls and the heroes seen there, loads as a position only: no recon, no count, a passing look's note, and
+     * none of the old tags written back. Its base is judged again by a recon. A format-4 faction loads with no orders and
+     * no strikes; a raid party's look saved with it is dropped, and the ruins a party saw are kept.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20, batch = "workers_static")
+    public static void oldReportsLoadAsPositions(GameTestHelper h) {
+        var provider = h.getLevel().registryAccess();
+        BlockPos town = new BlockPos(100, 64, 200);
         FactionState old = new FactionState(SIDE);
-        Report looked = new Report(Report.Kind.ENEMY_BASE, town, 4000, ENEMY, 3, "3 soldiers seen");
-        looked.look = new Intel.Look(3, 0.6, 1.0, 0, 4000);
-        looked.losses = 2;
-        looked.lossAt = 4500;
-        old.knowledge.add(looked);
+        old.knowledge.add(new Report(Report.Kind.ENEMY_BASE, town, 4000, ENEMY, 3, "Grove Covenant settlement, 3 soldiers seen, 60% of the yard in view"));
         net.minecraft.nbt.CompoundTag oldFaction = old.save();
+        net.minecraft.nbt.CompoundTag report = oldFaction.getList("knowledge", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+        net.minecraft.nbt.CompoundTag look = new net.minecraft.nbt.CompoundTag();
+        look.putInt("soldiers", 3);
+        look.putDouble("visible", 0.6);
+        look.putDouble("power", 1.0);
+        look.putDouble("heroPower", 6.0);
+        look.putLong("at", 4000);
+        report.put("look", look);
+        report.putString("heroes", "hinae=6.0@4000");
+        report.putInt("losses", 2);
+        report.putLong("lossAt", 4500);
         oldFaction.remove("reconOrders");
         oldFaction.remove("struckBy");
         oldFaction.remove("reconUrgentAt");
+        Report partyLook = new Report(Report.Kind.ENEMY_BASE, town, 4100, ENEMY, 5, "Grove Covenant settlement, 5 soldiers seen");
+        oldFaction.put("raidIntel", partyLook.save());
         net.minecraft.nbt.CompoundTag oldTag = new net.minecraft.nbt.CompoundTag();
         oldTag.putInt("format", 4);
         oldTag.putBoolean("started", true);
@@ -1384,11 +1638,32 @@ public final class KnowledgeGameTests {
         oldTag.put("factions", oldFactions);
         FactionState loaded = CampaignData.load(oldTag, provider).factions.get(SIDE);
         Report r4 = loaded.knowledge.get(0);
-        h.assertTrue(r4.recon == null && r4.reconFailures == 0 && r4.look != null && r4.look.soldiers() == 3 && r4.losses == 2,
-                "a format-4 report: recon " + r4.recon + ", look " + r4.look + ", losses " + r4.losses);
+        h.assertTrue(r4.recon == null && r4.reconFailures == 0 && r4.count == 0 && r4.pos.equals(town) && r4.subject == ENEMY
+                && r4.note.equals(Report.positionNote(ENEMY, Report.Kind.ENEMY_BASE)), "a format-4 report: recon " + r4.recon + ", count "
+                + r4.count + ", note " + r4.note);
+        net.minecraft.nbt.CompoundTag back = r4.save();
+        for (String tag : new String[]{"look", "heroes", "losses", "lossAt"}) {
+            h.assertTrue(!back.contains(tag), "an old tag was written back: " + tag);
+        }
         h.assertTrue(loaded.reconOrders.isEmpty() && loaded.struckBy.isEmpty() && loaded.reconUrgentAt.isEmpty(), "a format-4 faction has orders or strikes: "
                 + loaded.reconOrders + " / " + loaded.struckBy);
+        h.assertTrue(loaded.raidIntel == null, "a raid party's look was kept: " + loaded.raidIntel);
+        oldFaction.put("raidIntel", BaseWatch.ruins(enemyRecord(town), 4200).save());
+        net.minecraft.nbt.ListTag again = new net.minecraft.nbt.ListTag();
+        again.add(oldFaction);
+        oldTag.put("factions", again);
+        FactionState ruins = CampaignData.load(oldTag, provider).factions.get(SIDE);
+        h.assertTrue(ruins.raidIntel != null && ruins.raidIntel.fallen, "the ruins a party saw were dropped: " + ruins.raidIntel);
         h.succeed();
+    }
+
+    /** A Grove settlement record at {@code at}, outside any world (for the ruins a report names). */
+    private static BaseState enemyRecord(BlockPos at) {
+        BaseState b = new BaseState();
+        b.faction = ENEMY;
+        b.kind = BaseState.Kind.SETTLEMENT;
+        b.center = at;
+        return b;
     }
 
     /**

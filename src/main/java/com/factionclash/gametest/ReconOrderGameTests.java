@@ -36,8 +36,8 @@ import static com.factionclash.gametest.KnowledgeGameTests.SIDE;
  * and its roster record (on its way, missing, presumed or known dead, retrained). They run the council on the
  * {@code platform} as {@code KnowledgeGameTests}' council tests do (recon.md 10.2: the council tests drive a delivered
  * recon; no scout walks here), each within one tick of its own batch, on the Tide Alliance's test base with its reports of
- * enemy bases 150 to 700 blocks off (records only: no base stands there, so the council's judgement, unchanged in R3, has no
- * target to weigh unless the test gives it one).
+ * enemy bases 150 to 700 blocks off (records only: no base stands there, so the council's judgement has no target to weigh
+ * unless the test gives it one).
  */
 @GameTestHolder(FactionClash.MODID)
 @PrefixGameTestTemplate(false)
@@ -160,14 +160,14 @@ public final class ReconOrderGameTests {
             f.raidEndNews = null;
             KnowledgeGameTests.raids(t, f, opens + 11);
             t.assertTrue(f.reconOrders.size() == 1, "no order once the raid's end is known: " + f.reconOrders);
-            // once the council weighs the target (unchanged until R5: a garrison like its own, 6, and a party of 3 waits),
-            // its line carries the open order after its judgement
-            KnowledgeGameTests.enemyBase(t, ENEMY, target.pos);
+            // once the council weighs the target (task R5: with no focused report it waits for one), its line carries the
+            // open order after its judgement
+            com.factionclash.campaign.BaseState b = KnowledgeGameTests.enemyBase(t, ENEMY, target.pos);
             f.lastRaidAt = opens - interval - 1;
             KnowledgeGameTests.raids(t, f, opens + 12);
             line = FactionDirector.LAST_COUNCIL.get(SIDE);
-            t.assertTrue(f.raidTarget < 0 && line != null && line.contains(": party ") && line.contains("wait")
-                    && line.contains("; recon ordered day"), "the judgement and its order: " + line);
+            t.assertTrue(f.raidTarget < 0 && line != null && line.contains("waiting for a scout's report on " + ENEMY.id + " base " + b.id
+                    + " (settlement: never watched); recon ordered day"), "the judgement and its order: " + line);
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();

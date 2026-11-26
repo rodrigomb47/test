@@ -16,7 +16,7 @@ import java.util.List;
  *
  * <p>Task R1, additive: R3 places orders by them, R4a's column search ({@code work.ReconVantage}) reads the side order,
  * the band and the columns' order ({@link Band} and {@link #GROUND_ORDER} came with it), R4b runs the scout and R5
- * switches the council.
+ * switched the council to them ({@link #candidate}, {@link #answersStrike}, {@link #verdict}).
  */
 public final class ReconRules {
     private ReconRules() {
@@ -597,6 +597,18 @@ public final class ReconRules {
      */
     public static boolean candidate(boolean intervalOver, boolean settlement, boolean struckSinceLastRaid) {
         return intervalOver || settlement && struckSinceLastRaid;
+    }
+
+    /**
+     * Whether a recon made at {@code reconAt} answers a strike made at {@code struckAt} (recon.md 6, task R5): the
+     * counter-attack rests on a good recon made since the striker's last strike, the urgent recon (or any made after the
+     * strike). One from before the strike watched a garrison whose raiders had not yet marched on us, or had not yet been
+     * beaten at our walls, so it says nothing of how the strike left them; as for the urgent order ({@link #urgentDue},
+     * {@link #urgentQualifies}), it does not answer it. A later strike by the same faction dates {@code struckAt} again, so
+     * a recon made between the two strikes no longer answers until a newer one comes home.
+     */
+    public static boolean answersStrike(long reconAt, long struckAt) {
+        return reconAt > struckAt;
     }
 
     /** The council's verdict on its chosen target. */

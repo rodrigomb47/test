@@ -93,17 +93,22 @@ class KnowledgeIsolationTest {
     }
 
     /** The war council's methods in {@code FactionDirector} (knowledge review of 2026-11-19, known leak 1). */
-    private static final String[] COUNCIL = {"private static void raids(", "static BaseState reportedBase(", "static Intel.Estimate estimate(",
-            "private static void watchTarget(", "static void deliverRaidIntel(", "private static void launch("};
+    private static final String[] COUNCIL = {"private static void raids(", "static BaseState reportedBase(", "private static String waitingWhy(",
+            "private static void watchTarget(", "static void deliverRaidIntel(", "public static String forceRaid(", "private static void launch("};
     /** What the council may never read of an enemy: its roster's defenders, its own soldier power, its heroes, the truth of a fall. */
     private static final String[] ENEMY_TRUTHS = {"defenders(", "defencePower(", "heroDefence(", "heroWarPower(", "lairMobs", "data.heroes",
             "HeroState", ".destroyed ", ".destroyed)", ".destroyed;", ".destroyed&", ".destroyed|"};
-    /** {@code x.soldierPower} and {@code x.raiders}: only the council's own faction ({@code f}) and its estimate ({@code e}). */
+    /** {@code x.soldierPower} and {@code x.raiders}: only the council's own faction ({@code f}) and its plan ({@code plan}, {@code targetPlan}). */
     private static final java.util.regex.Pattern OWNED = java.util.regex.Pattern.compile("\\b(\\w+)\\.(soldierPower|raiders)\\b");
+    /**
+     * What a report holds besides its focused recon (recon.md 7, task R5): the passing look's count and note, and the old
+     * look, losses and heroes. A field read, not a method call ({@code r.heroes()} is the recon's).
+     */
+    private static final java.util.regex.Pattern NOT_THE_RECON = java.util.regex.Pattern.compile("\\.(count|note|look|losses|lossAt|heroes)\\b(?!\\s*\\()");
 
     /**
-     * The war council judges an enemy base only by what its own people saw ({@code docs/design/knowledge.md}): its scouts'
-     * and raiders' reports, aged, a prior, the losses it saw. Its methods never read another faction's roster (the
+     * The war council judges an enemy base only by what its own people saw ({@code docs/design/knowledge.md}): since task
+     * R5 its scouts' focused recons ({@code docs/design/recon.md}). Its methods never read another faction's roster (the
      * defenders' count), soldier power, raid party or heroes, nor a base's true fall. A line that reads the truth for the
      * engine or the operators (the party's own roll on the spot, the dump's line) says so with {@code // truth:}.
      */
@@ -138,7 +143,7 @@ class KnowledgeIsolationTest {
                 }
                 java.util.regex.Matcher m = OWNED.matcher(code);
                 while (m.find()) {
-                    if (!m.group(1).equals("f") && !m.group(1).equals("e") && !m.group(1).equals("targetEstimate")) {
+                    if (!m.group(1).equals("f") && !m.group(1).equals("plan") && !m.group(1).equals("targetPlan")) {
                         found.add(head + " reads another's " + m.group(2) + ": " + line.trim());
                     }
                 }
@@ -149,6 +154,49 @@ class KnowledgeIsolationTest {
         }
         assertTrue(lines > 150, "too little of the council scanned: " + lines);
         assertTrue(found.isEmpty(), "the war council reads what its people never saw: " + found);
+    }
+
+    /**
+     * The owner's rule (2026-11-25, recon.md 0, task R5): "Only estimate enemy defence when the scout or other related role
+     * makes a report of what he saw while focused on this particilar task". Of a base's report the war council reads only
+     * its focused recon ({@code Report.recon}): never a passing look's count or note, nor the old look, losses or heroes.
+     * It plans on that recon alone ({@code Reserve.plan}), and an operator's raid does the same.
+     */
+    @Test
+    void theWarCouncilReadsOnlyTheFocusedRecon() throws IOException {
+        Path file = Path.of("src/main/java/com/factionclash/campaign/FactionDirector.java");
+        String src = Files.readString(file);
+        List<String> found = new ArrayList<>();
+        int plans = 0, recons = 0;
+        for (String head : COUNCIL) {
+            int at = src.indexOf(head);
+            assertTrue(at >= 0, "no council method " + head);
+            int open = src.indexOf('{', at), depth = 0, end = open;
+            for (int i = open; i < src.length(); i++) {
+                char c = src.charAt(i);
+                depth += c == '{' ? 1 : c == '}' ? -1 : 0;
+                if (depth == 0) {
+                    end = i;
+                    break;
+                }
+            }
+            for (String line : src.substring(at, end).split("\\n")) {
+                String code = line.contains("//") ? line.substring(0, line.indexOf("//")) : line;
+                if (line.trim().startsWith("*")) {
+                    continue;
+                }
+                plans += code.contains("Reserve.plan(") ? 1 : 0;
+                recons += code.contains(".recon") ? 1 : 0;
+                if (NOT_THE_RECON.matcher(code).find()) {
+                    found.add(head + ": " + line.trim());
+                }
+            }
+        }
+        assertTrue(plans >= 2, "the council and the operators' raid should plan on Reserve.plan: " + plans);
+        assertTrue(recons >= 2, "the council should read the reports' recon: " + recons);
+        assertTrue(found.isEmpty(), "the war council reads a report beyond its focused recon: " + found);
+        assertFalse(Files.readString(Path.of("src/main/java/com/factionclash/campaign/Report.java")).matches("(?s).*public\\s+\\S*Look\\s+look\\b.*"),
+                "a report still keeps a look at the yard");
     }
 
     /**

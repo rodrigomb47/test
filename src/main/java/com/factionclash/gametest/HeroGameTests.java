@@ -260,7 +260,7 @@ public final class HeroGameTests {
         target.name = "Hero raid test target";
         data.addBase(target);
         Report seen = new Report(Report.Kind.ENEMY_BASE, target.center, now, FactionType.GROVE_COVENANT, 0, "");
-        seen.look = new com.factionclash.logic.campaign.Intel.Look(0, 1.0, 0, 0, now); // its scouts saw the yard empty
+        seen.recon = KnowledgeGameTests.counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
         f.knowledge.add(seen);
         t.onCleanup(() -> {
             data.bases.remove(target.id);

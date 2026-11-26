@@ -4,6 +4,7 @@ import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
 import com.factionclash.logic.campaign.ReconRules;
+import com.factionclash.logic.campaign.Reserve;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
@@ -836,15 +837,14 @@ public final class FactionDirector {
         // behaviour), which come with the leaders
         List<FactionNpc> draftable = soldiers.stream().filter(n -> !(n instanceof com.factionclash.hero.HeroEntity)).toList();
         if (!draftable.isEmpty()) {
-            // how well armed its own garrison is (ordinary soldiers only, HEROES_V2 8.1): the faction's own figure, which
-            // it also assumes of a garrison none of its people has seen (knowledge review of 2026-11-19; no other faction
-            // reads it)
+            // how well armed its own garrison is (ordinary soldiers only, HEROES_V2 8.1): the faction's own figure (the
+            // operators' truth of its defence reads it; no other faction's council does)
             f.soldierPower = (float) draftable.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
         }
         int party = Intel.partySize(soldiers.size(), draftable.size(), FCConfig.HOME_DEFENDERS.get(), FCConfig.RAID_PARTY_SIZE.get());
         // focused reconnaissance (docs/design/recon.md 2.1, task R3): the open orders settled by what the faction knows,
         // then the next ones placed: half a day before the raid interval ends (the first war's gate before any raid), or
-        // urgently once the fight at home is over after a strike. The judgement below does not read them yet (R5)
+        // urgently once the fight at home is over after a strike. The judgement below reads the recons they bring (R5)
         boolean ordersChanged = ReconOrders.settle(f, t);
         ordersChanged |= !ReconOrders.place(f, home, t, party, interval, ReconRules.nextRaidAt(f.lastRaidAt, data.startedAt, interval),
                 lastAlarmAt(f, home, t)).isEmpty();
@@ -853,7 +853,7 @@ public final class FactionDirector {
         }
         String orders = ReconOrders.line(f);
         councilLine(f.type, null, orders, t);
-        // a counter-attack may go out sooner (a quarter of the interval) - but only into a weakened enemy, below
+        // a counter-attack may go out sooner (a quarter of the interval) - but only against a faction that struck us, below
         if (t - f.lastRaidAt < interval / 4 || t - data.startedAt < interval) {
             return;
         }
@@ -861,68 +861,128 @@ public final class FactionDirector {
         if (party <= 0) {
             return;
         }
-        // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
-        // the party is at least two thirds of its defenders, or - sooner - when it outnumbers a beaten enemy 3 to 2.
-        // Strength is weighed by arms and armour, not only heads: eight soldiers in leather do not storm diamond.
-        // Each garrison is judged only by what the faction's own people saw of it (knowledge review of 2026-11-19, known
-        // leak 1): the newest look its scouts or raiders brought home, counting for less as it ages, a garrison like its
-        // own where nobody looked, less the soldiers of that settlement it saw fall at its walls since (Intel). A garrison
-        // that marched out unseen is still believed at home.
-        BaseState target = null;
-        double best = Double.MAX_VALUE;
-        Intel.Estimate targetEstimate = null;
-        Report targetReport = null;
-        // (our soldiers, not our heroes: heroes nobody saw are not assumed, and ours never go with the party)
-        Intel.Prior likeOurs = new Intel.Prior(draftable.size(), f.soldierPower);
+        // war council (docs/design/recon.md 5.4, task R5): an enemy settlement's or lair's defence is judged only by a
+        // focused recon its scouts brought home (the owner's rule, 2026-11-25): a good watch no older than half a day
+        // (Intel.usable). No prior, no losses, no raid party's or passing look. The council plans against what the scout
+        // counted and a reserve for what it could not see (Reserve.plan: half again the count; none at a lair or in a
+        // counter-attack), and chooses the target with the least plan, then the nearest. Inside the raid interval only a
+        // counter-attack may go: at 3 to 2, only against a faction that struck us since our last raid, on a recon made since
+        // its strike (ReconRules.answersStrike), and the target is chosen among those factions' settlements only (a weaker
+        // bystander's base cannot stand in its way). Strength is weighed by arms and armour, not only heads.
+        boolean anyStruck = false;
+        for (var strike : f.struckBy.entrySet()) {
+            anyStruck |= ReconRules.struckSince(strike.getValue(), f.lastRaidAt) && Diplomacy.hostile(f.type, strike.getKey());
+        }
+        if (!ReconRules.considersTargets(intervalOver, anyStruck)) {
+            return; // inside the interval with no strike: nothing to judge, and no waiting line
+        }
+        long revive = FCConfig.HERO_REVIVE_SECONDS.get() * 20L;
+        BaseState target = null, waitingOn = null;
+        Reserve.Plan targetPlan = null;
+        Report targetReport = null, waitingReport = null;
+        double best = Double.MAX_VALUE, waitingScore = Double.MAX_VALUE;
         for (Report r : f.knowledge) {
-            if (!r.base() || r.fallen || !Diplomacy.hostile(f.type, r.subject)) {
+            if (!r.base() || r.fallen || r.subject == null || !Diplomacy.hostile(f.type, r.subject)) {
+                continue;
+            }
+            boolean lair = r.kind == Report.Kind.LAIR;
+            long struckAt = f.struckAt(r.subject);
+            if (!ReconRules.candidate(intervalOver, !lair, ReconRules.struckSince(struckAt, f.lastRaidAt))) {
                 continue;
             }
             BaseState b = reportedBase(data, r);
             if (b == null) {
                 continue;
             }
-            Intel.Estimate e = estimate(data, r, likeOurs, t);
-            // in soldier units: heads, plus the heroes seen as so many soldiers of that garrison
-            double defence = com.factionclash.logic.hero.HeroRules.countedPower(e.soldierPower(), e.heroPower()) / Math.max(0.1, e.power());
-            double score = defence * 1000.0 + Math.sqrt(b.center.distSqr(home.center));
+            double distance = Math.sqrt(b.center.distSqr(home.center));
+            // the sightings behind the reserve (recon.md 5.5) come with task R11; until then the ledger is empty: the
+            // plan is the count, its share and the watch's heroes
+            Reserve.Plan plan = intervalOver || r.recon != null && ReconRules.answersStrike(r.recon.at(), struckAt)
+                    ? Reserve.plan(r.recon, t, Reserve.share(lair, !intervalOver), List.of(), revive) : null;
+            if (plan == null) {
+                // no usable report: a scout is to watch it first (the base with an open order first, then the nearest)
+                double score = (ReconOrders.ordered(f, r) ? 0 : 1_000_000.0) + distance;
+                if (score < waitingScore) {
+                    waitingScore = score;
+                    waitingOn = b;
+                    waitingReport = r;
+                }
+                continue;
+            }
+            double score = plan.heads() * 1000.0 + distance;
             if (score < best) {
                 best = score;
                 target = b;
-                targetEstimate = e;
+                targetPlan = plan;
                 targetReport = r;
             }
         }
         if (target == null) {
+            if (waitingOn != null) {
+                councilLine(f.type, String.format(java.util.Locale.ROOT, "day %.2f: waiting for a scout's report on %s base %d (%s: %s)",
+                        t / 24000.0, waitingReport.subject.id, waitingOn.id, waitingReport.kind == Report.Kind.LAIR ? "lair" : "settlement",
+                        waitingWhy(waitingReport, intervalOver, f.struckAt(waitingReport.subject), t)), orders, t);
+            }
             return;
         }
+        boolean lair = targetReport.kind == Report.Kind.LAIR;
+        boolean struck = ReconRules.struckSince(f.struckAt(targetReport.subject), f.lastRaidAt);
         List<FactionNpc> picks = new ArrayList<>(draftable);
         picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
         double partySoldiers = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
         double partyHeroes = 0; // heroes go only by their own rules (leaders, behaviour.raids), which come with L4
         double partyPower = com.factionclash.logic.hero.HeroRules.countedPower(partySoldiers, partyHeroes);
-        double defenceSoldiers = targetEstimate.soldierPower();
-        double defenceHeroes = targetEstimate.heroPower();
-        double defencePower = com.factionclash.logic.hero.HeroRules.countedPower(defenceSoldiers, defenceHeroes);
-        double unit = targetEstimate.power(); // one of its soldiers, as the council counts them
-        boolean counter = !intervalOver && Intel.threeToTwo(partyPower, defencePower, unit);
-        // two thirds of the defence in whole soldiers, a counter-attack's 3 to 2 to the nearest one (Intel.twoThirds and
-        // threeToTwo, review of the knowledge review, 2026-11-19)
-        boolean go = counter || intervalOver && Intel.twoThirds(partyPower, defencePower, unit);
+        ReconRules.Verdict verdict = ReconRules.verdict(intervalOver, struck, partyPower, targetPlan.power(), targetPlan.unit());
+        boolean go = verdict != ReconRules.Verdict.WAIT;
         // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
-        boolean goWithout = !intervalOver && Intel.threeToTwo(partySoldiers, defenceSoldiers, unit)
-                || intervalOver && Intel.twoThirds(partySoldiers, defenceSoldiers, unit);
+        boolean goWithout = ReconRules.verdict(intervalOver, struck, partySoldiers, targetPlan.soldierPower(), targetPlan.unit())
+                != ReconRules.Verdict.WAIT;
+        String what = ReconOrder.what(targetReport.subject, targetReport.kind);
+        String against = Reserve.defenceText(targetPlan, lair, targetReport.subject.displayName, heroNames(targetPlan));
+        Intel.Recon seen = targetPlan.recon();
         councilLine(f.type, String.format(java.util.Locale.ROOT,
-                "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; %s), %s%s [truth: %.1f]",
-                t / 24000.0, target.faction.id, target.id, target.isSettlement() ? "settlement" : "lair", partyPower, partyHeroes,
-                defencePower, defenceSoldiers, defenceHeroes, seenText(targetReport), go ? "attack" : "wait",
+                "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; recon %d%% day %d%s), %s%s [truth: %.1f]%s",
+                t / 24000.0, targetReport.subject.id, target.id, lair ? "lair" : "settlement", partyPower, partyHeroes,
+                targetPlan.power(), targetPlan.soldierPower(), targetPlan.heroPower(), Math.round(seen.coverage() * 100), Whereabouts.day(seen.at()),
+                intervalOver ? "" : ", a counter-attack's plan", go ? "attack" : "wait",
                 go == goWithout ? "" : go ? " (the heroes decided it)" : " (the defending heroes held it off)",
-                defencePower(level, data, target)), orders, t); // truth: the operators' line (fc admin dump), never the council's
+                defencePower(level, data, target), // truth: the operators' line (fc admin dump), never the council's
+                go ? "" : ": " + Reserve.waitLine(what, party, Reserve.needed(targetPlan, partySoldiers / party, !intervalOver), against)),
+                orders, t);
         if (!go) {
-            return; // not yet, or not strong enough for that garrison
+            return; // not yet, or not strong enough for that plan
         }
-        launch(level, data, f, home, target, picks.subList(0, party), targetEstimate.heads() + " defenders" + seenText(targetReport, t),
-                counter ? "Counter-attack! " : "", t);
+        launch(level, data, f, home, target, picks.subList(0, party), against,
+                verdict == ReconRules.Verdict.COUNTER_ATTACK ? "Counter-attack! " : "", t);
+    }
+
+    /**
+     * Why the council waits for a scout's report on a base (its waiting line, recon.md 2.2): "backing off after 2 failed
+     * recons", "never watched", "no good look yet", "its last recon is stale", or, inside the interval, "its last recon is
+     * older than their strike".
+     */
+    private static String waitingWhy(Report r, boolean intervalOver, long struckAt, long t) {
+        Intel.ReconFile file = r.reconFile();
+        if (ReconRules.backingOff(file, t)) {
+            return "backing off after " + file.failures() + (file.failures() == 1 ? " failed recon" : " failed recons");
+        }
+        if (r.recon == null) {
+            return file.failures() > 0 ? "no good look yet" : "never watched";
+        }
+        if (!Intel.usable(r.recon, t)) {
+            return "its last recon is stale";
+        }
+        return intervalOver ? "no plan" : "its last recon is older than their strike";
+    }
+
+    /** The heroes of a plan by name (their registry entry's name; an unknown id as it is). */
+    private static Map<String, String> heroNames(Reserve.Plan p) {
+        Map<String, String> names = new HashMap<>();
+        for (String id : p.heroes().keySet()) {
+            com.factionclash.hero.HeroEntry e = com.factionclash.hero.HeroRegistry.get(id);
+            names.put(id, e == null ? id : e.name());
+        }
+        return names;
     }
 
     /** The factions whose {@link #LAST_COUNCIL} line holds only their open recon orders (no target judged since). */
@@ -963,30 +1023,6 @@ public final class FactionDirector {
     }
 
     /**
-     * The council's estimate of a reported base's defence ({@link Intel#estimate}): the report's look, the losses seen since,
-     * and the prior: for a settlement a garrison like the council's own ({@code likeOurs}); for a lair, as grown as the
-     * campaign's days allow (every faction knows how lairs grow).
-     */
-    static Intel.Estimate estimate(CampaignData data, Report r, Intel.Prior likeOurs, long t) {
-        Intel.Prior prior = r.kind == Report.Kind.LAIR
-                ? new Intel.Prior(Intel.lairPrior(FCConfig.LAIR_BASE_CAP.get(), FCConfig.LAIR_MAX_CAP.get(), t - data.startedAt), 1.0)
-                : likeOurs;
-        // the losses and the heroes seen count for less as they age (review of the knowledge review, 2026-11-19)
-        double heroes = Intel.heroPower(Intel.heroes(r.heroes, r.seenAt()).values(), t);
-        return Intel.estimate(r.look, r.losses, r.lossAt, heroes, prior, t);
-    }
-
-    /** "seen day 3", or "never seen". */
-    private static String seenText(Report r) {
-        return r == null || r.look == null ? "garrison never seen" : "seen day " + Whereabouts.day(r.look.at());
-    }
-
-    /** ", as seen on day 3", or ", a garrison none of ours has seen" (the launch line). */
-    private static String seenText(Report r, long t) {
-        return r == null || r.look == null ? ", a garrison none of ours has seen" : ", as seen on day " + Whereabouts.day(r.look.at());
-    }
-
-    /**
      * A raider of {@code f}'s party (a soldier or a hero) sees its target in ruins, its heart gone and the heart's place in
      * view ({@link BaseWatch#seesFall}): the party keeps the ruins and brings them home with the raid's end ("its settlement
      * was found in ruins", or "in victory" when its own people broke the heart), and the ruins replace the standing report
@@ -1005,37 +1041,30 @@ public final class FactionDirector {
     }
 
     /**
-     * Each director pass of a raid under way: what the raiders at the target see of it (up to three looks), kept as the
-     * party's best look ({@link FactionState#raidIntel}), its ruins when its heart is gone and the place in view. It
-     * reaches home with the raid's end.
+     * Each director pass of a raid under way: a raider of the party that sees its target in ruins (its heart gone and the
+     * heart's place in view within {@link BaseWatch#HEART_SIGHT}, {@link BaseWatch#seesFall}) keeps them for the party
+     * ({@link #partySawRuins}); they reach home with the raid's end. That is all a raid party brings home of its target
+     * (recon.md 7, task R5): its raiders are attacking, not watching, so what they see of the yard is never an estimate.
      */
     private static void watchTarget(ServerLevel level, CampaignData data, FactionState f, BaseState target, long t) {
-        if (target == null) {
+        if (target == null || f.raidIntel != null && f.raidIntel.fallen) {
             return;
         }
-        int looked = 0;
         for (UUID u : f.raiders) {
-            if (looked >= 3) {
-                break;
-            }
-            if (level.getEntity(u) instanceof net.minecraft.world.entity.LivingEntity e && e.isAlive()) {
-                Report seen = BaseWatch.look(level, e, target, t);
-                if (seen != null) {
-                    looked++;
-                    f.raidIntel = f.raidIntel == null ? seen : Report.mergeBase(f.raidIntel, seen, true);
-                    data.setDirty();
-                }
+            if (level.getEntity(u) instanceof net.minecraft.world.entity.LivingEntity e && e.isAlive() && BaseWatch.seesFall(e, target)) {
+                partySawRuins(data, f, target, t);
+                return;
             }
         }
     }
 
-    /** The raid's end is told at home: what its party saw of the target becomes the faction's report of it. */
+    /** The raid's end is told at home: the ruins its party saw (the only news of its target it brings) become the faction's report. */
     static void deliverRaidIntel(FactionState f, long t) {
-        if (f.raidIntel == null) {
-            return;
-        }
         Report r = f.raidIntel;
         f.raidIntel = null;
+        if (r == null || !r.fallen) {
+            return;
+        }
         r.deliveredAt = t;
         r.by = "the raid party";
         f.addReport(r);
@@ -1051,10 +1080,10 @@ public final class FactionDirector {
         if (f.raidTarget >= 0) {
             return f.type.displayName + " already raids base " + f.raidTarget;
         }
-        if (target == null || target.destroyed || target.faction == f.type) {
+        if (target == null || target.destroyed || target.faction == f.type) { // truth: the operator's command names a standing base
             return "no such enemy base standing";
         }
-        BaseState home = data.bases.values().stream().filter(b -> b.faction == f.type && !b.destroyed && b.isSettlement())
+        BaseState home = data.bases.values().stream().filter(b -> b.faction == f.type && !b.destroyed && b.isSettlement()) // truth: its own
                 .findFirst().orElse(null);
         if (home == null) {
             return f.type.displayName + " has no settlement standing";
@@ -1070,7 +1099,8 @@ public final class FactionDirector {
             return f.type.displayName + " has no soldier at home to send";
         }
         picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
-        // the faction's own view of the target (its report, else a garrison like its own), never the target's records
+        // the faction's own view of the target: its usable recon if it has one (planned as at the interval, recon.md 5.5),
+        // else "no scout's report" (recon.md 7, task R5); never the target's records
         Report known = null;
         for (Report r : f.knowledge) {
             if (r.base() && reportedBase(data, r) == target) {
@@ -1078,19 +1108,22 @@ public final class FactionDirector {
             }
         }
         long now = level.getGameTime();
-        Intel.Prior likeOurs = new Intel.Prior(picks.size(), f.soldierPower);
-        Intel.Estimate e = known != null ? estimate(data, known, likeOurs, now) : Intel.estimate(null, 0, now, 0, likeOurs, now);
-        launch(level, data, f, home, target, picks.subList(0, party), e.heads() + " defenders" + seenText(known, now), "By order! ", now);
+        boolean lair = !target.isSettlement();
+        Reserve.Plan plan = known == null ? null
+                : Reserve.plan(known.recon, now, Reserve.share(lair, false), List.of(), FCConfig.HERO_REVIVE_SECONDS.get() * 20L);
+        String against = plan == null ? null : Reserve.defenceText(plan, lair, target.faction.displayName, heroNames(plan));
+        launch(level, data, f, home, target, picks.subList(0, party), against, "By order! ", now);
         return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";
     }
 
     /**
      * Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the council's plan
      * for the raid (knowledge review of 2026-11-19: the march there, the muster, the assault and the march home), the
-     * message ({@code defenders}: "about N defenders, as seen on day D").
+     * message ({@code against}: what the council plans against, {@link Reserve#defenceText}; null: an operator's raid
+     * with no usable recon, {@link Reserve#launchLine}).
      */
     private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
-                               List<FactionNpc> party, String defenders, String prefix, long t) {
+                               List<FactionNpc> party, String against, String prefix, long t) {
         f.raiders.clear();
         f.raidEndNews = null; // a new raid: the last one's end is old news
         f.raidLast = null;
@@ -1114,10 +1147,9 @@ public final class FactionDirector {
         f.lastRaidAt = t;
         f.raidsLaunched++;
         data.setDirty();
-        Messages.toFaction(level.getServer(), f.type, Component.literal(prefix
-                + "Launching a raid with " + party.size()
-                + " soldiers (against about " + defenders + ") on the "
-                + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
+        Messages.toFaction(level.getServer(), f.type, Component.literal(prefix + Reserve.launchLine(party.size(),
+                ReconOrder.what(target.faction, target.isSettlement() ? Report.Kind.ENEMY_BASE : Report.Kind.LAIR),
+                target.center.toShortString(), against)));
     }
 
     /**

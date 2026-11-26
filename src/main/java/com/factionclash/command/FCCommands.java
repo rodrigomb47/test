@@ -667,7 +667,8 @@ public final class FCCommands {
             o.addProperty("raidTarget", f.raidTarget);
             o.addProperty("raidPlanTicks", f.raidPlanTicks);
             o.addProperty("basesDestroyed", f.basesDestroyed);
-            // what the faction knows of enemy bases (docs/design/knowledge.md): its newest look at each, ruins, losses seen
+            // what the faction knows of enemy bases (docs/design/knowledge.md, recon.md): where each is, whether it is seen in
+            // ruins (its focused recons are task R6's to list)
             JsonArray seen = new JsonArray();
             for (com.factionclash.campaign.Report r : f.knowledge) {
                 if (!r.base()) {
@@ -677,16 +678,6 @@ public final class FCCommands {
                 so.addProperty("subject", r.subject == null ? "?" : r.subject.id);
                 so.addProperty("pos", r.pos.toShortString());
                 so.addProperty("fallen", r.fallen);
-                if (r.look != null) {
-                    so.addProperty("soldiers", r.look.soldiers());
-                    so.addProperty("visible", Math.round(r.look.visible() * 100) / 100.0);
-                    so.addProperty("power", Math.round(r.look.power() * 100) / 100.0);
-                    so.addProperty("heroPower", Math.round(r.look.heroPower() * 100) / 100.0);
-                    so.addProperty("lookAt", r.look.at());
-                }
-                so.addProperty("losses", r.losses);
-                so.addProperty("lossAt", r.lossAt);
-                so.addProperty("heroesSeen", r.heroes); // id=power@time, each fading in the council's count
                 so.addProperty("by", r.by);
                 seen.add(so);
             }

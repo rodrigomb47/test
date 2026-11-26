@@ -108,7 +108,7 @@ public final class FactionState {
      * When the faction last saw each enemy faction strike it at home (recon.md 6): an enemy soldier or hero falling in its
      * home area or seen falling by a member standing in it ({@code BaseWatch.enemyFell}), or an enemy fighter its alarm
      * noticed inside a settlement's walls box ({@code FactionDirector.defenceAlarm}). The faction's own observation,
-     * saved; it never lowers an estimate. Read from task R3 on (the urgent recon; from R5 the counter-attack).
+     * saved; it never lowers an estimate. Read from task R3 on (the urgent recon) and from R5 (the counter-attack).
      */
     public final Map<FactionType, Long> struckBy = new java.util.EnumMap<>(FactionType.class);
 
@@ -338,6 +338,9 @@ public final class FactionState {
         // pact allies' offensives of a save from before 2026-11-25, is left unread: the owner removed pacts)
         f.raidPlanTicks = t.getLong("raidPlan");
         f.raidIntel = t.contains("raidIntel") ? Report.load(t.getCompound("raidIntel")) : null;
+        if (f.raidIntel != null && !f.raidIntel.fallen) {
+            f.raidIntel = null; // a raid party brings home only the ruins it saw (recon.md 7, task R5): an old look of the yard is dropped
+        }
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.soldierPower = t.contains("soldierPower") ? t.getFloat("soldierPower") : 1.0F;
         f.xpBank = t.getLong("xpBank");

@@ -485,18 +485,19 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 * Withdrawal: under 30% health with no golden apple, fall back toward the storehouse (or 12 blocks away from the
   attacker near home) until over 60% or for at most 1200 ticks. Soldiers only: a hero never withdraws (it escapes for
   good under its escape threshold or fights to the death, `HEROES_V2.md` 6.13).
-* War council (PROPOSED): target = the reported, still-standing base with the fewest soldiers at home (lair: its
-  monsters), then the nearest. Party = every soldier beyond max(`homeDefenders`, a third of the garrison), at
-  least `raidPartySize`. Strength is power, not heads: a soldier counts 1 + armour/20 (at most 1) + weapon material
-  tier/4 (wood 0 … diamond 0.75, netherite 1); a faction's average power is noted whenever its garrison is home, and
-  rivals judge its defenders by it (a lair's monsters count 1 each). A raid goes when the interval has passed and
-  the party's power is at least 2/3 of the defence; a counter-attack may go after a quarter of the interval at 3/2.
+* War council (PROPOSED): target = the reported, still-standing base with a usable focused recon whose plan is the
+  least (`docs/design/recon.md` 5.4 and 5.7: the count and its reserve, below), then the nearest. Party = every soldier
+  beyond max(`homeDefenders`, a third of the garrison), at least `raidPartySize`. Strength is power, not heads: a
+  soldier counts 1 + armour/20 (at most 1) + weapon material tier/4 (wood 0 … diamond 0.75, netherite 1), as seen on
+  the enemy's soldiers in a watch (a lair's monsters count 1 each). A raid goes when the interval has passed and the
+  party's power is at least 2/3 of the plan; a counter-attack may go after a quarter of the interval at 3/2, only
+  against a faction that struck us since our last raid, on a recon made since its strike (`ReconRules.answersStrike`),
+  the target chosen among those factions' settlements only.
   Since the review of the knowledge review (2026-11-19, PROPOSED `Intel.twoThirds` and `Intel.threeToTwo`): two thirds
   of the defence counted in **whole soldiers** of its mean power (floor; the party is what a garrison of that size sends,
   the council's own rounding), the counter-attack's 3/2 to the **nearest** whole soldier, strengths within **0.01** of a
-  soldier equal (PROPOSED `Intel.TIE`). Against a garrison nobody has seen (the prior, like its own) a council therefore
-  attacks with **7 or more** soldiers at home whatever their gear, never with 6; before, only 9 or 12 did (at exact
-  equality, when the float rounding of `soldierPower` allowed it) and 10 or 11 never did.
+  soldier equal (PROPOSED `Intel.TIE`). With the reserve of half again, two thirds of the plan is the count head for
+  head: a party goes against as many soldiers counted as it sends, in the same gear, and waits against one more.
 * No pacts (owner, 2026-11-25; config `war.pacts` removed): every faction is hostile to every other, and the
   survivors of a conquest stay enemies. A faction whose last base falls is eliminated and every member dies with it:
   loaded members at once; a member in an unloaded place at the server tick after it loads (in a chunk that does not tick
@@ -785,23 +786,23 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   encounter, or after 40 escapes on one expedition (a typical trip needs well under 20); cornered with a monster within 3.5 blocks it fights back for 100 ticks while over half health. An
   encounter ends after 100 quiet ticks. Enemy soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
-* What the war council knows of an enemy base (knowledge review of 2026-11-19, `docs/design/knowledge.md`): only its
-  scouts' and raiders' looks. A look (`BaseWatch`) is made within **64** blocks of the base's centre: the soldiers in
-  sight (a ray from the eyes; within the walls box + **8**), their mean visible power (`FactionDirector.power`), the
-  heroes in sight at full war power, and the share of the yard in view (**5 x 5** points at eye height over the walls'
-  inside). Estimate (`Intel`): the soldiers seen + the prior x the share out of view, drifting up to the prior over
-  **48000** ticks (PROPOSED `Intel.FORGET_TICKS`), never below what was seen, minus the enemy soldiers seen falling at
-  home since, each loss counting less as it ages over the same 48000 ticks (the base hires replacements; review of the
-  knowledge review); the heroes seen there count by their war power, each sighting less as it ages over 48000 ticks
-  (kept as `id=power@time`, an old `id=power` as seen with its look); the prior is a garrison like the council's own
-  (its ordinary soldiers at home, not its heroes, and its `soldierPower`), a lair's
-  `lairBaseCap` + 1 a day up to `lairMaxCap`. Two looks on one trip: the one with more of the yard in view (**0.1**
-  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks, and a party that
-  broke the heart itself brings the ruins home with the raid's end (live check); ruins seen stay
-  ruins (no base is rebuilt: a later look that misses the heart's place does not raise them again).
+* What the war council knows of an enemy base (`docs/design/recon.md`, task R5; the owner's rule of 2026-11-25): only a
+  focused recon a scout ordered to watch that base brought home. A recon is **good** with at least **8** of the **25**
+  yard points and the middle in view over a watch of at least **600** ticks (`ReconRules.MIN_POINTS`,
+  `MIN_WATCH_TICKS`; the planned watch **1200**) and **fresh** for **12000** ticks (`ReconRules.FRESH_TICKS`); a blind or
+  stale recon, a passing look (which reports where a base is and that it stands, with no count; `BaseWatch.SIGHT` **64**),
+  a raid party's look and the enemy soldiers seen falling at our walls (a strike, `FactionState.struckBy`) make no
+  estimate. Estimate (`Intel.estimate`): the faces counted with no extrapolation, their mean power (1 when none was seen)
+  and the heroes seen in that watch at full war power. Plan (`Reserve.plan`, PROPOSED `Reserve.SHARE` **0.5**,
+  `SHARE_LAIR` **0**, `COUNTER_SHARE` **0**): the count plus a reserve of half again the count (rounded up), none at a lair
+  or in a counter-attack, the heroes under the soldier backbone; the sightings that may raise the reserve come with task
+  R11 (until then the ledger is empty). A raider sees a fall when the heart's place is in view within **48** blocks, and a
+  party that broke the heart itself brings the ruins home with the raid's end (live check); ruins seen stay ruins (no base
+  is rebuilt: a later look that misses the heart's place does not raise them again). Removed with task R5:
+  `Intel.FORGET_TICKS` (48000), `SAME_VIEW` (0.1) and the lair's prior.
 * Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only (the
-  faction's own, its prior for a garrison it has not seen); an enemy base's defence is its soldiers seen x their power
-  plus the war power of each hero seen there, fading with the sighting's age (the operators' truth, `FactionDirector.defencePower`: alive, at home, not
+  faction's own; the operators' truth of its defence reads it); an enemy base's plan is its soldiers counted and its
+  reserve x their power plus the war power of each hero its watch saw (the operators' truth, `FactionDirector.defencePower`: alive, at home, not
   on a raid; **half** under half health), the heroes counting at most **1.5x** the soldiers' power (the
   soldier backbone). A hero's war power is `2.25 x sqrt(maxHealth / 20) x (1.5 + level / 30) x war.heroPowerPercent /
   100` (`heroPowerPercent` **100**, 0-200; 0 counts a hero as one soldier by heads, as before). The target score reads

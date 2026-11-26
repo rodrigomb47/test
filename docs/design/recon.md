@@ -900,6 +900,52 @@ the walls: a pillar's row. Phase 3's radio tower lets a scout report from afar: 
 station when sent, not when the scout walks in; the report's time stays its watch's. It changes when the faction knows,
 not what.
 
+### 5.7 As built (task R5): the council's switch
+
+`FactionDirector.raids` judges only usable recons, on `Reserve.plan` with an empty sightings ledger (the count, its
+share, the watch's heroes; R11 fills the ledger). Where this list and the sections above differ, the code is the truth:
+
+* **The counter-attack rests on a recon made since the strike** (`ReconRules.answersStrike`: the recon's last sample
+  after the striker's `struckBy` time). Inside the interval a striker's settlement whose only usable recon is older than
+  the strike gets no plan: the council waits for a scout's report (the urgent order of 2.1 is placed on it), as
+  `urgentDue` and `urgentQualifies` already treat a recon from before the strike. A later strike by the same faction
+  dates `struckBy` again, so a recon made between two strikes no longer answers until a newer one comes home. At the
+  interval any usable recon is a candidate, struck or not. Lairs never strike, so they are never candidates inside it.
+* **The lines.** A day is the chat lines' day (`Whereabouts.day`: "day 5", not "day 5.2"). The launch line:
+  "Launching a raid with 3 soldiers on the Grove Covenant settlement reported at 400, 67, 16, against about 4 defenders
+  and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4 counted)", with "Counter-attack! "
+  or an operator's "By order! " before it; an empty yard: "against an empty yard (scout Edrin Cole, day 5) and no
+  soldier of theirs seen away"; a hero the backbone counts at nothing: "an empty yard but for Hinae Shirasuzu (alone:
+  not counted) (...)"; a lair: "against about 6 monsters (scout Edrin Cole, day 5)" (no reserve in a lair's line); a
+  counter-attack's plan, which has no share: "... and no soldier of theirs seen away". `LAST_COUNCIL` keeps the
+  operators' figures first (party, defence: the plan's power, its soldiers and heroes, "recon N% day D", the truth) and
+  on a wait adds the design's line: "...: waiting on the Grove Covenant settlement: 3 soldiers to send, 6 needed against
+  ...". "N needed" is the fewest soldiers of the party's own mean gear that pass (`Reserve.needed`). With no usable
+  report on any candidate it says "day D: waiting for a scout's report on grove_covenant base 3 (settlement: never
+  watched)" (or "no good look yet", "backing off after 2 failed recons", "its last recon is stale", "its last recon is
+  older than their strike"), naming the candidate with an open order first, else the nearest, and the open orders follow
+  it as in R3. Inside the interval with no strike there is no line at all (`ReconRules.considersTargets`). The pure line
+  helpers are `Reserve.defenceText`, `needed`, `launchLine` and `waitLine` (unit-tested in `ReserveTest`).
+* **The passing look** (`BaseWatch.look`) reports a count of 0, no heroes and the note "Grove Covenant settlement seen"
+  (`Report.positionNote`); it is still filed when the walls, the yard, the heart's place or one of its people is in view.
+* **The raid party** keeps only ruins: `watchTarget` asks `BaseWatch.seesFall` (the heart's place in view within 48
+  blocks) of each raider, no longer the passing look's 64, and `deliverRaidIntel` delivers only ruins.
+* **An operator's raid** (`forceRaid`) plans on the faction's usable recon as at the interval (the share; none at a
+  lair), else its line says "with no scout's report of it".
+* **Deleted.** `Intel.Look`, `Prior`, the old `estimate`, `better`, `SAME_VIEW`, `FORGET_TICKS`, `weight`, `heroPower`,
+  `mergeHeroes`, `lairPrior`, and also `Intel.Hero` and the "id=power@time" hero list's parse and format, which 7 keeps:
+  nothing reads them since R2 saves a recon's heroes as a compound tag. `Intel.estimateRecon` took the name
+  `Intel.estimate`. `Report.look`, `heroes`, `losses`, `lossAt`, `seenAt()`; `FactionDirector.estimate`, `likeOurs`,
+  `seenText`; `enemyFell`'s loss counting (it records the strike only); the dump's `soldiers`, `visible`, `power`,
+  `heroPower`, `lookAt`, `losses`, `lossAt` and `heroesSeen` of each known base (it keeps `subject`, `pos`, `fallen` and
+  `by`; R6 adds the recon); `BaseInfo`'s "seen falling at our walls" text.
+* **Old saves.** A report that carries the old `look`, `losses` or `heroes` tag loads as a position: no recon, count 0,
+  the passing look's note (its old note's numbers dropped), and none of those tags is written back. A saved raid party's
+  look that is not ruins is dropped on load; ruins are kept.
+* **Tools** (R6): `warcheck.py` still matches the old launch line ("raid with N soldiers (against about N defenders",
+  so its party and "about" columns print "?") and reads the council line's "defence N" (kept), and `rolltrack.py`
+  prints "no look" for every standing base (the dump has no look fields now); both still run.
+
 ## 6. What replaces the 3-to-2 counter-attack's input
 
 Losses seen at home are gone as an input. The same sighting is now a **trigger**:

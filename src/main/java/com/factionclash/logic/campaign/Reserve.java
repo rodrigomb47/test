@@ -13,13 +13,14 @@ import java.util.Map;
 /**
  * What a war council plans against ({@code docs/design/recon.md} 5.5). The owner, on counting only the soldiers a scout
  * saw: "they can assume that what they saw is not the enemy mainforce". The estimate stays the faces counted
- * ({@link Intel#estimateRecon}); the council plans against more: what it counted and a reserve for what it could not see,
+ * ({@link Intel#estimate}); the council plans against more: what it counted and a reserve for what it could not see,
  * the larger of a share of the count and the soldiers of that faction its people saw away from that base and did not see
  * fall, with the heroes it knows of, under the soldier backbone ({@link HeroRules#countedPower}). Pure rules, no
  * Minecraft classes.
  *
- * <p>Task R10, additive: nothing reads the plan yet (R5 switches the council to it with an empty sightings ledger; R11
- * fills the ledger, {@link Sightings}). Without a fresh good recon there is no plan, whatever the sightings hold.
+ * <p>Task R10; the war council plans on it since the switch, task R5, with an empty sightings ledger (R11 fills the
+ * ledger, {@link Sightings}), and its lines say what the plan rests on ({@link #defenceText}). Without a fresh good recon
+ * there is no plan, whatever the sightings hold.
  */
 public final class Reserve {
     private Reserve() {
@@ -97,7 +98,7 @@ public final class Reserve {
      * sighting's. {@code share}: {@link #share}; {@code reviveTicks}: the heroes' revival every faction knows.
      */
     public static Plan plan(Intel.Recon recon, long now, double share, Collection<Sightings.Sighting> sightings, long reviveTicks) {
-        Intel.Estimate e = Intel.estimateRecon(recon, now);
+        Intel.Estimate e = Intel.estimate(recon, now);
         if (e == null) {
             return null;
         }
@@ -146,7 +147,7 @@ public final class Reserve {
                 soldierPower, heroPower, power, unit);
     }
 
-    // ---- What the lines say the plan rests on (recon.md 5.4; the whole launch and waiting lines are R5's and R11's) ----
+    // ---- What the lines say the plan rests on (recon.md 5.4; the sightings' forms come with R11) ----
 
     /** "half again", "a quarter again", "as many again", or "N% again": the share in words. */
     static String shareWords(double share) {
@@ -213,6 +214,87 @@ public final class Reserve {
             notes.add("alone: not counted");
         }
         return notes.isEmpty() ? name : name + " (" + String.join("; ", notes) + ")";
+    }
+
+    // ---- The council's lines (recon.md 5.4, task R5; the sightings' forms come with R11) ----
+
+    /**
+     * What a council's line says it plans against (recon.md 5.4): the count, the heroes in the plan, the recon it rests on
+     * and the reserve. "about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4
+     * counted)"; "an empty yard (scout Edrin Cole, day 5) and no soldier of theirs seen away"; at a lair, "about 6 monsters
+     * (scout Edrin Cole, day 5)" (a lair's line leaves the reserve out: it has none). A hero the backbone counts at nothing
+     * is named "(alone: not counted)": "an empty yard but for Hinae Shirasuzu (alone: not counted) (scout ...)". The day
+     * is the recon's last sample's ({@link Whereabouts#day}); {@code heroNames} names the heroes by id (an id it does not
+     * know is shown as it is).
+     */
+    public static String defenceText(Plan p, boolean lair, String faction, Map<String, String> heroNames) {
+        List<String> heroes = new ArrayList<>();
+        for (String id : p.heroes().keySet()) {
+            String name = heroNames == null ? null : heroNames.get(id);
+            heroes.add(heroText(p, id, name == null || name.isEmpty() ? id : name));
+        }
+        StringBuilder b = new StringBuilder();
+        if (p.counted() > 0) {
+            b.append("about ").append(p.counted()).append(lair ? (p.counted() == 1 ? " monster" : " monsters")
+                    : (p.counted() == 1 ? " defender" : " defenders"));
+            if (!heroes.isEmpty()) {
+                b.append(heroes.size() == 1 ? " and " : ", ").append(names(heroes));
+            }
+        } else {
+            b.append(lair ? "no monsters" : "an empty yard");
+            if (!heroes.isEmpty()) {
+                b.append(" but for ").append(names(heroes));
+            }
+        }
+        Intel.Recon r = p.recon();
+        b.append(" (").append(r.by().isEmpty() ? "a scout's watch" : "scout " + r.by()).append(", day ").append(Whereabouts.day(r.at())).append(')');
+        if (!lair) {
+            b.append(" and ").append(reserveText(p, faction));
+        }
+        return b.toString();
+    }
+
+    /** "A", "A and B", "A, B and C". */
+    private static String names(List<String> names) {
+        if (names.size() <= 1) {
+            return names.isEmpty() ? "" : names.get(0);
+        }
+        return String.join(", ", names.subList(0, names.size() - 1)) + " and " + names.get(names.size() - 1);
+    }
+
+    /**
+     * The fewest soldiers of {@code soldier} power each a council must send against this plan (recon.md 5.4): two thirds
+     * of it at the interval ({@link Intel#twoThirds}), 3 to 2 for a counter-attack ({@link Intel#threeToTwo}), in the plan's
+     * unit; the waiting line's "N needed".
+     */
+    public static int needed(Plan p, double soldier, boolean counter) {
+        double s = Math.max(Intel.TIE, soldier);
+        for (int n = 0; n < 10_000; n++) {
+            if (counter ? Intel.threeToTwo(n * s, p.power(), p.unit()) : Intel.twoThirds(n * s, p.power(), p.unit())) {
+                return n;
+            }
+        }
+        return 10_000;
+    }
+
+    /**
+     * The launch line (recon.md 5.4): "Launching a raid with 7 soldiers on the Stoneguard settlement reported at 400, 67,
+     * 16, against " and what it plans against ({@link #defenceText}); {@code against} null (an operator's raid with no
+     * usable recon) says "..., with no scout's report of it". {@code what} is "the Stoneguard settlement".
+     */
+    public static String launchLine(int party, String what, String at, String against) {
+        return "Launching a raid with " + party + (party == 1 ? " soldier" : " soldiers") + " on " + what + " reported at " + at
+                + (against == null ? ", with no scout's report of it" : ", against " + against);
+    }
+
+    /**
+     * The council's line while it waits on a target it judged (recon.md 5.4): "waiting on the Stoneguard settlement: 6
+     * soldiers to send, 7 needed against about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of
+     * 2 (half again the 4 counted)".
+     */
+    public static String waitLine(String what, int party, int needed, String against) {
+        return "waiting on " + what + ": " + party + (party == 1 ? " soldier" : " soldiers") + " to send, " + needed
+                + " needed against " + against;
     }
 
     /** How a sighting was made, as a line says it. */

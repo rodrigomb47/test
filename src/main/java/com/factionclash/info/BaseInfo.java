@@ -297,7 +297,7 @@ public final class BaseInfo {
             long age = (now - r.observedAt) / 20;
             boolean stale = r.kind.canGoStale && now - r.observedAt > FCConfig.REPORT_STALE_TICKS.get();
             out.add(r.kind.label + " at " + r.pos.getX() + ", " + r.pos.getZ() + (r.subject != null ? " [" + r.subject.displayName + "]" : "")
-                    + " - " + r.note + (r.losses > 0 ? "; " + r.losses + " of its soldiers seen falling at our walls since" : "")
+                    + " - " + r.note
                     + " (seen " + age + "s ago by " + r.by + (stale ? ", STALE" : "") + ")");
         }
         return out;

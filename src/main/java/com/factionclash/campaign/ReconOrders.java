@@ -20,8 +20,8 @@ import java.util.UUID;
  * records.
  *
  * <p>An order is written at the station; a scout takes it at home ({@link #take}) and tells at the station what it saw of
- * the target ({@link #atStation}). No scout takes one before task R4b, so until then an order waits untaken and is dropped
- * after half a day; R5 switches the council's judgement to the recons the orders bring.
+ * the target ({@link #atStation}): a scout's recon trip since task R4b, and the council judges by the recons the orders
+ * bring since task R5.
  */
 public final class ReconOrders {
     private ReconOrders() {

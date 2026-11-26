@@ -73,13 +73,17 @@ class LeaderBiasesTest {
         assertEquals(36000, n.firstRaidTicks(36000));
         contains(director, "t - f.lastRaidAt < interval / 4", "FactionDirector");
         assertEquals(0.25, n.counterWindow(), EPS);
-        contains(director, "!intervalOver && Intel.threeToTwo(partyPower, defencePower, unit)", "FactionDirector");
+        // (since the focused reconnaissance's switch, task R5, the verdict on the plan is ReconRules.verdict: two thirds
+        // at the interval, 3 to 2 inside it against a faction that struck us)
+        String rules = source("logic/campaign/ReconRules.java");
+        contains(director, "ReconRules.verdict(intervalOver, struck, partyPower, targetPlan.power(), targetPlan.unit())", "FactionDirector");
+        contains(rules, "return struckSinceLastRaid && Intel.threeToTwo(party, plan, unit)", "ReconRules");
         contains(source("logic/campaign/Intel.java"), "Math.round(Math.max(0, defence) / unit * 3 / 2)", "Intel");
         assertEquals(1.5, n.counterOdds(), EPS);
         // (two thirds of the defence in whole soldiers, and the third kept at home: Intel since the review of the
         // knowledge review, 2026-11-19)
         String intel = source("logic/campaign/Intel.java");
-        contains(director, "intervalOver && Intel.twoThirds(partyPower, defencePower, unit)", "FactionDirector");
+        contains(rules, "return Intel.twoThirds(party, plan, unit) ? Verdict.ATTACK : Verdict.WAIT", "ReconRules");
         contains(intel, "Math.floor(heads * 2 / 3 + TIE)", "Intel");
         assertEquals(2.0 / 3, n.attackOdds(), EPS);
         contains(director, "Intel.partySize(soldiers.size(), draftable.size()", "FactionDirector");
@@ -89,7 +93,7 @@ class LeaderBiasesTest {
         }
         contains(director, "f.raiders.size() * 2 < f.raidParty", "FactionDirector");
         assertEquals(0.5, n.fallBackShare(), EPS);
-        contains(director, "double score = defence * 1000.0 + Math.sqrt(", "FactionDirector");
+        contains(director, "double score = plan.heads() * 1000.0 + distance;", "FactionDirector");
         for (double d : new double[]{0, 3, 7.5}) {
             for (double dist : new double[]{0, 40, 250}) {
                 assertEquals(d * 1000 + dist, n.targetCost(d, dist, 0.6, false, true), 1e-9, "today's target cost");

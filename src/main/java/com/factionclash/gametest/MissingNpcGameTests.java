@@ -501,6 +501,15 @@ public final class MissingNpcGameTests {
         }
     }
 
+    /** The faction's scouts watched the yard of its report of {@code target} empty again at {@code at} (a fresh recon). */
+    private static void watchedEmpty(FactionState f, BaseState target, long at) {
+        for (Report r : f.knowledge) {
+            if (r.base() && r.pos.equals(target.center)) {
+                r.recon = KnowledgeGameTests.counted(0, 0, at, java.util.Map.of());
+            }
+        }
+    }
+
     /** A far settlement of the Grove the faction's scouts reported (no one of it lives there): a raid target. */
     private static BaseState reportedTarget(GameTestBases.Handle t, FactionState f, long now) {
         BaseState target = new BaseState();
@@ -510,7 +519,7 @@ public final class MissingNpcGameTests {
         target.name = "Missing review raid target";
         t.data.addBase(target);
         Report seen = new Report(Report.Kind.ENEMY_BASE, target.center, now, FactionType.GROVE_COVENANT, 0, "");
-        seen.look = new com.factionclash.logic.campaign.Intel.Look(0, 1.0, 0, 0, now); // its scouts saw the yard empty
+        seen.recon = KnowledgeGameTests.counted(0, 0, now, java.util.Map.of()); // its scout watched the yard empty
         f.knowledge.add(seen);
         long oldStarted = t.data.startedAt, oldLastRaid = f.lastRaidAt, oldRaidStarted = f.raidStartedAt, oldRally = f.raidRally,
                 oldMustered = f.raidMusteredAt, oldPlan = f.raidPlanTicks;
@@ -591,6 +600,7 @@ public final class MissingNpcGameTests {
             raids(t, f, later - 2);
             t.assertTrue(f.raidTarget < 0 && f.raidEndNews != null, "the council gave the raid up before its plan and the grace passed");
             f.lastRaidAt = later - interval - 1;
+            watchedEmpty(f, target, later); // (a recon is fresh for half a day: its scouts watched the yard again)
             raids(t, f, later);
             t.assertTrue(f.raidTarget == target.id && f.raidEndNews == null, "past the raid's bound the council should plan again");
             // a raid whose one raider dies in sight of home: the council knows the party is gone and plans again at once

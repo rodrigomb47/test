@@ -56,14 +56,14 @@ class ReconTest {
     @Test
     void noEstimateWithoutAFreshGoodRecon() {
         long at = 50_000;
-        assertNull(Intel.estimateRecon(null, at), "nobody watched");
+        assertNull(Intel.estimate(null, at), "nobody watched");
         Recon blind = recon(0, 0, false, 1200, at);
-        assertNull(Intel.estimateRecon(blind, at), "a blind recon is never 'about 0'");
-        assertNull(Intel.estimateRecon(recon(4, 20, false, 1200, at), at), "20 of 25 without the middle is blind too");
-        assertNull(Intel.estimateRecon(recon(4, 12, true, 599, at), at), "a watch cut short before 600");
+        assertNull(Intel.estimate(blind, at), "a blind recon is never 'about 0'");
+        assertNull(Intel.estimate(recon(4, 20, false, 1200, at), at), "20 of 25 without the middle is blind too");
+        assertNull(Intel.estimate(recon(4, 12, true, 599, at), at), "a watch cut short before 600");
         Recon good = recon(4, 12, true, 1200, at);
-        assertNotNull(Intel.estimateRecon(good, at + 12000), "fresh for half a day");
-        assertNull(Intel.estimateRecon(good, at + 12001), "stale: a new recon, never an assumption");
+        assertNotNull(Intel.estimate(good, at + 12000), "fresh for half a day");
+        assertNull(Intel.estimate(good, at + 12001), "stale: a new recon, never an assumption");
         assertTrue(Intel.usable(good, at + 12000));
         assertFalse(Intel.usable(good, at + 12001));
     }
@@ -73,18 +73,18 @@ class ReconTest {
         long at = 50_000;
         Recon r = new Recon(4, 1.8, Map.of("hinae", 6.8), Intel.coverage(10), true, 1200, at, "pillar 13", "Edrin Cole",
                 Set.of(java.util.UUID.randomUUID()));
-        Intel.Estimate e = Intel.estimateRecon(r, at + 6000);
+        Intel.Estimate e = Intel.estimate(r, at + 6000);
         assertEquals(4, e.soldiers(), 1e-9, "the faces counted, with no extrapolation to the yard out of view");
         assertEquals(1.8, e.power(), 1e-9);
         assertEquals(6.8, e.heroPower(), 1e-9, "only the heroes of that watch");
         assertEquals(4, e.heads());
         Recon emptyYard = new Recon(0, 0, Map.of(), Intel.coverage(25), true, 1200, at, "pillar 12", "Edrin Cole", Set.of());
-        Intel.Estimate empty = Intel.estimateRecon(emptyYard, at);
+        Intel.Estimate empty = Intel.estimate(emptyYard, at);
         assertEquals(0, empty.soldiers(), 1e-9, "a good look at an empty yard is a real 'about 0'");
         assertEquals(1, empty.power(), 1e-9, "a bare soldier when none was seen");
         assertEquals(0, empty.heroPower(), 1e-9);
         // the same estimate however old within the freshness: no drift, no fading
-        assertEquals(e, Intel.estimateRecon(r, at + 12000));
+        assertEquals(e, Intel.estimate(r, at + 12000));
     }
 
     // ---- 3. Merging (recon.md 4's table; the pure rule, which R2's Report.mergeBase will follow) ----
@@ -293,6 +293,23 @@ class ReconTest {
         assertTrue(ReconRules.struckSince(120, 100));
         assertFalse(ReconRules.struckSince(100, 100), "struck at the launch of our last raid: before it");
         assertFalse(ReconRules.struckSince(0, 0), "never struck");
+    }
+
+    /**
+     * Task R5: the counter-attack rests on the urgent recon, a good one made since the strike; one from before it watched a
+     * garrison whose raiders had not yet been beaten at our walls. A later strike dates the strike again.
+     */
+    @Test
+    void aCounterAttackRestsOnAReconMadeSinceTheStrike() {
+        long strike = 50_000;
+        assertTrue(ReconRules.answersStrike(strike + 1, strike), "the urgent recon, made after the strike");
+        assertFalse(ReconRules.answersStrike(strike, strike), "made at the strike's own tick");
+        assertFalse(ReconRules.answersStrike(strike - 4000, strike), "a fresh recon from before the strike");
+        long again = strike + 3000;
+        assertFalse(ReconRules.answersStrike(strike + 1000, again), "a recon between two strikes no longer answers the second");
+        // the same line the urgent order draws: a recon that answers the strike stops the urgent order, one that does not
+        assertEquals(!ReconRules.answersStrike(strike - 4000, strike), ReconRules.urgentQualifies(judged(strike - 4000), strike + 700, false, strike));
+        assertEquals(!ReconRules.answersStrike(strike + 1, strike), ReconRules.urgentQualifies(judged(strike + 1), strike + 700, false, strike));
     }
 
     /** A weaker base of a faction that did not strike us does not stop the counter-attack on the striker's. */

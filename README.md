@@ -509,12 +509,13 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1167 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1158 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
-  a faction knows of an enemy base: a garrison nobody saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
-  at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
-  soldiers (from 7 soldiers against a garrison like its own, whatever the gear), a counter-attack's 3 to 2, the party
-  rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
+  a faction knows of an enemy base: only a scout's focused recon, good (8 of the 25 yard points and its middle, half a
+  minute's watch) and fresh (half a day), the faces counted with no extrapolation, the plan of half again the count
+  (none at a lair or in a counter-attack) and the council's lines, a counter-attack only on a recon made since the
+  strike, two thirds in whole soldiers (a party goes against as many counted as it sends, whatever the gear), a
+  counter-attack's 3 to 2, the party rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
   list or true fall, and hero code reads kill credit only for its presentation lines; the roll call: when an away member is missing and presumed
   dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
   under the old rule, the council's wait for its raid's news, a day's remote work expected back at nightfall, a hero's own fall, a hero's faction lines heard only
@@ -577,7 +578,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 434 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 438 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -587,13 +588,14 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   corner outside the standoff, and the target backs off;
   a patrol below the pillar keeps it up, a hit or a broken block brings it down, good only past 600 ticks; a lair is
   watched from the ground through a gap; a dead scout's report is lost, its order lapses once it goes missing by its
-  recon trip's plan and a follow-up scout is wanted; a second scout for an order nobody took), **what a faction knows** (a
-  council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
-  defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
-  and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
-  attack a garrison like their own; ruins seen stay ruins when only the yard is seen again; a raid party turns home by
-  its plan and home never gives up a raider still fighting, nor pulls one off its party; a scout counts no soldier
-  behind a wall; a party that broke its target's heart brings the ruins home;
+  recon trip's plan and a follow-up scout is wanted; a second scout for an order nobody took; the council's switch: no
+  launch on a passing look, which counts nobody, only on a focused recon, "against an empty yard (scout Edrin Cole,
+  day N) and no soldier of theirs seen away"; enemy soldiers killed at our walls move no estimate and bring an urgent
+  recon, and the counter-attack goes 3 to 2 on it; a weaker bystander does not block it; a blind or stale recon is no
+  estimate; a raid party's look is none; ten soldiers send six against six counted and wait on seven; a hero counts
+  only in the watch that saw her; old reports load as positions), **what a faction knows** (ruins seen stay ruins when
+  only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
+  pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
   wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge
   twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;

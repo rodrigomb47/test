@@ -267,4 +267,48 @@ class ReserveTest {
         assertEquals("a quarter again", Reserve.shareWords(0.25));
         assertEquals("as many again", Reserve.shareWords(1.0));
     }
+    // ---- 15. The council's lines (recon.md 5.4, task R5; the sightings' forms come with R11) ----
+
+    @Test
+    void theLinesSayWhatThePlanRestsOn() {
+        Map<String, String> names = Map.of("hinae", "Hinae Shirasuzu", "benika", "Benika");
+        // the share's reason, and a hero the watch saw
+        Plan four = plan(counted(4, 1.5, Map.of("hinae", 6.8), Set.of()), List.of());
+        String against = Reserve.defenceText(four, false, "Stoneguard", names);
+        assertEquals("about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4 counted)", against);
+        assertEquals("Launching a raid with 7 soldiers on the Stoneguard settlement reported at 400, 67, 16, against " + against,
+                Reserve.launchLine(7, "the Stoneguard settlement", "400, 67, 16", against));
+        assertEquals("waiting on the Stoneguard settlement: 6 soldiers to send, 7 needed against " + against,
+                Reserve.waitLine("the Stoneguard settlement", 6, 7, against));
+        // the design's example: 4 counted at 1.5, Hinae at 6.8 and a reserve of 2 need 7 soldiers of the same gear
+        assertEquals(7, Reserve.needed(four, 1.5, false), "two thirds of the plan in whole soldiers");
+        assertEquals(6, Reserve.needed(plan(counted(6), List.of()), 1.0, false), "6 counted, plan 9: two thirds is 6");
+        assertEquals(3, Reserve.needed(Reserve.plan(counted(2), NOW, Reserve.share(false, true), List.of(), REVIVE), 1.0, true),
+                "a counter-attack on 2 counted, no share: 3 to 2 is 3");
+        // an empty yard
+        assertEquals("an empty yard (scout Edrin Cole, day 5) and no soldier of theirs seen away",
+                Reserve.defenceText(plan(counted(0), List.of()), false, "Stoneguard", names));
+        // a hero alone: the backbone counts her at nothing, and the line says so
+        assertEquals("an empty yard but for Hinae Shirasuzu (alone: not counted) (scout Edrin Cole, day 5) and no soldier of theirs seen away",
+                Reserve.defenceText(plan(counted(0, 1, Map.of("hinae", 6.8), Set.of()), List.of()), false, "Stoneguard", names));
+        // two heroes and one soldier; an id no registry knows is shown as it is
+        Map<String, Double> two = new java.util.LinkedHashMap<>();
+        two.put("hinae", 6.8);
+        two.put("unknown_hero", 4.0);
+        assertEquals("about 1 defender, Hinae Shirasuzu and unknown_hero (scout Edrin Cole, day 5) and a reserve of 1 (half again the 1 counted)",
+                Reserve.defenceText(plan(counted(1, 1, two, Set.of()), List.of()), false, "Stoneguard", names));
+        // a counter-attack's plan has no reserve
+        assertEquals("about 3 defenders (scout Edrin Cole, day 5) and no soldier of theirs seen away",
+                Reserve.defenceText(Reserve.plan(counted(3), NOW, Reserve.share(false, true), List.of(), REVIVE), false, "Stoneguard", names));
+        // a lair: its monsters, and no reserve in its line
+        Plan lair = Reserve.plan(counted(6), NOW, Reserve.share(true, false), List.of(), REVIVE);
+        assertEquals("about 6 monsters (scout Edrin Cole, day 5)", Reserve.defenceText(lair, true, "The Hollow", names));
+        assertEquals("no monsters (scout Edrin Cole, day 5)", Reserve.defenceText(Reserve.plan(counted(0), NOW, 0, List.of(), REVIVE), true, "The Hollow", names));
+        // an operator's raid with no usable recon
+        assertEquals("Launching a raid with 1 soldier on the Hollow lair reported at 1, 2, 3, with no scout's report of it",
+                Reserve.launchLine(1, "the Hollow lair", "1, 2, 3", null));
+        // a recon with no scout's name
+        Recon unnamed = new Recon(2, 1, Map.of(), Intel.coverage(12), true, 1200, NOW - 1000, "pillar 13", "", Set.of());
+        assertTrue(Reserve.defenceText(plan(unnamed, List.of()), false, "Stoneguard", names).contains("(a scout's watch, day 5)"));
+    }
 }
