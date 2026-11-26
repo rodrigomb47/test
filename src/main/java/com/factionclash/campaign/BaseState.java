@@ -98,6 +98,13 @@ public final class BaseState {
      */
     public transient int testHalf = -1;
     public transient int testRadius = -1;
+    /**
+     * GameTests only, never saved: the vantage band a recon scout watches this base from (recon.md 10.2: the real 61 to
+     * 72 blocks do not fit a test field), its nearest (Chebyshev) and farthest (horizontal) distance from the centre;
+     * -1 = the real one ({@code ReconRules.Band.of}).
+     */
+    public transient int testStandoff = -1;
+    public transient int testSight = -1;
 
     // Lair state
     public final Set<UUID> lairMobs = new HashSet<>();

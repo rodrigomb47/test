@@ -246,7 +246,7 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   with the 7.5 reach, every log can then be cut from the ground), or up to 32 (MAX_TALL_DY) when the woodcutter has
   the dirt for a scaffold (below). Species: oak, birch, spruce, jungle, acacia, dark oak and cherry; not mangrove,
   nether stems, stripped logs or other mods' logs.
-* Scaffold (PROPOSED, `TreeShape.pillarSpot`, `Scaffold`, `WoodcutterJob`): a tree with a log the ground does not
+* Scaffold (PROPOSED, `TreeShape.pillarSpot`, `Scaffold`, `PillarClimb`, `WoodcutterJob`): a tree with a log the ground does not
   reach (higher than 8, or a branch end neither the stump's column nor the ground under it reaches) is felled from a
   pillar of dirt or coarse dirt (only earth: stone, cobblestone and netherrack drop nothing without a pickaxe, and the
   builders' tool-stone reserve is never touched). The pillar stands in one of the columns beside the trunk (8
@@ -265,7 +265,7 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   the column's middle, cuts a vine out of the cell its feet are in (standing in vines a jump lifts it only half a
   block; giant jungle trunks are hung with them on every side) and natural leaves or the tree's logs in the cell
   above its head, jumps, and places a block in the cell its feet left once they are above it (vanilla jump: about 9
-  ticks a block); 6 jumps without a block (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, strictly top down (while a log above 8
+  ticks a block); 6 jumps without a block (PillarClimb.MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, strictly top down (while a log above 8
   stands out of reach at that log's height or higher, nothing below it is cut, so a climb cut short leaves nothing
   hanging), then natural leaves of the crown
   (within 5/6 of the stump) within 5.5; nothing left in reach, it breaks the block underfoot at player speed (dirt by

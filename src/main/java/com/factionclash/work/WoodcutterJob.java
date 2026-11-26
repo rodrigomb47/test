@@ -116,8 +116,6 @@ public class WoodcutterJob extends Job {
     static final int KEEP_SAPLINGS = 8, KEEP_BONE_MEAL = 16;
     /** How far it reaches for leaves (eyes to the block's centre), from the ground or from its scaffold. */
     static final double LEAF_REACH = 5.5;
-    /** PROPOSED: jumps on the scaffold that land without a block going in under it before the pillar stops there. */
-    static final int MAX_MISSES = 6;
     /** PROPOSED: pillars built for one tree before what is left of it is cut from the ground as far as it goes. */
     static final int MAX_PILLARS_PER_TREE = 3;
     /** PROPOSED: tries at taking down scaffold blocks left standing before they are given up. */
@@ -1408,7 +1406,7 @@ public class WoodcutterJob extends Job {
             state = State.CHECK;
             return;
         }
-        if (p.phase != Scaffold.Phase.WALK && !Scaffold.overColumn(npc, p.base, 0.8)) {
+        if (PillarClimb.offColumn(npc, p)) {
             strayPillar();
             return;
         }
@@ -1459,12 +1457,9 @@ public class WoodcutterJob extends Job {
         if (p == null || p.down != null) {
             return;
         }
-        p.down = why;
         breaker.reset(npc);
-        if (p.phase == Scaffold.Phase.WALK || p.height == 0 && npc.onGround() && p.phase != Scaffold.Phase.DOWN) {
-            endPillar();
-        } else if (p.phase != Scaffold.Phase.DOWN) {
-            p.phase = Scaffold.Phase.WORK; // (lands first, then steps down without cutting)
+        if (PillarClimb.comeDown(npc, p, why)) {
+            endPillar(); // (else it lands first, then steps down without cutting)
         }
     }
 
@@ -1532,8 +1527,7 @@ public class WoodcutterJob extends Job {
                 return;
             }
         }
-        boolean there = Scaffold.overColumn(npc, p.base, 0.7) && Math.abs(npc.getY() - p.base.getY()) < 0.5 && npc.onGround();
-        if (!there) {
+        if (!PillarClimb.atFoot(npc, p)) {
             if (walkFailed()) {
                 if (p.strays) {
                     pillar = null;
@@ -1548,12 +1542,7 @@ public class WoodcutterJob extends Job {
             goTo(p.base, 0.7, p.strays ? "scaffold blocks left standing" : "the foot of its scaffold");
             return;
         }
-        npc.getNavigation().stop();
-        npc.setPos(p.base.getX() + 0.5, npc.getY(), p.base.getZ() + 0.5);
-        p.height = 0;
-        p.airTicks = 0;
-        p.misses = 0;
-        p.phase = p.goal > 0 ? Scaffold.Phase.CLIMB : Scaffold.Phase.WORK;
+        PillarClimb.begin(npc, p);
     }
 
     /**
@@ -1564,56 +1553,46 @@ public class WoodcutterJob extends Job {
      */
     private void climb(WorkplaceState wp) {
         Scaffold.Pillar p = pillar;
-        Scaffold.holdStill(npc, p.base);
-        if (!npc.onGround()) {
-            p.airTicks++;
-            BlockPos cell = p.feet();
-            if (!p.placed && npc.getY() >= cell.getY() + 1.0 && Scaffold.place(npc, cell)) {
-                p.placed = true;
-                p.height++;
+        switch (PillarClimb.climb(npc, p, breaker, climber(wp))) {
+            case VINES -> status("Cutting the vines off its scaffold's column", "Chopping");
+            case JUMP -> status((p.strays ? "Building a scaffold to take down another (" : "Building a scaffold up the " + treeName() + " (")
+                    + p.height + " high)", "Building");
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * The woodcutter's side of the climb ({@link PillarClimb.Climber}): the woodland notes each pillar it builds (should
+     * it die up there, the next woodcutter takes it down); natural leaves or the tree's own logs over its head are cut on
+     * the way up (the pillar ends under anything else); and the step down's status line.
+     */
+    private PillarClimb.Climber climber(WorkplaceState wp) {
+        return new PillarClimb.Climber() {
+            @Override
+            public void placed(Scaffold.Pillar p) {
                 if (wp != null && wp.addScaffold(p.base)) {
                     data().setDirty(); // the woodland knows it stands, should this woodcutter die up there
                 }
             }
-            return;
-        }
-        if (p.airTicks > 0 && !p.placed) {
-            p.misses++; // landed back where it jumped from
-        }
-        p.airTicks = 0;
-        p.placed = false;
-        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
-        if (p.height >= p.goal || p.misses >= MAX_MISSES || Scaffold.carried(npc) == 0) {
-            p.goal = p.height;
-            p.phase = Scaffold.Phase.WORK;
-            return;
-        }
-        BlockPos feet = p.feet();
-        BlockState here = level().getBlockState(feet);
-        if (here.is(BlockTags.CLIMBABLE) && here.canBeReplaced()) {
-            // vines down the trunk: standing in them, a jump only lifts it half a block (it would hang on them), so it
-            // cuts them away first, as a player clears the vines off the spot it pillars up from
-            status("Cutting the vines off its scaffold's column", "Chopping");
-            breaker.tick(npc, feet);
-            return;
-        }
-        BlockPos over = feet.above(2);
-        BlockState s = level().getBlockState(over);
-        if (!s.getCollisionShape(level(), over).isEmpty()) {
-            if (cuttableLeaves(over) || logs.contains(over) && treeLog(over)) {
-                status("Cutting through the canopy above its scaffold", "Chopping");
-                if (chopBlock(wp, over) && logs.remove(over)) {
-                    logCut(wp, over);
+
+            @Override
+            public boolean clearOverhead(Scaffold.Pillar p, BlockPos over) {
+                if (cuttableLeaves(over) || logs.contains(over) && treeLog(over)) {
+                    status("Cutting through the canopy above its scaffold", "Chopping");
+                    if (chopBlock(wp, over) && logs.remove(over)) {
+                        logCut(wp, over);
+                    }
+                    return true;
                 }
-                return;
+                return false;
             }
-            p.goal = p.height; // something else overhead (it changed since the survey): the pillar ends here
-            p.phase = Scaffold.Phase.WORK;
-            return;
-        }
-        status((p.strays ? "Building a scaffold to take down another (" : "Building a scaffold up the " + treeName() + " (")
-                + p.height + " high)", "Building");
-        npc.getJumpControl().jump();
+
+            @Override
+            public void breaking(Scaffold.Pillar p) {
+                status("Taking the scaffold down (" + p.height + " high" + (p.down != null ? ", " + p.down : "") + ")", "Building");
+            }
+        };
     }
 
     /**
@@ -1624,11 +1603,9 @@ public class WoodcutterJob extends Job {
      */
     private void workFromPillar(WorkplaceState wp) {
         Scaffold.Pillar p = pillar;
-        Scaffold.holdStill(npc, p.base);
-        if (!npc.onGround()) {
+        if (!PillarClimb.settled(npc, p)) {
             return; // still dropping onto the block below
         }
-        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
         if (p.down == null && wp != null) {
             if (p.strays) {
                 BlockPos block = nextStray();
@@ -1660,11 +1637,9 @@ public class WoodcutterJob extends Job {
                 }
             }
         }
-        if (p.height == 0) {
+        if (!PillarClimb.down(p)) {
             endPillar();
-            return;
         }
-        p.phase = Scaffold.Phase.DOWN;
     }
 
     /**
@@ -1673,36 +1648,13 @@ public class WoodcutterJob extends Job {
      * from the backpack is put back under it first, so the drop is never more than a block.
      */
     private void stepDown() {
-        Scaffold.Pillar p = pillar;
-        Scaffold.holdStill(npc, p.base);
-        if (!npc.onGround()) {
-            return;
-        }
-        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
-        BlockPos under = p.top();
-        if (under == null) {
-            endPillar();
-            return;
-        }
-        BlockState s = level().getBlockState(under);
-        if (s.getCollisionShape(level(), under).isEmpty()) {
-            p.phase = Scaffold.Phase.WORK; // nothing under it after all: it drops, then looks again
-            return;
-        }
-        BlockPos below = under.below();
-        if (p.height >= 2 && level().getBlockState(below).getCollisionShape(level(), below).isEmpty() && Scaffold.place(npc, below)) {
-            return;
-        }
-        status("Taking the scaffold down (" + p.height + " high" + (p.down != null ? ", " + p.down : "") + ")", "Building");
-        if (s.hasBlockEntity() || s.getDestroySpeed(level(), under) < 0) {
+        switch (PillarClimb.stepDown(npc, pillar, breaker, climber(null))) {
+            case GROUND -> endPillar();
             // not a block it can break (someone put it there): left to the stuck recovery, which digs or bridges down;
             // the scaffold blocks still standing are noted, to be taken down from beside
-            strayPillar();
-            return;
-        }
-        if (breaker.tick(npc, under)) {
-            p.height--;
-            p.phase = Scaffold.Phase.WORK;
+            case STUCK -> strayPillar();
+            default -> {
+            }
         }
     }
 
@@ -1805,10 +1757,8 @@ public class WoodcutterJob extends Job {
      * taken down from beside ({@link #startStrayCleanup}); the tree is finished afterwards.
      */
     private void strayPillar() {
-        Scaffold.Pillar p = pillar;
-        for (int k = 0; k <= p.height + 1; k++) {
-            BlockPos c = p.base.above(k);
-            if (Scaffold.isBlock(level().getBlockState(c)) && !strays.contains(c) && strays.size() < 64) {
+        for (BlockPos c : PillarClimb.standing(level(), pillar)) {
+            if (!strays.contains(c) && strays.size() < 64) {
                 strays.add(c);
             }
         }

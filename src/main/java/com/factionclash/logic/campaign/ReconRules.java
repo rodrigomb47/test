@@ -14,8 +14,9 @@ import java.util.List;
  * vantage band and the side order, the climb, the hold on the pillar, and which targets the council may judge inside its
  * raid interval. The report itself is {@link Intel.Recon}; the plan built on it is {@link Reserve}.
  *
- * <p>Task R1, additive: nothing in the game reads these rules yet (R3 places orders, R4a and R4b run the scout, R5
- * switches the council).
+ * <p>Task R1, additive: R3 places orders by them, R4a's column search ({@code work.ReconVantage}) reads the side order,
+ * the band and the columns' order ({@link Band} and {@link #GROUND_ORDER} came with it), R4b runs the scout and R5
+ * switches the council.
  */
 public final class ReconRules {
     private ReconRules() {
@@ -373,9 +374,26 @@ public final class ReconRules {
      * {@link #LAIR_SIGHT}.
      */
     public static boolean inBand(int dx, int dz, boolean lair) {
-        int standoff = lair ? LAIR_STANDOFF : STANDOFF;
-        long sight = lair ? LAIR_SIGHT : SIGHT;
-        return Math.max(Math.abs(dx), Math.abs(dz)) >= standoff && (long) dx * dx + (long) dz * dz <= sight * sight;
+        return inBand(dx, dz, Band.of(lair));
+    }
+
+    /**
+     * A vantage band: the nearest its columns come to the base's centre ({@code standoff}, Chebyshev), the farthest
+     * ({@code sight}, horizontal) and how far they lie to either side of the side's axis ({@code lateral}). The game uses
+     * {@link #of}; a GameTest base gives a scaled one (its transient {@code testStandoff} and {@code testSight}), since
+     * the real band does not fit a test field.
+     */
+    public record Band(int standoff, int sight, int lateral) {
+        /** A settlement's ({@link #STANDOFF} to {@link #SIGHT}, {@link #LATERAL} to either side) or a lair's (on the axis). */
+        public static Band of(boolean lair) {
+            return lair ? new Band(LAIR_STANDOFF, LAIR_SIGHT, 0) : new Band(STANDOFF, SIGHT, LATERAL);
+        }
+    }
+
+    /** Whether a column {@code dx}, {@code dz} from a base's centre lies in {@code band} (as {@link #inBand(int, int, boolean)}). */
+    public static boolean inBand(int dx, int dz, Band band) {
+        long sight = band.sight();
+        return Math.max(Math.abs(dx), Math.abs(dz)) >= band.standoff() && (long) dx * dx + (long) dz * dz <= sight * sight;
     }
 
     /** A vantage column: where it is from the base's centre, how far off the side's axis and how far out along it. */
@@ -386,25 +404,55 @@ public final class ReconRules {
      * A side's vantage columns in the band, in the order the scout prefers them (recon.md 3.5): on the side's axis first,
      * then one block off it, and so on to {@link #LATERAL} (the left before the right); at each, the nearest the standoff
      * first. A lair's are on the gap's axis only, on the ground (3.7). The game side keeps only the ones it can walk to with
-     * a solid top and open sky, and may prefer the higher ground among them.
+     * a solid top and open sky ({@code work.ReconVantage}) and ranks them by {@link #GROUND_ORDER}, which prefers the
+     * higher ground along each line.
      */
     public static List<Column> columns(Side side, boolean lair) {
-        int standoff = lair ? LAIR_STANDOFF : STANDOFF;
-        int lateral = lair ? 0 : LATERAL;
+        return columns(side, Band.of(lair));
+    }
+
+    /** A side's vantage columns in {@code band}, in the order of {@link #columns(Side, boolean)}. */
+    public static List<Column> columns(Side side, Band band) {
         List<Column> out = new ArrayList<>();
-        for (int off = 0; off <= lateral; off++) {
+        for (int off = 0; off <= band.lateral(); off++) {
             for (int sign : off == 0 ? new int[]{1} : new int[]{-1, 1}) {
                 int l = off * sign;
-                for (int depth = standoff; ; depth++) {
+                for (int depth = band.standoff(); ; depth++) {
                     int dx = side.dx != 0 ? side.dx * depth : l;
                     int dz = side.dz != 0 ? side.dz * depth : l;
-                    if (!inBand(dx, dz, lair)) {
+                    if (!inBand(dx, dz, band)) {
                         break;
                     }
                     out.add(new Column(dx, dz, l, depth));
                 }
             }
         }
+        return out;
+    }
+
+    /**
+     * A vantage column the scout can stand on (the game side found it walkable ground with a solid top, open sky, a
+     * loaded chunk, and in no base's plan or alarm box): the column, and how high its standing ground lies above the
+     * target's floor, in blocks (negative below it).
+     */
+    public record Ground(Column column, int rise) {
+    }
+
+    /**
+     * The order in which the scout prefers the columns it can stand on (recon.md 3.5, task R4a): the side's axis first,
+     * then one block off it, and so on (the left before the right, as {@link #columns}), since a column off the axis of a
+     * grown base needs up to 4 blocks more of pillar (table 3.3); along each line, the highest standing ground first (a
+     * shorter pillar), then the nearest the standoff. On flat land this is {@link #columns}' order.
+     */
+    public static final Comparator<Ground> GROUND_ORDER = Comparator.comparingInt((Ground g) -> Math.abs(g.column().lateral()))
+            .thenComparingInt(g -> g.column().lateral())
+            .thenComparingInt(g -> -g.rise())
+            .thenComparingInt(g -> g.column().depth());
+
+    /** {@code found} in {@link #GROUND_ORDER}, best first (a new list). */
+    public static List<Ground> rank(Collection<Ground> found) {
+        List<Ground> out = new ArrayList<>(found);
+        out.sort(GROUND_ORDER);
         return out;
     }
 

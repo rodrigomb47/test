@@ -20,7 +20,8 @@ import java.util.Locale;
  * A woodcutter's scaffold pillar, as a player "nerd-poles" up beside a trunk too tall to fell from the ground: it
  * jumps and places a block under its feet, again and again, fells the tree from up there, and breaks the pillar
  * block under its feet on the way down, the blocks going back into its backpack. This class holds what the pillar is
- * made of, its saved state and the placing itself; {@link WoodcutterJob} drives it.
+ * made of, its saved state and the placing itself; {@link PillarClimb} drives it, for {@link WoodcutterJob} and (task
+ * R4b) the recon scout, which climbs the same way where it can see over an enemy's walls.
  *
  * <p>Only earth is used (dirt, coarse dirt): it comes back by hand at player speed. Stone, cobblestone and netherrack
  * need a pickaxe to drop anything, which a woodcutter does not carry, so they would be slow to break and lost.</p>
@@ -32,7 +33,7 @@ public final class Scaffold {
     /** PROPOSED: scaffold blocks fetched from the storehouse for a tall tree, and kept in the backpack when unloading. */
     public static final int CARRY = 32;
 
-    /** True for an item the woodcutter builds its scaffold with: dirt or coarse dirt. */
+    /** True for an item a scaffold pillar is built with: dirt or coarse dirt. */
     public static boolean isItem(ItemStack s) {
         return s.is(Items.DIRT) || s.is(Items.COARSE_DIRT);
     }
@@ -102,13 +103,16 @@ public final class Scaffold {
         }
     }
 
-    /** What the woodcutter is doing with its pillar. */
+    /** What the climber is doing with its pillar. */
     public enum Phase {
         /** Walking to the column's foot. */
         WALK,
         /** Jumping and placing a block underfoot, block by block, up to the planned height. */
         CLIMB,
-        /** Cutting what is within reach (logs top first, then leaves), then stepping down one block. */
+        /**
+         * Working from where it stands (a woodcutter cuts what is within reach, logs top first, then leaves), then stepping
+         * down one block.
+         */
         WORK,
         /** Breaking the block underfoot (the step down). */
         DOWN
@@ -131,6 +135,8 @@ public final class Scaffold {
         int airTicks, misses;
         /** A block went in under it on the current jump. */
         boolean placed;
+        /** The height of the climb's last look ({@link PillarClimb.Climber#look}; -1: none yet). Not saved. */
+        int looked = -1;
 
         public Pillar(BlockPos base, int goal, boolean strays) {
             this.base = base.immutable();
@@ -138,7 +144,7 @@ public final class Scaffold {
             this.strays = strays;
         }
 
-        /** The cell the woodcutter's feet are in while it stands on the pillar. */
+        /** The cell the climber's feet are in while it stands on the pillar. */
         public BlockPos feet() {
             return base.above(height);
         }

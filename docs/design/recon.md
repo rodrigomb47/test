@@ -391,6 +391,21 @@ monsters move by other rules. The live check measures the count against the trut
      farther; the band 61 to 72 gives the column search 12 blocks of depth instead of 3.
    * The east vantage lies inside the enemy's work belt (`BaseLayout.WORK_AREA_EAST` reaches 78 blocks), the west one
      just outside it (58): enemy workers may pass; they are civilians and do not attack.
+   * **As built (task R4a, `work/ReconVantage`).** The search returns every column of a side it can stand on, ranked by
+     `ReconRules.GROUND_ORDER`: the axis first, then each line one block farther off it (the left before the right);
+     along a line the highest standing ground first, then the nearest the standoff. So higher ground wins along a line
+     but never pulls the scout off the axis (a column off the axis of a grown base needs up to 4 blocks more of pillar,
+     table 3.3). "Can walk to" is read from the land: the band and 4 blocks round it, walked from that edge by steps of
+     at most one block up and drops of at most three, under leaves too; a column's top must be solid and not leaves, a
+     log, a block entity or a built block (`WorkSafety.builtBlock`: planks, cobblestone, glass, a roof). The base's plan
+     is tested block by block (the ground and the 22 cells over it), not on the plan's bounding box: a settlement's
+     plan holds its outside paths (the east landing and the path to the grove pad, 31 to 34 blocks out), so its box
+     would cover open ground. The alarm box is the walls' half plus 4 of every base still standing, the scout's own and
+     the target included (a GameTest base's own half; `FactionDirector.defenceAlarm` uses the layout's half for every
+     base, the same for real ones). The ground under a solid overhang is read at the overhang's top (the heightmap's),
+     so a lair's vantage under a rock ledge is not found; one under leaves is. The walk itself is R4b's: when the scout
+     cannot get to the first column, it takes the next. `PillarClimb` (beside `Scaffold`) is the climb and descent
+     the woodcutter drives, lifted out of `WoodcutterJob` unchanged, with the look at each block as a hook.
 4. **Climb and look.** At the foot it looks once from the ground: natural high ground may already be good. Then it pillars
    up as a woodcutter does (`Scaffold.place`, `Scaffold.holdStill`, a `Scaffold.Pillar` saved with the job), looking
    (`BaseWatch` recon sample, 3.6) after each block from 4 up. At the first height whose look is good it climbs
@@ -981,7 +996,7 @@ faction's own `FactionState.sightings`).
   lair, the night's wild monsters raise the count (3.7).
 * **Performance.** One sample is 25 rays plus a line of sight per soldier in the box, every 40 ticks, for each scout on a
   watch: the same as a passing look today. The climb adds one sample per block from 4 up (at most 17 a side), and the
-  column search reads at most 17 x 12 heightmap columns per side once. With at most two open orders per faction, that
+  column search reads at most 25 x 20 columns per side once (the band's 17 x 12 and 4 blocks round it, task R4a). With at most two open orders per faction, that
   is at most a few hundred rays a second across a campaign of four factions. Sightings: at home, one pass a second over
   the enemies in the home area while there are any (with the alarm's own sweep), a line of sight from the nearest
   members within 32; a scout's, with its existing look every 40 ticks.

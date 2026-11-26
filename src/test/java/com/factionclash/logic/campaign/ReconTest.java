@@ -367,6 +367,49 @@ class ReconTest {
     }
 
     @Test
+    void aScaledBandKeepsTheRulesOfTheRealOne() {
+        assertEquals(new ReconRules.Band(61, 72, 8), ReconRules.Band.of(false));
+        assertEquals(new ReconRules.Band(46, 64, 0), ReconRules.Band.of(true));
+        for (int dx = -80; dx <= 80; dx += 3) {
+            for (int dz = -80; dz <= 80; dz += 5) {
+                assertEquals(ReconRules.inBand(dx, dz, false), ReconRules.inBand(dx, dz, ReconRules.Band.of(false)), dx + "," + dz);
+                assertEquals(ReconRules.inBand(dx, dz, true), ReconRules.inBand(dx, dz, ReconRules.Band.of(true)), dx + "," + dz);
+            }
+        }
+        for (Side side : Side.values()) {
+            assertEquals(ReconRules.columns(side, false), ReconRules.columns(side, ReconRules.Band.of(false)));
+            assertEquals(ReconRules.columns(side, true), ReconRules.columns(side, ReconRules.Band.of(true)));
+        }
+        // a GameTest's band, scaled to a 32-block field: 10 to 13 from the centre, 8 to either side
+        ReconRules.Band test = new ReconRules.Band(10, 13, 8);
+        List<Column> east = ReconRules.columns(Side.EAST, test);
+        assertEquals(new Column(10, 0, 0, 10), east.get(0), "the axis, the nearest the standoff");
+        assertEquals(new Column(13, 0, 0, 13), east.get(3), "the axis reaches 13");
+        assertEquals(new Column(10, -1, -1, 10), east.get(4), "then one block off it, the left first");
+        assertEquals(42, east.size(), "4 on the axis, 3 a line up to 5 off, then 2, 1 and 1, on both sides");
+        assertTrue(east.stream().allMatch(c -> c.dx() >= 10 && c.dx() * c.dx() + c.dz() * c.dz() <= 169 && Math.abs(c.dz()) <= 8));
+        assertTrue(east.stream().anyMatch(c -> c.lateral() == 8 && c.depth() == 10));
+    }
+
+    @Test
+    void theScoutTakesTheAxisFirstThenAlongEachLineTheHighestGroundThenTheNearest() {
+        Side side = Side.EAST;
+        List<Column> cols = ReconRules.columns(side, false);
+        List<ReconRules.Ground> onFlat = cols.stream().map(c -> new ReconRules.Ground(c, 0)).toList();
+        assertEquals(onFlat, ReconRules.rank(new java.util.ArrayList<>(onFlat).reversed()),
+                "on flat land the order of the columns: the axis first, the nearest the standoff first");
+        Column axis61 = new Column(61, 0, 0, 61), axis64 = new Column(64, 0, 0, 64), axis66 = new Column(66, 0, 0, 66);
+        Column left1 = new Column(61, -1, -1, 61), right1 = new Column(61, 1, 1, 61), off5 = new Column(62, 5, 5, 62);
+        List<ReconRules.Ground> ranked = ReconRules.rank(List.of(new ReconRules.Ground(axis61, 0), new ReconRules.Ground(axis64, 3),
+                new ReconRules.Ground(axis66, 3), new ReconRules.Ground(off5, 9), new ReconRules.Ground(right1, 1),
+                new ReconRules.Ground(left1, 1)));
+        assertEquals(List.of(axis64, axis66, axis61, left1, right1, off5), ranked.stream().map(ReconRules.Ground::column).toList(),
+                "along the axis the higher ground first, then the nearer; a hill 9 high 5 off the axis comes after every line nearer it");
+        assertTrue(ReconRules.GROUND_ORDER.compare(new ReconRules.Ground(axis66, -2), new ReconRules.Ground(left1, 4)) < 0,
+                "a column on the axis in a dip comes before higher ground off it");
+    }
+
+    @Test
     void theSidesGoGateFacingHomeThenTheOtherGateThenFacingHomeThenTheLast() {
         int gates = Side.WEST.bit() | Side.EAST.bit();
         List<Side> fromSouthWest = ReconRules.sideOrder(-200, 150, gates);
