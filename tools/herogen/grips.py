@@ -123,6 +123,62 @@ def _depth_inside(local, box):
     return np.clip(d.min(axis=1), 0.0, None)
 
 
+def _oriented_box(c, world):
+    """A cube as an oriented box in a pose: (centre, axes as columns, half extents), its own rotation and inflate
+    included."""
+    r, t = world[c.bone]
+    lo, hi = np.array(c.box[:3], dtype=float), np.array(c.box[3:], dtype=float)
+    q = (lo + hi) / 2
+    axes = r
+    if c.rotation is not None:
+        m = file_matrix(c.rotation)
+        pv = np.array(c.pivot, dtype=float)
+        q = pv + m @ (q - pv)
+        axes = r @ m
+    return r @ q + t, axes, (hi - lo) / 2 + float(c.inflate or 0.0)
+
+
+def box_overlap(a, b):
+    """C4: how far two oriented boxes ((centre, axes, half extents), as `_oriented_box`) overlap: the shortest move
+    that parts them, over their 15 separating axes (0 when apart). `_depth_inside` cannot pass half a cube's thinnest
+    side; this reads a blade through a thin plate's middle as about half the plate's width, a graze as its depth and a
+    crossing near a rim as how far in from the rim it is."""
+    ca, ra, ha = a
+    cb, rb, hb = b
+    d = cb - ca
+    axes = [ra[:, i] for i in range(3)] + [rb[:, i] for i in range(3)]
+    for i in range(3):
+        for j in range(3):
+            x = np.cross(ra[:, i], rb[:, j])
+            n = float(np.linalg.norm(x))
+            if n > 1e-6:
+                axes.append(x / n)
+    best = None
+    for ax in axes:
+        ov = float(ha @ np.abs(ra.T @ ax) + hb @ np.abs(rb.T @ ax) - abs(d @ ax))
+        if ov <= 0.0:
+            return 0.0
+        best = ov if best is None else min(best, ov)
+    return best
+
+
+def worst_overlap(world, mine, theirs):
+    """C4: the largest `box_overlap` between any cube of `mine` and any of `theirs` in a pose's world transforms
+    (`Skeleton.world`), with the two cubes' names (None when nothing overlaps)."""
+    boxes = [(c, _oriented_box(c, world)) for c in theirs]
+    worst = (0.0, None)
+    for c in mine:
+        a = _oriented_box(c, world)
+        ra = float(np.linalg.norm(a[2]))
+        for c2, b in boxes:
+            if np.linalg.norm(b[0] - a[0]) > ra + float(np.linalg.norm(b[2])):
+                continue
+            v = box_overlap(a, b)
+            if v > worst[0]:
+                worst = (v, (c.name, c2.name))
+    return worst
+
+
 def measure(model, hero, pose_chans, sides=("r", "l")):
     """{"body": {(prop cube, body bone): depth px}, "low": lowest prop point, "grip2": distance or None} of the
     props in the hands in a pose."""

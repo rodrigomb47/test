@@ -133,7 +133,7 @@
   "rig": "hero_rig_v3",
   "scale": 1.04,
   "secondary": [{"chain": ["p3_banner"], "damping": 0.6, "part": "back/standard", "stiffness": 0.35}],
-  "source_sha256": "9a9b6bf7eabfa767ac70aa5d79770605139ce098f7304a065ad220ceb84e575d",
+  "source_sha256": "67e9b6506eb69bb08e7fad435fa4dd19cb1b106fc255aea4857b08dfc23a0a42",
   "states": ["bulwark"],
   "style": "sword_shield",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": false, "width": 256},

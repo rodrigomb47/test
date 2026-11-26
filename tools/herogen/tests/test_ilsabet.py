@@ -6,7 +6,8 @@ clips' rules on every base and the sword and the shield clear of her body; the v
 stays down (the helm's new hinge bone, held down by her `sec.loop` on the secondary controller, which plays after
 every other controller, while `phase.2` swings the visor shut on it); the stills that draw what `sec.loop` holds;
 the standard that rises on her back in phase 3; her arms and props clear of the helm's and the standard's thick cubes
-(the depth used cannot see their thin plates)."""
+(the sampled depth cannot see their thin plates) and, by the exact box overlap (grips.box_overlap, tested here on
+made-up cubes), clear of the whole helm, her head and the standard, the blade clear of the shield."""
 import json
 import os
 import unittest
@@ -154,6 +155,55 @@ class IlsabetTest(unittest.TestCase):
                 for g, cs in mine.items():
                     for o, os_ in theirs.items():
                         self.assertLess(self.depth(pose, cs, os_), 0.5, (name, round(t, 2), g, o))
+
+    def test_box_overlap_sees_thin_plates(self):
+        """grips.box_overlap (C4): the exact overlap of two cubes over their 15 separating axes. Against a kite-shield
+        plate 0.45 px thin (7 x 9), a 0.44 x 1.4 blade through its middle reads 4.2 px (half the plate's height and
+        half the blade's width), a 0.1 px graze 0.1, a crossing 1 px in from the rim 1.0 and a blade over the top 0;
+        the plate turned 90 degrees on its own pivot reads as turned. The sampled depth cannot pass 0.225 there."""
+        from rig import Cube
+        world = {"b": (np.eye(3), np.zeros(3))}
+
+        def cube(origin, size, **kw):
+            return Cube("c", "b", tuple(origin), tuple(size), "metal", "metal", **kw)
+
+        def overlap(a, b):
+            return grips.box_overlap(grips._oriented_box(a, world), grips._oriented_box(b, world))
+        plate = cube((-0.225, -3.5, -4.5), (0.45, 7.0, 9.0))
+        self.assertAlmostEqual(overlap(cube((-7.5, -0.7, -0.22), (15.0, 1.4, 0.44)), plate), 4.2, places=6)
+        self.assertAlmostEqual(overlap(cube((0.125, -0.7, -0.22), (15.0, 1.4, 0.44)), plate), 0.1, places=6)
+        self.assertAlmostEqual(overlap(cube((-7.5, 2.5, -0.22), (15.0, 1.4, 0.44)), plate), 1.0, places=6)
+        self.assertEqual(overlap(cube((-7.5, 3.6, -0.22), (15.0, 1.4, 0.44)), plate), 0.0)
+        turned = cube((-0.225, -3.5, -4.5), (0.45, 7.0, 9.0), rotation=(0.0, 90.0, 0.0), pivot=(0.0, 0.0, 0.0))
+        along_z = cube((-0.22, -0.7, -7.5), (0.44, 1.4, 15.0))
+        self.assertAlmostEqual(overlap(along_z, turned), 4.2, places=6)
+        self.assertAlmostEqual(overlap(along_z, plate), 0.445, places=6)
+        blade = cube((-7.5, -0.7, -0.22), (15.0, 1.4, 0.44))
+        local = grips._samples(blade)
+        self.assertLessEqual(float(grips._depth_inside(local, plate.box).max()), 0.225 + 1e-9)
+
+    def test_clear_of_the_helm_head_and_standard_exactly(self):
+        """With the exact overlap (grips.worst_overlap), on every tick of her own clips (but sec.loop): her arms (the
+        gauntlets included), the sword and the shield at most 0.5 px into the helm (its visor held down on the hinge;
+        phase.2 turns the visor itself), her head and the standard's pole and banner; the sword at most 0.75 px into
+        the shield (the blade passes close over its top, never through it). Her style's guard and sheathe are shared
+        and not hers to fix (artgen.md, C4, open items)."""
+        arm_bones = set(grips._subtree(self.model, ["arm_r", "arm_l"]))
+        mine = [c for c in self.model.cubes if c.bone in arm_bones]
+        sword, shield = self.cubes_of(["weapon_r"]), self.cubes_of(["weapon_l"])
+        theirs = self.cubes_of(["p2_hat", "p2_visor_hinge", "p3_back", "p3_banner"])
+        theirs += [c for c in self.model.cubes if c.bone == "head" and c.part == "base"]
+        for clip in self.own.clips:
+            if clip.name == "sec.loop":
+                continue
+            for t, pose, drawn in grips.clip_poses(clip, self.lookup, self.d, 1):
+                pose = dict(pose, p2_visor_hinge={"rotation": (VISOR_UP, 0.0, 0.0)})
+                world = self.sk.world(pose)
+                v, k = grips.worst_overlap(world, mine, theirs)
+                self.assertLessEqual(v, 0.5, (clip.name, round(t, 2), k))
+                if drawn:
+                    v, k = grips.worst_overlap(world, sword, shield)
+                    self.assertLessEqual(v, 0.75, (clip.name, round(t, 2), k))
 
     # -------------------------------------------------------------- the visor
 

@@ -1529,7 +1529,7 @@
           "arm_r": [
             -74.0,
             19.2,
-            17.6
+            17.5
           ],
           "forearm_r": [
             -109.2,
@@ -1542,17 +1542,17 @@
             16.0
           ],
           "arm_l": [
-            -64.6,
-            5.3,
-            -32.4
+            -58.4,
+            4.0,
+            -38.3
           ],
           "forearm_l": [
-            -110.1,
-            -8.0,
+            -113.1,
+            -7.2,
             0.0
           ],
           "hand_l": [
-            29.6,
+            22.3,
             -60.0,
             35.0
           ]
@@ -1620,19 +1620,19 @@
             0
           ],
           "arm_r": [
-            -80.9,
-            39.6,
-            44.4
+            -72.6,
+            42.9,
+            50.2
           ],
           "forearm_r": [
-            -83.5,
-            24.6,
+            -83.8,
+            25.4,
             0.0
           ],
           "hand_r": [
             80.0,
             -60.0,
-            20.7
+            22.4
           ],
           "arm_l": [
             -35.6,
@@ -2286,19 +2286,19 @@
             4.7
           ],
           "arm_l": [
-            -46.3,
-            11.7,
-            -17.6
+            -45.2,
+            11.8,
+            -17.9
           ],
           "forearm_l": [
-            -125.2,
-            -21.3,
+            -125.7,
+            -21.2,
             0.0
           ],
           "hand_l": [
-            48.0,
+            46.7,
             -60.0,
-            31.1
+            31.7
           ]
         },
         "knees": 0,
@@ -2379,19 +2379,19 @@
             -6.5
           ],
           "arm_l": [
-            -46.3,
-            11.7,
-            -17.6
+            -44.4,
+            11.8,
+            -18.0
           ],
           "forearm_l": [
-            -125.2,
-            -21.3,
+            -126.1,
+            -21.2,
             0.0
           ],
           "hand_l": [
-            48.0,
+            45.8,
             -60.0,
-            31.1
+            32.2
           ]
         },
         "knees": 0,
@@ -2922,19 +2922,19 @@
             0
           ],
           "arm_r": [
-            -82.3,
-            33.8,
-            78.9
+            -85.8,
+            24.9,
+            68.9
           ],
           "forearm_r": [
-            -53.5,
-            -25.1,
+            -47.8,
+            -31.9,
             0.0
           ],
           "hand_r": [
-            -4.1,
-            -55.4,
-            -18.7
+            -12.9,
+            -60.0,
+            -3.0
           ],
           "arm_l": [
             32.3,
@@ -3201,19 +3201,19 @@
             0
           ],
           "arm_r": [
-            -97.0,
-            48.6,
+            -82.5,
+            45.4,
             60.7
           ],
           "forearm_r": [
-            -25.8,
-            20.3,
+            -42.9,
+            11.7,
             0.0
           ],
           "hand_r": [
             80.0,
-            -25.6,
-            12.2
+            -52.6,
+            19.4
           ],
           "arm_l": [
             27.4,
@@ -3480,19 +3480,19 @@
             0
           ],
           "arm_r": [
-            -102.7,
-            48.2,
-            55.3
+            -86.2,
+            43.8,
+            50.7
           ],
           "forearm_r": [
-            -28.4,
-            28.7,
+            -51.4,
+            23.7,
             0.0
           ],
           "hand_r": [
             80.0,
-            11.8,
-            5.1
+            51.4,
+            -2.5
           ],
           "arm_l": [
             19.3,
@@ -3573,19 +3573,19 @@
             0
           ],
           "arm_r": [
-            -117.5,
-            25.6,
-            27.9
+            -98.3,
+            43.7,
+            34.4
           ],
           "forearm_r": [
-            -50.0,
-            20.4,
+            -53.3,
+            16.9,
             0.0
           ],
           "hand_r": [
-            80.0,
-            7.2,
-            8.9
+            66.7,
+            59.8,
+            -6.5
           ],
           "arm_l": [
             19.3,
@@ -3798,7 +3798,7 @@
         ]
       },
       "ils.p2_nod": {
-        "_comment": "Phase 2: the sharp nod that snaps the visor down, the sword upright before her face.",
+        "_comment": "Phase 2: the sharp nod that snaps the visor down, the sword upright beside the right of her face.",
         "extends": "sword_shield.stance",
         "bones": {
           "leg_r": [
@@ -3852,19 +3852,19 @@
             0
           ],
           "arm_r": [
-            -29.0,
-            -10.1,
-            5.3
+            -13.3,
+            3.7,
+            11.6
           ],
           "forearm_r": [
-            -86.3,
-            -4.9,
+            -100.6,
+            4.6,
             0.0
           ],
           "hand_r": [
-            29.2,
-            4.8,
-            3.4
+            30.0,
+            4.4,
+            5.8
           ],
           "arm_l": [
             20.3,
@@ -3945,19 +3945,19 @@
             0
           ],
           "arm_r": [
-            -99.5,
-            45.0,
-            55.6
+            -90.6,
+            39.3,
+            52.3
           ],
           "forearm_r": [
-            -27.1,
-            21.8,
+            -41.6,
+            15.2,
             0.0
           ],
           "hand_r": [
             80.0,
-            -7.0,
-            7.7
+            -37.4,
+            15.6
           ],
           "arm_l": [
             29.4,
@@ -4649,6 +4649,99 @@
           ]
         }
       },
+      "ils.salute_side": {
+        "_comment": "Phase 2's salute: the sword upright beside the right of her face, clear of the raised visor that juts forward from her brow until it snaps down.",
+        "extends": "sword_shield.stance",
+        "bones": {
+          "leg_r": [
+            -0.24,
+            0.0,
+            3.98
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.76,
+            0.0,
+            -3.98
+          ],
+          "leg_l": [
+            -14.1,
+            0.0,
+            -3.97
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.1,
+            0.0,
+            3.97
+          ],
+          "body": [
+            0,
+            0,
+            0
+          ],
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            0,
+            0,
+            0
+          ],
+          "neck": [
+            2,
+            0,
+            0
+          ],
+          "arm_r": [
+            -5.3,
+            6.5,
+            9.4
+          ],
+          "forearm_r": [
+            -111.3,
+            7.0,
+            0.0
+          ],
+          "hand_r": [
+            29.1,
+            5.6,
+            7.1
+          ],
+          "arm_l": [
+            21.0,
+            23.9,
+            -17.9
+          ],
+          "forearm_l": [
+            -58.2,
+            12.4,
+            0.0
+          ],
+          "hand_l": [
+            -59.3,
+            -31.4,
+            -5.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
       "ils.visor_down": {
         "_comment": "sec.loop: the helm's visor held down on its hinge (+visor_up).",
         "bones": {
@@ -4671,8 +4764,8 @@
         }
       },
       "ils.p2_salute": {
-        "_comment": "ils.salute with the visor at -75 degrees on its hinge.",
-        "extends": "ils.salute",
+        "_comment": "ils.salute_side with the visor at -75 degrees on its hinge.",
+        "extends": "ils.salute_side",
         "bones": {
           "p2_visor": [
             -75.0,
@@ -4682,8 +4775,8 @@
         }
       },
       "ils.p2_salute_h": {
-        "_comment": "ils.salute with the visor at -75 degrees on its hinge.",
-        "extends": "ils.salute",
+        "_comment": "ils.salute_side with the visor at -75 degrees on its hinge.",
+        "extends": "ils.salute_side",
         "bones": {
           "p2_visor": [
             -75.0,
@@ -5603,7 +5696,7 @@
         ]
       },
       "phase.2": {
-        "description": "Phase 2 (inside the 1.2 s transition: \"Then I will stand against you properly.\"): the helm's visor is raised as the phase begins; the sword comes upright before her face (0.3 s) and she gives one sharp nod that snaps the visor down at 0.45 s (the visor sound), the visor bouncing shut on its hinge, then lifts her head and settles back into her guard by 1.1 s (Bulwark follows).",
+        "description": "Phase 2 (inside the 1.2 s transition: \"Then I will stand against you properly.\"): the helm's visor is raised as the phase begins, jutting forward from her brow; the sword comes upright beside the right of her face, clear of it (0.3 s), and she gives one sharp nod that snaps the visor down at 0.45 s (the visor sound), the visor bouncing shut on its hinge, then lifts her head and settles back into her guard by 1.1 s (Bulwark follows).",
         "length": 1.1,
         "keys": [
           {

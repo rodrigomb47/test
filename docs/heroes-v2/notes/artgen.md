@@ -5175,7 +5175,8 @@ animation and timing files are new.
 | generated | `geo/hero` (66 bones of the 100 budget, 237 cubes of the 300, 125 of the 130 beyond the fine distance), `textures/entity/hero` (256x128 texture and glow mask; no `_p2` texture: nothing of hers changes colour), `heroes/*.visual.json`, `animations/hero/ilsabet_frostmere.animation.json`, `data/factionclash/hero_timings/ilsabet_frostmere.json` |
 | `render/scene.py` | `HeroAssets.held()`: the channels a hero's `sec.loop` holds at one value, laid over `stance()` (below) |
 | `render/hero_previews.py` | her captions (`OWN_CAPTIONS`) |
-| `tests/test_ilsabet.py` | 18 tests (below) |
+| `grips.py` | `box_overlap` and `worst_overlap`: the exact overlap of cubes (below) |
+| `tests/test_ilsabet.py` | 20 tests (below) |
 
 ### Her look
 
@@ -5244,7 +5245,7 @@ each of its two cuts (ticks 9 and 15: MovePlan takes the markers as the form's h
 | `move.call_the_guard` | 1.0 s | light | 12 / 2 / 8 | the sword thrust straight up over her head and the shield swept wide, the chest open (`hit` 12: the server's horn), `cast` 13; swept down to point at the foe |
 | `ultimate` | 3.2 s | ultimate | 32 / 4 / 30 | Vow of Winter: the sword upright before her face with the eyes closed (the vow), raised straight up over her head with the chin up and the shield out low and wide ("By my vow, winter holds this line!"), trembling while the ice ring grows, tipped back; swept down in a great arc to point at the ground before her as she drops deep on her knees (`hit` 32: the frost bursts), `cast` 35; held low, rising |
 | `state.bulwark` | 1.5 s | - | - | played as phase 2's transition ends: she drops into a braced shield wall, the shield forward and low and the sword laid over its top, and rises into her guard |
-| `phase.2`, `phase.3` | 1.1, 1.3 s | - | - | inside the 1.2 s and 1.4 s transitions: the sword upright before her face, one sharp nod that snaps the visor shut (`visor`), the head up; the sword thrust up over her head and the shield out wide ("To me, Rime Vow! Hold the line!", `rally`) while the standard rises out of its socket on her back with a small overshoot (`p3_back` and `p3_banner` 14 px down to 0) and its banner unfurls (`p3_banner` scaled 0.15 to 1 along its length) |
+| `phase.2`, `phase.3` | 1.1, 1.3 s | - | - | inside the 1.2 s and 1.4 s transitions: the sword upright beside her face (clear of the raised visor), one sharp nod that snaps the visor shut (`visor`), the head up; the sword thrust up over her head and the shield out wide ("To me, Rime Vow! Hold the line!", `rally`) while the standard rises out of its socket on her back with a small overshoot (`p3_back` and `p3_banner` 14 px down to 0) and its banner unfurls (`p3_banner` scaled 0.15 to 1 along its length) |
 | `intro` | 1.5 s | - | - | the salute: the sword upright before her face, the eyes closed, the shield at her side (`intro`); the sword lowered, its point to the ground at her right front, an offer ("Lower your weapon and I will lower mine. I keep my word."); her guard |
 | `victory`, `taunt` | 2.0, 1.5 s | - | - | the sword's point set on the ground before her and the head bowed toward the fallen ("It is done."), then up with a gentle smile; the sword levelled at the foe over the shield, its point flicked up twice: come |
 | `last_stand` | 1.6 s | - | - | bent over and breathing hard, leaning on the sword planted point down by her right foot, the shield hanging low; up into the braced shield wall ("My word is given. Not one step back.") |
@@ -5267,21 +5268,25 @@ each of its two cuts (ticks 9 and 15: MovePlan takes the markers as the form's h
   and for the shield's centre, top and face (its point for the plant), some in the chest's frame (the sweep's tucked
   shield rides with the turning torso); the legs of every planted pose on her stance's sole spots; the charge's run in
   place lifts the root and takes the `floor` fix (`steps`).
-- **Against her phase looks, only the thick cubes are measured.** The clearance check (`grips`' depth: a point's
-  distance to a cube's nearest face) keeps her arms, the sword and the shield within 0.5 px of the helm (its visor held
-  down) and the standard on every tick of her own clips and her style's string and guard. That depth can never pass
-  half a cube's thinnest side, so it sees only the helm's two lower skull slabs (2.75 and 1.5 px thick) and the
-  standard's finial; the helm's cheek, back and visor plates (0.6-0.7 px), the 0.7 px pole, the 0.3 px banner and the
-  shield's 0.15-0.45 px plates stay under any limit above their half-thickness, whatever crosses them. So the 0.33-0.35
-  px first read as "a forearm grazing the helm's cheek plate" (Rime Wall, Frozen Standard, Call the Guard, the
-  ultimate, the library's `guard.hit`) is the cheek plate's full half-thickness, and the arm may pass through it; the
-  same holds for the blade against the shield. Sampled plate-aware probes point at crossings (the raised upper arm
-  through the cheek plates in Call the Guard, `phase.3` and the ultimate; the gauntlets through the lowered visor in
-  the library's `guard`; the frost-lit blade through the shield's face for a tick or two as Frozen Standard and the
-  victory leave her guard; the library's `attack.3` and `sheathe`), but they disagree with each other, so these are
-  open (below), not measured. What the thick cubes did catch: the first draft's phase-2 nod brought the helm's skull
-  1.36 px into the upright blade (the salute's blade now stands 3 px further out), and the sweep's first tuck put the
-  shield's point into the blade's path at her left (the tuck rides higher in the chest's frame).
+- **Clear of her phase looks, measured exactly.** The props' depth check (`grips`' sampled depth: a point's distance
+  to a cube's nearest face) can never pass half a cube's thinnest side, so against the helm's cheek, back and visor
+  plates (0.6-0.7 px), the 0.7 px pole, the 0.3 px banner and the shield's 0.15-0.45 px plates it saw nothing,
+  whatever crossed them: the 0.33-0.35 px first read as "a forearm grazing the helm's cheek plate" was the plate's
+  full half-thickness. `grips.box_overlap` (below) measures how far two cubes overlap exactly: the shortest move that
+  parts them, over their 15 separating axes. Measured so, the first solve put the raised sword arm's gauntlet through
+  the helm's cheek and visor plates (Call the Guard 1.47 px, `phase.3` 1.48, the ultimate 2.13, Rime Wall's shield
+  hand 1.03, Frozen Standard 1.05) and 0.99 px into her bare head in the ultimate (phase 1 has no helm); and in
+  `phase.2` the salute's upright blade crossed the raised visor, which juts some 9 px forward from her brow until it
+  snaps down (0.68 px, 1.3 as it starts down). Nine arm poses (`rw_lift`, `rw_set`, `ts_e`, `ts_f`, `fs_raise`,
+  `cg_raise`, `vw_raise`, `vw_peak`, `p3_rally`) were re-solved with the exact overlap against the helm (visor down)
+  and the head in the solver's cost (each grip moved about 1 px), and `phase.2` now salutes with the sword upright
+  beside the right of her face (`ils.salute_side`, the nod's sword with it), clear of the raised visor. Now, on every
+  tick of her own clips, her arms, gauntlets, sword and shield are at most 0.34 px into the helm, her head and the
+  standard (Frozen Standard's cuff against the cheek plate 0.33, Frost Lance Charge's shoulder against her head
+  0.34), and the blade at most 0.70 px into the shield (the frost-lit shell over the shield's boss as the sweep settles
+  into her guard; 0.49 in the victory). No hit tick, marker or key time moved. The old check did catch two things
+  earlier: the first draft's phase-2 nod brought the helm's skull 1.36 px into the upright blade, and the sweep's first
+  tuck put the shield's point into the blade's path at her left (the tuck rides higher in the chest's frame).
 
 ### Generator additions (every other hero builds and previews byte for byte as before)
 
@@ -5289,6 +5294,9 @@ each of its two cuts (ticks 9 and 15: MovePlan takes the markers as the form's h
 - **`render/scene.py`**: `HeroAssets.held()` and `stance()` laying the held channels over the stance (above); the
   turnaround, `phases.png`, the lineup and the coplanar check of `herogen check` see her visor down.
 - **`render/hero_previews.py`**: her captions (`OWN_CAPTIONS`).
+- **`grips.py`**: `box_overlap` (two oriented boxes, the 15 separating axes), `worst_overlap` (the largest between two
+  sets of cubes in a pose) and `_oriented_box` (a cube's box in a pose, its own rotation and inflate included). Only
+  tests and authoring use them; nothing built or rendered changes.
 
 ### Previews (`docs/heroes-v2/previews/heroes/ilsabet_frostmere/` and `heroes/lineup.png`)
 
@@ -5299,15 +5307,19 @@ per move (Frost Lance Charge in phase 2, Frozen Standard and Call the Guard in p
 `idles.gif` and `locomotion.gif` (walk > run, the charging run and its skid, jump > leap > land, climb). The lineup now has
 her between Hinae and Kagenori (alphabetical), at 1.89 blocks.
 
-### Tests (576 -> 594: `tests/test_ilsabet.py`, 18)
+### Tests (576 -> 596: `tests/test_ilsabet.py`, 20)
 
 - Her one body: adult, female, standard, 104, no phase changes it, no tail; the kit is the fixture's; the budgets.
 - Every move's and the ultimate's frames equal the kit's (Oath Strike's cuts at ticks 9 and 15), and
   `assets.check_frames` passes on the written chain.
 - Her own clips pass every rule on every base; the clip set is the 18 and `sec.loop` (no `escape`, no
   `ultimate.loop`); the sword and the shield clear of her body on every tick; her arms and props within 0.5 px of the
-  helm (visor down) and the standard on every tick of her own clips, her string and her guard (a check of the thick
-  cubes only: see "Against her phase looks" above).
+  helm (visor down) and the standard by the sampled depth on every tick of her own clips, her string and her guard (it
+  sees only the thick cubes); and by the exact overlap, on every tick of her own clips, her arms, gauntlets and props
+  at most 0.5 px into the helm, her head and the standard, and the blade at most 0.75 px into the shield.
+- `grips.box_overlap` on made-up cubes: a blade through a 0.45 px plate's middle 4.2 px, a 0.1 px graze 0.1, a
+  crossing 1 px in from the rim 1.0, a blade over the top 0, a plate turned 90 degrees on its own pivot read as turned;
+  the sampled depth stays at 0.225 there.
 - The visor: the hinge is a cubeless bone at the visor's pivot and the visor its child; `sec.loop` keys only the hinge,
   at +75 on every tick, and no other clip keys it; lowered, the visor lies in front of her face, and at rest it does not
   (the face rule passes); `phase.2` starts with it raised, slams it past shut at 0.45 s and ends shut; the phase clips
@@ -5331,8 +5343,12 @@ Oath Strike's second cut a tick late fails `test_move_frames_equal_the_kit`; pha
 Sweep's shield arm swung up 60 degrees (`ils.ts_d`) fails `test_sword_and_shield_clear_of_her_body` ("the prop passes
 2.4 px into head"). A first draft of that last case, Frozen Standard's pull bringing the shield across before her with
 Shield Bash's recovery arm, passed the test, and rightly: measured, it puts the shield 0.17 px into her right forearm
-(the limit is 1.0) and nowhere into the blade, so it was no defect and was replaced. A blade-against-shield test was
-drafted and dropped: on the shield's thin plates the depth it used can never reach its limit (above).
+(the limit is 1.0) and nowhere into the blade, so it was no defect and was replaced. `box_overlap` ignoring a cube's
+own rotation fails `test_box_overlap_sees_thin_plates` (0.445 for 4.2); Call the Guard's raised arm as first solved
+fails `test_clear_of_the_helm_head_and_standard_exactly` (the gauntlet's cuff 1.33 px in the helm's cheek plate at
+0.2 s); the sweep's shield slammed down before her (Rime Wall's shield arm in `ils.ts_f`) before the blade has come
+round fails it too (the blade 1.47 px into the shield at 2.45 s). A first blade-against-shield test on the sampled
+depth was dropped: on the shield's thin plates it could never reach its limit; the exact test replaces it.
 
 ### Checks run
 
@@ -5349,6 +5365,14 @@ the_wither the_ender_dragon --check` and `hero-previews --lineup --check` OK; `a
 `--styles --check` and `--locomotion --check`, `render-previews --check` and `icons --check` OK; the Python suite, 594
 tests, OK (run before the test file's last change, which removed a drafted test and narrowed a docstring;
 `tests.test_ilsabet` alone, 18 tests, OK after it).
+
+After the exact clearance work (the re-solved arms, `phase.2`'s salute, `grips.box_overlap` and its two tests):
+`herogen build ilsabet_frostmere` and `check ilsabet_frostmere` OK, her clips' rules on every base 0 problems and the
+props' body clearance on every tick; `check --all --style` OK (the old NOTE only); `build --check --all` OK (every
+other hero byte for byte as committed); her previews re-rendered (`move_call_the_guard`, `move_frozen_standard`,
+`move_rime_wall`, `move_turning_sweep`, `ultimate`, `moments` and `sheet` changed) and `hero-previews
+ilsabet_frostmere --check` OK; `hero-previews --lineup --check` OK (her stance is unchanged); `tests.test_ilsabet`, 20
+tests, OK; the three new sabotage cases fail as they should.
 
 ### Decisions
 
@@ -5367,6 +5391,11 @@ tests, OK (run before the test file's last change, which removed a drafted test 
 7. **The idle quirks use what she carries**: the shield on her back for the tap, no blade for the salute (the fist over
    her heart).
 8. **No escape clip** (she never escapes), as for Benika and Kagenori.
+9. **The exact overlap for her phase looks**, not a tighter limit on the sampled depth, which cannot see a crossing of
+   a plate thinner than twice the limit. It is the solver's cost for the re-solved arms and the test's measure.
+10. **Phase 2's salute beside her face**: the raised visor juts some 9 px forward from her brow, so a blade upright
+    before her face crosses it at any distance she can hold it; beside her face it clears the visor, and the nod's
+    sword stays there while the visor snaps shut. The intro (phase 1, no helm) keeps the salute before her face.
 
 ### Open items
 
@@ -5380,15 +5409,12 @@ tests, OK (run before the test file's last change, which removed a drafted test 
   `phase.2` raises it over the action's 2-tick blend before it snaps shut; the standard shows as phase 3 begins, a tick
   before `phase.3` sinks it into its socket. As for Kagenori's helmet, the engine can set the phase bit a tick after it
   sends the phase clip.
-- **The library's draw and sheathe** (shared, unchanged) slide the left forearm behind the back under the shield's
-  strap; in phase 3 that forearm reaches 0.34 px into the standard's 0.7 px pole, its full half-thickness, so it may
-  pass through it.
-- **Crossings of thin plates, unmeasured**: the clearance depth cannot see the helm's cheek, back and visor plates,
-  the pole, the banner or the shield's plates (above). An exact measure (box against box, the separating axes) would
-  settle what the sampled probes point at: the raised upper arm through the cheek plates (Call the Guard, `phase.3`,
-  the ultimate), the gauntlets through the lowered visor in the library's `guard`, the frost-lit blade through the
-  shield's face for a tick or two as Frozen Standard and the victory leave her guard, and the library's `attack.3`
-  and `sheathe`. Her own clips can then be re-solved; the library's are shared.
+- **The shared clips against her phase looks** (the sword_shield style and the core, unchanged; measured with
+  `box_overlap`): the style's `guard` puts the right gauntlet 1.51 px into the helm's cheek plate (`guard.loop` 1.10,
+  `guard.hit` 1.01) and lays the blade 0.70 px into the shield; `attack.3` (the bash) puts the frost-lit blade 1.57 px
+  into the shield and `sheathe` 1.33; `draw` and `sheathe` slide the left gauntlet 2.31 px through the standard's pole
+  behind her back and the left upper arm 1.14 px into her head. They are shared by every sword_shield hero (and the
+  draw by every hero), so a hat- and back-aware variant is a shared decision for later, as for Kagenori's helmet.
 - **The banner's procedural sway** (`back/standard`'s chain) adds to `phase.3`'s keys in game; a look in the client.
 - Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.
