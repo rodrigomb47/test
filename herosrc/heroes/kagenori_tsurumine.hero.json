@@ -3696,7 +3696,7 @@
         ]
       },
       "kag.ul_high": {
-        "_comment": "The draw held at its height (zanshin): the blade straight up over his head, a little behind it, the body stretched tall.",
+        "_comment": "The draw held at its height (zanshin): the blade straight up, a little behind, the arm raised beside his head so the face stays clear under it, the body stretched tall.",
         "extends": "katana.stance",
         "bones": {
           "leg_r": [
@@ -3750,19 +3750,19 @@
             0
           ],
           "arm_r": [
-            -97.9,
-            -31.6,
-            -29.8
+            -107.5,
+            4.2,
+            5.0
           ],
           "forearm_r": [
-            -41.9,
-            -13.4,
+            -46.4,
+            9.6,
             0.0
           ],
           "hand_r": [
-            58.8,
-            5.5,
-            -4.6
+            70.7,
+            21.9,
+            2.4
           ],
           "arm_l": [
             60.5,

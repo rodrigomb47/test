@@ -120,7 +120,7 @@
     },
     {"chain": ["sleeve_r", "sleeve_l"], "damping": 0.7, "part": "outfit_top/haori", "stiffness": 0.5}
   ],
-  "source_sha256": "f0a2dab0207e78a2625e7a8672e22df7702aa46606aafb4e31ad39b880738a72",
+  "source_sha256": "de7bf1a824bfd889816b9843c05333283979d02f97d8f6306f217453789cb498",
   "states": ["twin_sky"],
   "style": "katana",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 256, "p2": false, "width": 256},

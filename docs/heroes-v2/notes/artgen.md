@@ -4778,7 +4778,7 @@ when the counts match).
 | `move.guard_splitter` | 1.8 s | heavy | 18 / 2 / 18 | the blade raised high over his head and drawn back like a bow, trembling with a held breath (the tell, `heavy_cut` at the top); crashed straight down (`hit` 18, a kiai), driven on to just above the ground over deep knees (`cast` 19) |
 | `move.chain_draw` | 2.15 s | heavy | 20 / 9 / 16, hits 20, 23, 26 | the blade upright before his face, flat toward him, the left palm raised beside it while the hands tremble with gathering lightning (the tell); the point thrust at the first target (`hit` 20), snapped to his right front (23) and across to his left front (26), held (`cast` 28) |
 | `move.falling_crane` | 2.3 s | heavy | 18 / 10 / 20 | a deep gathering crouch, both arms swept back and low like folded wings (the tell); the launch (`hit` 18, `crane_leap`) with the arms beating up and out, the crane at the top (arms spread, one knee high), the blade raised over his head as he drops, down blade-first on deep knees (`cast` 27: the landing's knockback; Three Cuts follows) |
-| `ultimate` | 3.6 s | ultimate | 40 / 2 / 32 | Heaven-Splitting Draw: the blade slid home, the eyes close and stay closed (no blinking) as he sinks into the deepest iai; the eyes open sharp at 1.75 s, the blade starts out along the scabbard's line and he uncoils in one rising draw that sweeps the blade past his face to the sky (`hit` 40: the server's lightning), `cast` 41; held high (zanshin), the chiburi, his guard |
+| `ultimate` | 3.6 s | ultimate | 40 / 2 / 32 | Heaven-Splitting Draw: the blade slid home, the eyes close and stay closed (no blinking) as he sinks into the deepest iai; the eyes open sharp at 1.75 s, the blade starts out along the scabbard's line and he uncoils in one rising draw that sweeps the blade past his face to the sky (`hit` 40: the server's lightning), `cast` 41; held high (zanshin) with the sword arm raised beside his head, so his face stays clear under it, the chiburi, his guard |
 | `state.twin_sky` | 1.5 s | - | - | played as phase 3's transition ends: both blades raised and crossed high ("Two blades."), swept apart and down to his sides ("No more restraint."), into his guard |
 | `phase.2`, `phase.3` | 1.1, 1.3 s | - | - | inside the 1.2 s and 1.4 s transitions: the left hand holds the helmet up over his head (`p2_hat` lifted 6 px), sets it on (the `helmet` sound) and tugs its cord tight; the head bowed and the eyes closed, the left hand on the short sword's hilt in its scabbard ("Forgive me, teacher."), the head comes up with the eyes and edges glowing (`blade_hum`) and the short sword is drawn out to his left side |
 | `intro` | 1.5 s | - | - | the blade slid home, a formal bow from the hips with the eyes closed and the hand on the hilt ("Tsurumine Kagenori."), upright with the hand on the hilt ("Draw when you are ready."), the quick draw into his guard |
@@ -4870,7 +4870,10 @@ Sabotage (each restored afterwards, every file byte for byte): a leaper II landi
    the kit sheet leaves that choice to the build).
 6. **The ponytail spring left out of five clips** rather than a collision rule in the bake: the bake has no head
    collision, and the hair hanging on his head as the base carries it reads well at that speed.
-7. **Previews in the move's first kit phase** (the shared rule): the five phase-1 moves are drawn with one sword. Every
+7. **The ultimate's hold re-solved after review**: the first held pose put the hand in front of his brow, so the
+   raised forearm hid his face for 0.7 s; the hand now sits beside his head (the grip 4 px further out to his
+   right, 1 px further back) and the face stays clear. Its frames and timing are unchanged.
+8. **Previews in the move's first kit phase** (the shared rule): the five phase-1 moves are drawn with one sword. Every
    move was filmed in phase 3 too while authoring, and the short sword's clearance is checked in every clip.
 
 ### Open items
